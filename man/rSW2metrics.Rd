@@ -8,8 +8,7 @@
 ecohydrological metrics from output created by
 \pkg{rSOILWAT2} or \pkg{rSFSW2}simulation experiments.}
 \description{
-Collection of functions to calculate ecohydrological metrics
-    from output created by rSOILWAT2 or rSFSW2 simulation experiments.
+Collection of functions to calculate ecohydrological metrics from output created by rSOILWAT2 or rSFSW2 simulation experiments.
 }
 \section{Details}{
 
