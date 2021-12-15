@@ -245,7 +245,8 @@ check_project_parameters <- function(x, args) {
   if (args[["add_aggs_across_yrs"]] && args[["is_out_ts"]]) {
     stopifnot(
       exists("fun_aggs_across_yrs", where = x),
-      is.function(get0(x[["fun_aggs_across_yrs"]]))
+      is.function(x[["fun_aggs_across_yrs"]]) ||
+        is.function(get0(x[["fun_aggs_across_yrs"]]))
     )
   }
 
