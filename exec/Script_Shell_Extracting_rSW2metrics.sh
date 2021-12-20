@@ -5,6 +5,7 @@ mode="-mode=full"
 parallel="-ncores=2 -cllog=FALSE"
 
 
+# Extract soil inputs to simulations
 Rscript Script_to_Extract_Metric.R -o=input_soillayers_depth -fun=collect_input_soillayers_depth ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=input_soillayers_N -fun=collect_input_soillayers_count ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=input_soillayers_sand -fun=collect_input_soillayers_sand ${mode} ${parallel} ${prjoptions}
@@ -12,6 +13,7 @@ Rscript Script_to_Extract_Metric.R -o=input_soillayers_clay -fun=collect_input_s
 Rscript Script_to_Extract_Metric.R -o=input_soillayers_gravel -fun=collect_input_soillayers_gravel ${mode} ${parallel} ${prjoptions}
 
 
+# Extract metrics
 Rscript Script_to_Extract_Metric.R -o=Climate_Annual -fun=metric_Climate_Annual ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=CorTempPPT -fun=metric_CorTempPPT ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=CorTP_Annual -fun=metric_CorTP_Annual ${mode} ${parallel} ${prjoptions}
@@ -77,3 +79,7 @@ Rscript Script_to_Extract_Metric.R -o=VWC_Seasonal_wholeprofile -fun=metric_VWC_
 Rscript Script_to_Extract_Metric.R -o=WDDat5C0to100cm15bar -fun=metric_WDDat5C0to100cm15bar ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=WetSoilDays_Seasonal_top50cm -fun=metric_WetSoilDays_Seasonal_top50cm ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=WetSoilDays_Seasonal_wholeprofile -fun=metric_WetSoilDays_Seasonal_wholeprofile ${mode} ${parallel} ${prjoptions}
+
+
+# Prepare daily simulation output for sharing
+Rscript Script_to_Extract_Metric.R -o=SW2toTable_daily -fun=metric_SW2toTable_daily ${mode} ${parallel} ${prjoptions}

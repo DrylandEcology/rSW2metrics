@@ -184,7 +184,8 @@ test_that("Check metrics", {
     path = prjpars[["dir_sw2_output"]],
     id_scen_used = prjpars[["id_scen_used"]],
     group_by_month = prjpars[["season_by_month"]],
-    first_month_of_year = prjpars[["first_month_of_year"]]
+    first_month_of_year = prjpars[["first_month_of_year"]],
+    dir_out_SW2toTable = tempdir()
   )
 
 
@@ -202,6 +203,7 @@ test_that("Check metrics", {
         list(prjpars[["years_aggs_by_scen"]])
       }
     )
+
 
     # Call aggregation function for rSOILWAT2 input/output for each site `s`
     if (!do_timing) {

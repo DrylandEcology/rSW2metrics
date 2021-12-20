@@ -41,6 +41,7 @@
 \alias{metric_SemiDryDuration_Annual_top50cm}
 \alias{metric_SemiDryDuration_Annual_wholeprofile}
 \alias{metric_SMTRs}
+\alias{metric_SW2toTable_daily}
 \alias{metric_SWA_Seasonal_top50cm}
 \alias{metric_SWA_Seasonal_wholeprofile}
 \alias{metric_SWAat0to020cm39bar_daily}
@@ -172,6 +173,7 @@ They have at least the following arguments:
   \item \var{metric_SemiDryDuration_Annual_top50cm}
   \item \var{metric_SemiDryDuration_Annual_wholeprofile}
   \item \var{metric_SMTRs}
+  \item \var{metric_SW2toTable_daily}
   \item \var{metric_SWA_Seasonal_top50cm}
   \item \var{metric_SWA_Seasonal_wholeprofile}
   \item \var{metric_SWAat0to020cm39bar_daily}

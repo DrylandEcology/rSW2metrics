@@ -455,7 +455,7 @@ extract_metrics <- function(args) {
   ##### Get data!                  ------------------------------  #####
   ######################################################################
 
-  # Prepare function arguments
+  #--- Prepare function arguments
   if (do_collect_inputs) {
     fun_args <- list(
       path = prjpars[["dir_sw2_output"]],
@@ -474,6 +474,31 @@ extract_metrics <- function(args) {
       group_by_month = prjpars[["season_by_month"]],
       first_month_of_year = prjpars[["first_month_of_year"]]
     )
+
+
+    #--- Arguments for alternative output type via `metric_SW2toTable_daily()`
+    tmp_args <- c(
+      "dir_out_SW2toTable", "format_share_SW2toTable",
+      "share_soillayer_ids",
+      "outputs_SW2toTable"
+    )
+
+    # note: because `prjpars` is an environment,
+    # we cannot use `[` and need to loop each with `[[`
+    for (k in seq_along(tmp_args)) {
+      if (tmp_args[k] %in% names(prjpars)) {
+        fun_args[[tmp_args[k]]] <- prjpars[[tmp_args[k]]]
+      }
+    }
+
+    # use `dir_out` if `dir_out_SW2toTable` is not defined
+    if (!("dir_out_SW2toTable" %in% names(prjpars))) {
+      warning(
+        "Output will be written to `dir_out` ",
+        "instead of expected but absent `dir_out_SW2toTable`."
+      )
+      fun_args[["dir_out_SW2toTable"]] <- prjpars[["dir_out"]]
+    }
   }
 
 
