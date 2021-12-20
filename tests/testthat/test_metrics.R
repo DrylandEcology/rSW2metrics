@@ -21,7 +21,7 @@ foo_metrics <- function(
         fun_args = fun_args,
         name_sw2_run = run_rSFSW2_names[s],
         is_soils_input = is_soils_input,
-        soil_variables <- list_soil_variables()
+        soil_variables = list_soil_variables()
       ))
       format_metric_1sim(x = tmp, id = s)
     }
