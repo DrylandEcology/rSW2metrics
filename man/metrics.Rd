@@ -90,7 +90,7 @@
 \alias{metric_WDDat5C0to100cm15bar_quarterly}
 \alias{metric_WetSoilDays_Seasonal_top50cm}
 \alias{metric_WetSoilDays_Seasonal_wholeprofile}
-\title{End-user functions that return a specific \code{metric}}
+\title{End-user functions that calculate a specific \code{metric}}
 \arguments{
 \item{path}{A character string. The path to the simulation project folder
 that contains the individual folder of each simulated site.}
@@ -126,12 +126,59 @@ contain the respective values for each soil layer at the site.}
 
 \item{...}{Additional arguments}
 }
+\value{
+\itemize{
+\item A \code{data.frame} with a least two columns
+"site" (identifying sites) and
+"group"
+(identifying different variables, soil layers, or sub-annual time steps)
+\item If \code{do_collect_inputs}, then
+a \code{data.frame} where rows represent sites (identified by column "site")
+and columns represent soil layers
+(columns \code{varname_LX} where X is the soil layer number).
+\item Otherwise (i.e., for regular metrics), a \code{data.frame}:
+\itemize{
+\item rows represent combinations of sites
+(identified by column "site") and "groups"
+(identified by column "group" for different variables, soil layers,
+or sub-annual time steps:
+seasonal "season", quarterly "Q", monthly "mon", daily "doy");
+\item values of annual time series for different scenarios are present,
+if \code{is_out_ts}, in columns with names:
+\code{scX_YYYY} (where X is the scenario number and \code{YYYY} is the
+calendar year);
+\item values of across-year aggregations
+are present if the metric itself calculates them or if they were
+added by the option \code{add_aggs_across_yrs}, in columns with names
+\code{fun_scX_YYYY-ZZZZ} (where "fun" is the aggregation function,
+X is the scenario, \code{YYYY} the start year and
+\code{ZZZZ} the end year of the period
+across which the aggregation was calculated)
+}
+}
+}
 \description{
 These functions have a name that starts with \code{metric_}.
 They have at least the following arguments:
 \code{path}, \code{name_sw2_run}, \code{id_scen_used},
 \code{list_years_scen_used}, \code{out}, and \code{...}.
 }
+\section{Details}{
+
+Each metric function produces a set of variables (one to many) at a
+time step that is specified in the name of the metric function. The default
+time step is annual (which may be omitted from the name of the function);
+sub-annual time steps include (case-insensitive):
+\code{Seasonal} (1 to 12 seasons per year); \code{quarterly}; \code{monthly}; and \code{daily}.
+}
+
+\section{Notes}{
+
+The metric \code{metric_SW2toTable_daily()} is an exception and produces
+a different type of output, i.e., spreadsheets of the most important
+daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
+}
+
 \section{List of currently available metrics:}{
  \itemize{
    \item \var{metric_AI}

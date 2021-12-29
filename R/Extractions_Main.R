@@ -700,6 +700,7 @@ format_metric_1sim <- function(x, id) {
 
 
 #' Format concatenated spreadsheet with identifiers and column names
+#'
 #' @noRd
 format_metric_Nsim <- function(
   x, names, prjpars,

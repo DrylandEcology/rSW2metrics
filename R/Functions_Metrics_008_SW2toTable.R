@@ -17,7 +17,8 @@
 #'   all simulated soil layers are included.
 #'
 #' @section Notes:
-#'   This is not a metric as conceived by any of the others of the package.
+#'   This is not a metric as any of the regular (\code{\link{metrics}})
+#'   produced by the package.
 #'
 #' @section Details:
 #'   This function produces files as side-effect which
@@ -30,7 +31,8 @@
 #'           regular output mechanism of the package.
 #'  }
 #'
-#' @noRd
+#' @rdname SW2toTable
+#' @export
 metric_SW2toTable_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
