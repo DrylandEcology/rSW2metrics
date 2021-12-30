@@ -147,3 +147,94 @@ list_soil_variables <- function() {
     gravel_content = "gravel"
   )
 }
+
+
+#' List possible sub-annual time step identifiers
+#'
+#' Sub-annual time steps are organized via the column "group".
+#'
+#' @return A list with the implemented sub-annual time step identifiers
+#'   - seasonal: "seasonX" where X can be 1 to a value in `1:12`
+#'   - quarterly: "QX" where X in `1:4`
+#'   - monthly: "monX" where X in `01:12`
+#'   - daily: "doyX" where X in `001:366`
+#'
+#' @export
+#' @md
+list_subannual_timesteps <- function() {
+  list(
+    seasonal = "season[[:digit:]]{1,2}",
+    quarterly = paste0("Q", seq_len(4)),
+    monthly = paste0("mon", formatC(seq_len(12), width = 2, flag = 0)),
+    daily = paste0("doy", formatC(seq_len(366), width = 3, flag = 0))
+  )
+}
+
+
+#' @examples
+#' identify_submetric_timesteps(
+#'   paste0("PET_", list_subannual_timesteps()[["monthly"]])
+#' )
+#'
+#' @noRd
+identify_submetric_timesteps <- function(submetrics) {
+  tag_timesteps <- list_subannual_timesteps()
+  tag_timesteps2 <- unlist(tag_timesteps)
+  names(tag_timesteps2) <- rep(names(tag_timesteps), lengths(tag_timesteps))
+
+  sapply(
+    submetrics,
+    function(mm) {
+      tmp <- sapply(tag_timesteps2, function(val) grepl(val, mm))
+      res <- names(tag_timesteps2)[tmp]
+      if (length(res) == 0) "yearly" else res
+    }
+  )
+}
+
+
+#' @examples
+#' identify_metric_timestep(
+#'   paste0("PET_", list_subannual_timesteps()[["monthly"]])
+#' )
+#'
+#' @noRd
+identify_metric_timestep <- function(submetrics) {
+
+  tag_timesteps <- list_subannual_timesteps()
+
+  tmp <- sapply(
+    tag_timesteps,
+    function(tss) {
+      all(sapply(tss, function(val) any(grepl(val, submetrics))))
+    }
+  )
+
+  timestep <- names(tmp)[tmp]
+
+
+  if (length(timestep) > 1) {
+    stop(
+      "More than one time step detected ",
+      paste(shQuote(timestep), collapse = ", ")
+    )
+
+  } else if (length(timestep) == 0) {
+    list(
+      timestep = "yearly",
+      submetrics2s = submetrics,
+      submetrics2u = submetrics
+    )
+
+  } else {
+    tmp <- paste0(tag_timesteps[[timestep]], collapse = "|")
+    tmp <- gsub("_\\>", "", gsub(tmp, "", submetrics))
+
+    list(
+      timestep = timestep,
+      submetrics2s = tmp,
+      submetrics2u = unique(tmp)
+    )
+  }
+}
+
