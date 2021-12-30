@@ -32,7 +32,7 @@ foo_metrics <- function(
 test_that("Check metrics", {
   skip_on_ci()
 
-  #--- List all metric functions
+  #--- List all metric functions ------
   fun_metrics <- list_all_metrics()
 
 
@@ -65,7 +65,7 @@ test_that("Check metrics", {
   )
 
 
-  # Put together rSOILWAT2 simulations and save to disk
+  #------ Put together rSOILWAT2 simulations and save to disk ------
   # Site = 1: rSOILWAT2 example data
   # Site = 2: as site 1, but with one only soil layer
 
@@ -191,7 +191,7 @@ test_that("Check metrics", {
 
 
 
-  #------ Loop over metrics and aggregate
+  #------ Loop over metrics and aggregate ------
   for (k1 in seq_along(fun_metrics)) {
     is_out_ts <- has_fun_ts_as_output(fun_metrics[[k1]])
 
@@ -205,7 +205,7 @@ test_that("Check metrics", {
     )
 
 
-    # Call aggregation function for rSOILWAT2 input/output for each site `s`
+    #--- Call aggregation function for rSOILWAT2 input/output for each site `s`
     if (!do_timing) {
       res <- foo_metrics(
         fun = fun_metrics[k1],
@@ -228,6 +228,7 @@ test_that("Check metrics", {
     }
 
 
+    #--- Check that output contains columns for each requested year x scenario
     N_yrs_expected <- sum(lengths(fun_args[["list_years_scen_used"]]))
     expect_equal(
       sapply(res, ncol) - 2,
@@ -244,8 +245,31 @@ test_that("Check metrics", {
       is_out_ts = is_out_ts
     )
 
+    #--- Check that formatted output has column names
     expect_false(anyNA(colnames(values_all_sites)))
 
+
+    #--- Check consistency of the one output time step
+    submetric_timesteps <- unique(
+      identify_submetric_timesteps(values_all_sites[, "group"])
+    )
+
+    tmp <- submetric_timesteps != "yearly"
+    if (any(tmp)) {
+      # Check that time step occurs as pattern in function name (if not annual)
+      expect_true(grepl(!!submetric_timesteps[tmp], !!fun_metrics[k1]))
+    } else {
+      # Check that no subannual timestep occurs in annual function name
+      for (ts_suba in names(list_subannual_timesteps())) {
+        expect_false(grepl(!!ts_suba, !!fun_metrics[k1]))
+      }
+    }
+
+    # Check that there is exactly one time step
+    expect_length(!!c(fun_metrics[k1], submetric_timesteps), n = 2)
+
+
+    #--- Calculate aggregations across years
     output <- if (is_out_ts) {
       aggs_across_years(
         values_all_sites,
@@ -258,6 +282,8 @@ test_that("Check metrics", {
       values_all_sites
     }
 
+
+    #--- Check output against stored copy of previous output
     if (FALSE) {
       # `testthat::expect_snapshot_value()` doesn't properly work
       # for our situation as of v3.0.1:
@@ -292,13 +318,13 @@ test_that("Check metrics", {
   }
 
 
-  #------ Report on timing (only if interactively used)
+  #------ Report on timing (only if interactively used) ------
   if (do_timing) {
     ttime <- data.frame(metric = fun_metrics, time = time_metrics)
     print(ttime[order(ttime$time, decreasing = TRUE), ])
   }
 
 
-  #------ Cleanup
+  #------ Cleanup ------
   unlink(prjpars[["dir_sw2_output"]])
 })
