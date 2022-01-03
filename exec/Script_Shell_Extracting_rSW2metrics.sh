@@ -14,20 +14,23 @@ Rscript Script_to_Extract_Metric.R -o=input_soillayers_gravel -fun=collect_input
 
 
 # Extract metrics
-Rscript Script_to_Extract_Metric.R -o=Climate_Annual -fun=metric_Climate_Annual ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=Climate_annual -fun=metric_Climate_annual ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=Climate_monthly -fun=metric_Climate_monthly ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=CorTempPPT -fun=metric_CorTempPPT ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=CorTP_Annual -fun=metric_CorTP_Annual ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=CWD -fun=metric_CWD ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DDDat5C0to030cm30bar -fun=metric_DDDat5C0to030cm30bar ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DDDat5C0to100cm30bar -fun=metric_DDDat5C0to100cm30bar ${mode} ${parallel} ${prjoptions}
-Rscript Script_to_Extract_Metric.R -o=DR -fun=metric_DR ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=DR_annual -fun=metric_DR_annual ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DR_daily -fun=metric_DR_daily ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=DR_monthly -fun=metric_DR_monthly ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DR_JJA -fun=metric_DR_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DrySoilDays_Seasonal_top50cm -fun=metric_DrySoilDays_Seasonal_top50cm ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DrySoilDays_Seasonal_wholeprofile -fun=metric_DrySoilDays_Seasonal_wholeprofile ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DSIat0to100cm15bar -fun=metric_DSIat0to100cm15bar ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DSIat0to100cm30bar -fun=metric_DSIat0to100cm30bar ${mode} ${parallel} ${prjoptions}
-Rscript Script_to_Extract_Metric.R -o=ET -fun=metric_ET ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=ET_annual -fun=metric_ET_annual ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=ET_monthly -fun=metric_ET_monthly ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Evaporation_Seasonal -fun=metric_Evaporation_Seasonal ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=ExtremeShortTermDryStress_Seasonal_top50cm -fun=metric_ExtremeShortTermDryStress_Seasonal_top50cm ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=ExtremeShortTermDryStress_Seasonal_wholeprofile -fun=metric_ExtremeShortTermDryStress_Seasonal_wholeprofile ${mode} ${parallel} ${prjoptions}
@@ -40,7 +43,8 @@ Rscript Script_to_Extract_Metric.R -o=PPT_daily -fun=metric_PPT_daily ${mode} ${
 Rscript Script_to_Extract_Metric.R -o=PPT_JJA -fun=metric_PPT_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=PPT_MeanMonthly -fun=metric_PPT_MeanMonthly ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=PPT_Seasonal -fun=metric_PPT_Seasonal ${mode} ${parallel} ${prjoptions}
-Rscript Script_to_Extract_Metric.R -o=Radiation -fun=metric_Radiation ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=Radiation_annual -fun=metric_Radiation_annual ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=Radiation_monthly -fun=metric_Radiation_monthly ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=RecruitmentIndex_v4 -fun=metric_RecruitmentIndex_v4 ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=RecruitmentIndex_v5 -fun=metric_RecruitmentIndex_v5 ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SemiDryDuration_Annual_top50cm -fun=metric_SemiDryDuration_Annual_top50cm ${mode} ${parallel} ${prjoptions}
@@ -74,6 +78,8 @@ Rscript Script_to_Extract_Metric.R -o=Tmean_daily -fun=metric_Tmean_daily ${mode
 Rscript Script_to_Extract_Metric.R -o=Tmean_JJA -fun=metric_Tmean_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Transpiration_Seasonal -fun=metric_Transpiration_Seasonal ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=TranspirationSeasonality_v5 -fun=metric_TranspirationSeasonality_v5 ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=veg_biomass_annual -fun=metric_veg_biomass_annual_v2 ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=veg_biomass_monthly -fun=metric_veg_biomass_monthly_v2 ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=VWC_Seasonal_top50cm -fun=metric_VWC_Seasonal_top50cm ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=VWC_Seasonal_wholeprofile -fun=metric_VWC_Seasonal_wholeprofile ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=WDDat5C0to100cm15bar -fun=metric_WDDat5C0to100cm15bar ${mode} ${parallel} ${prjoptions}

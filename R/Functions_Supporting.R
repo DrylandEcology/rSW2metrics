@@ -1398,6 +1398,9 @@ peak_size_v2 <- function(
 }
 
 
+#' @param years An integer vector. The sequence of years that `x` covers.
+#' @noRd
+#' @md
 format_monthly_to_matrix <- function(x, years, out_labels) {
   if (!is.list(x) && length(out_labels) == 1) {
     x <- list(x)

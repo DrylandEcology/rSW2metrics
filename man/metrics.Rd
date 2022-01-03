@@ -3,7 +3,8 @@
 \name{metrics}
 \alias{metrics}
 \alias{metric_AI}
-\alias{metric_Climate_Annual}
+\alias{metric_Climate_annual}
+\alias{metric_Climate_monthly}
 \alias{metric_Climate_quarterly}
 \alias{metric_CorTempPPT}
 \alias{metric_CorTP_Annual}
@@ -12,15 +13,16 @@
 \alias{metric_DDDat5C0to030cm30bar}
 \alias{metric_DDDat5C0to100cm30bar}
 \alias{metric_DDDat5C0to100cm30bar_quarterly}
-\alias{metric_DR}
+\alias{metric_DR_annual}
 \alias{metric_DR_daily}
 \alias{metric_DR_JJA}
+\alias{metric_DR_monthly}
 \alias{metric_DrySoilDays_Seasonal_top50cm}
 \alias{metric_DrySoilDays_Seasonal_wholeprofile}
 \alias{metric_DSIat0to100cm15bar}
 \alias{metric_DSIat0to100cm30bar}
-\alias{metric_ET}
-\alias{metric_ETyr}
+\alias{metric_ET_annual}
+\alias{metric_ET_monthly}
 \alias{metric_Evaporation_Seasonal}
 \alias{metric_ExtremeShortTermDryStress_Seasonal_top50cm}
 \alias{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}
@@ -35,7 +37,8 @@
 \alias{metric_PPT_JJA}
 \alias{metric_PPT_MeanMonthly}
 \alias{metric_PPT_Seasonal}
-\alias{metric_Radiation}
+\alias{metric_Radiation_annual}
+\alias{metric_Radiation_monthly}
 \alias{metric_RecruitmentIndex_v4}
 \alias{metric_RecruitmentIndex_v5}
 \alias{metric_SemiDryDuration_Annual_top50cm}
@@ -81,8 +84,10 @@
 \alias{metric_TranspirationSeasonality_v4}
 \alias{metric_TranspirationSeasonality_v5}
 \alias{metric_TranspirationSeasonality_v6}
-\alias{metric_veg_biomass_v1}
-\alias{metric_veg_biomass_v2}
+\alias{metric_veg_biomass_annual_v1}
+\alias{metric_veg_biomass_annual_v2}
+\alias{metric_veg_biomass_monthly_v1}
+\alias{metric_veg_biomass_monthly_v2}
 \alias{metric_VWC_Seasonal_top50cm}
 \alias{metric_VWC_Seasonal_wholeprofile}
 \alias{metric_WDDat5C0to020cm15bar_quarterly}
@@ -182,7 +187,8 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
 \section{List of currently available metrics:}{
  \itemize{
    \item \var{metric_AI}
-  \item \var{metric_Climate_Annual}
+  \item \var{metric_Climate_annual}
+  \item \var{metric_Climate_monthly}
   \item \var{metric_Climate_quarterly}
   \item \var{metric_CorTempPPT}
   \item \var{metric_CorTP_Annual}
@@ -191,15 +197,16 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_DDDat5C0to030cm30bar}
   \item \var{metric_DDDat5C0to100cm30bar}
   \item \var{metric_DDDat5C0to100cm30bar_quarterly}
-  \item \var{metric_DR}
+  \item \var{metric_DR_annual}
   \item \var{metric_DR_daily}
   \item \var{metric_DR_JJA}
+  \item \var{metric_DR_monthly}
   \item \var{metric_DrySoilDays_Seasonal_top50cm}
   \item \var{metric_DrySoilDays_Seasonal_wholeprofile}
   \item \var{metric_DSIat0to100cm15bar}
   \item \var{metric_DSIat0to100cm30bar}
-  \item \var{metric_ET}
-  \item \var{metric_ETyr}
+  \item \var{metric_ET_annual}
+  \item \var{metric_ET_monthly}
   \item \var{metric_Evaporation_Seasonal}
   \item \var{metric_ExtremeShortTermDryStress_Seasonal_top50cm}
   \item \var{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}
@@ -214,7 +221,8 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_PPT_JJA}
   \item \var{metric_PPT_MeanMonthly}
   \item \var{metric_PPT_Seasonal}
-  \item \var{metric_Radiation}
+  \item \var{metric_Radiation_annual}
+  \item \var{metric_Radiation_monthly}
   \item \var{metric_RecruitmentIndex_v4}
   \item \var{metric_RecruitmentIndex_v5}
   \item \var{metric_SemiDryDuration_Annual_top50cm}
@@ -260,8 +268,10 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_TranspirationSeasonality_v4}
   \item \var{metric_TranspirationSeasonality_v5}
   \item \var{metric_TranspirationSeasonality_v6}
-  \item \var{metric_veg_biomass_v1}
-  \item \var{metric_veg_biomass_v2}
+  \item \var{metric_veg_biomass_annual_v1}
+  \item \var{metric_veg_biomass_annual_v2}
+  \item \var{metric_veg_biomass_monthly_v1}
+  \item \var{metric_veg_biomass_monthly_v2}
   \item \var{metric_VWC_Seasonal_top50cm}
   \item \var{metric_VWC_Seasonal_wholeprofile}
   \item \var{metric_WDDat5C0to020cm15bar_quarterly}

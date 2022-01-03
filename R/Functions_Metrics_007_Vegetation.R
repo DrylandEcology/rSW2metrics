@@ -106,13 +106,13 @@ metric_land_cover_v2 <- function(
 
 #--- Monthly and annual vegetation biomass
 # available with rSOILWAT2 v3.1.2/SOILWAT v5.2.0
-metric_veg_biomass_v2 <- function(
+get_veg_biomass_v2 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
   include_year = FALSE,
+  timestep = c("yearly", "monthly"),
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  timestep <- match.arg(timestep)
 
   tmp_var <- c("total", "tree", "shrub", "forbs", "grass")
   tmp_veg <- c(
@@ -130,14 +130,8 @@ metric_veg_biomass_v2 <- function(
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
       output_sets = list(
-        yr = list(
-          sw2_tp = "Year",
-          sw2_outs = "BIOMASS",
-          sw2_vars = tmp_veg,
-          varnames_are_fixed = TRUE
-        ),
-        mon = list(
-          sw2_tp = "Month",
+        val = list(
+          sw2_tp = switch(timestep, yearly = "Year", monthly = "Month"),
           sw2_outs = "BIOMASS",
           sw2_vars = tmp_veg,
           varnames_are_fixed = TRUE
@@ -145,34 +139,72 @@ metric_veg_biomass_v2 <- function(
       )
     )
 
-    res[[k1]] <- rbind(
-      format_yearly_to_matrix(
-        x = sim_data[["yr"]][["values"]],
-        years = sim_data[["yr"]][["time"]][, "Year"],
-        out_labels = tmp_veg
-      ),
-      format_monthly_to_matrix(
-        x = sim_data[["mon"]][["values"]],
-        years = sim_data[["yr"]][["time"]][, "Year"],
-        out_labels = tmp_veg
-      )
+    foo <- switch(
+      EXPR = timestep,
+      yearly = format_yearly_to_matrix,
+      monthly = format_monthly_to_matrix
+    )
+
+    res[[k1]] <- foo(
+      x = sim_data[["val"]][["values"]],
+      years = unique(sim_data[["val"]][["time"]][, "Year"]),
+      out_labels = tmp_veg
     )
   }
 
   res
 }
 
-
-#--- Monthly and annual vegetation biomass
-# available with rSOILWAT2 v1.7.0/SOILWAT v3.5.0
-# and before rSOILWAT2 v3.1.2/SOILWAT v5.2.0)
-metric_veg_biomass_v1 <- function(
+metric_veg_biomass_annual_v2 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  get_veg_biomass_v2(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    id_scen_used = id_scen_used,
+    list_years_scen_used = list_years_scen_used,
+    include_year = include_year,
+    timestep = "yearly",
+    ...
+  )
+}
+
+metric_veg_biomass_monthly_v2 <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "ts_years",
+  include_year = FALSE,
+  ...
+) {
+  stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  get_veg_biomass_v2(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    id_scen_used = id_scen_used,
+    list_years_scen_used = list_years_scen_used,
+    include_year = include_year,
+    timestep = "monthly",
+    ...
+  )
+}
+
+
+
+#--- Monthly and annual vegetation biomass
+# available with rSOILWAT2 v1.7.0/SOILWAT v3.5.0
+# and before rSOILWAT2 v3.1.2/SOILWAT v5.2.0)
+get_veg_biomass_v1 <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  include_year = FALSE,
+  timestep = c("yearly", "monthly"),
+  ...
+) {
+  timestep <- match.arg(timestep)
 
   tmp_var <- c("total", "tree", "shrub", "forbs", "grass")
   tmp_veg_metrics <- c(
@@ -195,14 +227,8 @@ metric_veg_biomass_v1 <- function(
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
       output_sets = list(
-        yr = list(
-          sw2_tp = "Year",
-          sw2_outs = "CO2EFFECTS",
-          sw2_vars = tmp_veg_sw2old,
-          varnames_are_fixed = TRUE
-        ),
-        mon = list(
-          sw2_tp = "Month",
+        val = list(
+          sw2_tp = switch(timestep, yearly = "Year", monthly = "Month"),
           sw2_outs = "CO2EFFECTS",
           sw2_vars = tmp_veg_sw2old,
           varnames_are_fixed = TRUE
@@ -211,28 +237,61 @@ metric_veg_biomass_v1 <- function(
       fail = FALSE
     )
 
+    foo <- switch(
+      EXPR = timestep,
+      yearly = format_yearly_to_matrix,
+      monthly = format_monthly_to_matrix
+    )
 
-    res[[k1]] <- rbind(
-      format_yearly_to_matrix(
-        x = c(
-          sim_data[["yr"]][["values"]][tmp_veg_tbm],
-          Biomass_litter = list(rep(NA, nrow(sim_data[["yr"]][["time"]]))),
-          sim_data[["yr"]][["values"]][tmp_veg_lbm]
-        ),
-        years = sim_data[["yr"]][["time"]][, "Year"],
-        out_labels = tmp_veg_metrics
+    res[[k1]] <- foo(
+      x = c(
+        sim_data[["val"]][["values"]][tmp_veg_tbm],
+        Biomass_litter = list(rep(NA, nrow(sim_data[["val"]][["time"]]))),
+        sim_data[["val"]][["values"]][tmp_veg_lbm]
       ),
-      format_monthly_to_matrix(
-        x = c(
-          sim_data[["mon"]][["values"]][tmp_veg_tbm],
-          Biomass_litter = list(rep(NA, nrow(sim_data[["mon"]][["time"]]))),
-          sim_data[["mon"]][["values"]][tmp_veg_lbm]
-        ),
-        years = sim_data[["yr"]][["time"]][, "Year"],
-        out_labels = tmp_veg_metrics
-      )
+      years = unique(sim_data[["val"]][["time"]][, "Year"]),
+      out_labels = tmp_veg_metrics
     )
   }
 
   res
+}
+
+
+metric_veg_biomass_annual_v1 <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "ts_years",
+  include_year = FALSE,
+  ...
+) {
+  stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  get_veg_biomass_v1(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    id_scen_used = id_scen_used,
+    list_years_scen_used = list_years_scen_used,
+    include_year = include_year,
+    timestep = "yearly",
+    ...
+  )
+}
+
+metric_veg_biomass_monthly_v1 <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "ts_years",
+  include_year = FALSE,
+  ...
+) {
+  stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  get_veg_biomass_v1(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    id_scen_used = id_scen_used,
+    list_years_scen_used = list_years_scen_used,
+    include_year = include_year,
+    timestep = "monthly",
+    ...
+  )
 }
