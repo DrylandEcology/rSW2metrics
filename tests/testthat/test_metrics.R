@@ -257,11 +257,15 @@ test_that("Check metrics", {
     tmp <- submetric_timesteps != "yearly"
     if (any(tmp)) {
       # Check that time step occurs as pattern in function name (if not annual)
-      expect_true(grepl(!!submetric_timesteps[tmp], !!fun_metrics[k1]))
+      expect_true(
+        grepl(!!submetric_timesteps[tmp], !!fun_metrics[k1], ignore.case = TRUE)
+      )
     } else {
       # Check that no subannual timestep occurs in annual function name
       for (ts_suba in names(list_subannual_timesteps())) {
-        expect_false(grepl(!!ts_suba, !!fun_metrics[k1]))
+        expect_false(
+          grepl(!!ts_suba, !!fun_metrics[k1], ignore.case = TRUE)
+        )
       }
     }
 
