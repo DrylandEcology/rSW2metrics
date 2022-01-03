@@ -297,7 +297,7 @@ metric_SW2toTable_daily <- function(
         rbind,
         lapply(
           list_years_scen_used[[k1]],
-          function(yrs) data.frame(SW2toTable = 1)
+          function(yrs) data.frame(SW2toTable_doy001 = NA)
         )
       ))
     }
