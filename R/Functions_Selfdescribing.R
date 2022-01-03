@@ -4,7 +4,16 @@
 list_all_metrics <- function() {
   tmp <- ls(getNamespace("rSW2metrics"))
   tmp <- tmp[grepl("^metric_", tmp)]
-  tmp[sapply(tmp, function(x) is.function(get0(x)))]
+  tmp <- tmp[sapply(tmp, function(x) is.function(get0(x)))]
+  # Exclude defunct metrics, i.e., those with `...` as the only argument
+  tmpa <- sapply(
+    tmp,
+    function(foo) {
+      frmls <- formals(foo)
+      isTRUE(length(frmls) == 1 && names(frmls) == "...")
+    }
+  )
+  tmp[!tmpa]
 }
 
 
