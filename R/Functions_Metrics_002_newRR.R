@@ -1711,7 +1711,9 @@ metric_Tmean_monthly <- function(
   )
 }
 
-metric_Tmean_monthly_clim <- function(
+#' Across-year average monthly mean air temperature
+#' @noRd
+metric_Tmean_monthlyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
   ...
@@ -1726,6 +1728,54 @@ metric_Tmean_monthly_clim <- function(
     out = out,
     ...
   )
+}
+
+#' Across-year average monthly precipitation amount [mm]
+#' @noRd
+metric_PPT_monthlyClim <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "across_years",
+  ...
+) {
+  stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    tmp <- lapply(
+      list_years_scen_used[[k1]],
+      function(yrs) {
+        sim_data <- collect_sw2_sim_data(
+          path = path,
+          name_sw2_run = name_sw2_run,
+          id_scen = id_scen_used[k1],
+          years = yrs,
+          output_sets = list(
+            mon = list(
+              sw2_tp = "Month",
+              sw2_outs = "PRECIP",
+              sw2_vars = "ppt",
+              varnames_are_fixed = TRUE
+            )
+          )
+        )
+
+        format_monthly_to_matrix(
+          x = tapply(
+            X = 10 * sim_data[["mon"]][["values"]][["ppt"]],
+            INDEX = sim_data[["mon"]][["time"]][, "Month"],
+            FUN = mean
+          ),
+          years = NA,
+          out_labels = "PPT_mm"
+        )
+      }
+    )
+
+    res[[k1]] <- do.call(cbind, tmp)
+  }
+
+  res
 }
 
 

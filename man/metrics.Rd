@@ -35,7 +35,7 @@
 \alias{metric_PET_Seasonal}
 \alias{metric_PPT_daily}
 \alias{metric_PPT_JJA}
-\alias{metric_PPT_MeanMonthly}
+\alias{metric_PPT_monthlyClim}
 \alias{metric_PPT_Seasonal}
 \alias{metric_Radiation_annual}
 \alias{metric_Radiation_monthly}
@@ -68,14 +68,13 @@
 \alias{metric_TDDat5C}
 \alias{metric_TDDat5C_quarterly}
 \alias{metric_TemperatureMax_Seasonal}
-\alias{metric_TemperatureMean_MeanMonthly}
 \alias{metric_TemperatureMean_Seasonal}
 \alias{metric_TemperatureMin_Seasonal}
 \alias{metric_TEPET_daily}
 \alias{metric_Tmean_daily}
 \alias{metric_Tmean_JJA}
 \alias{metric_Tmean_monthly}
-\alias{metric_Tmean_monthly_clim}
+\alias{metric_Tmean_monthlyClim}
 \alias{metric_Transpiration_Seasonal}
 \alias{metric_TranspirationPeaks_v6}
 \alias{metric_TranspirationSeasonality_v1}
@@ -219,7 +218,7 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_PET_Seasonal}
   \item \var{metric_PPT_daily}
   \item \var{metric_PPT_JJA}
-  \item \var{metric_PPT_MeanMonthly}
+  \item \var{metric_PPT_monthlyClim}
   \item \var{metric_PPT_Seasonal}
   \item \var{metric_Radiation_annual}
   \item \var{metric_Radiation_monthly}
@@ -252,14 +251,13 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_TDDat5C}
   \item \var{metric_TDDat5C_quarterly}
   \item \var{metric_TemperatureMax_Seasonal}
-  \item \var{metric_TemperatureMean_MeanMonthly}
   \item \var{metric_TemperatureMean_Seasonal}
   \item \var{metric_TemperatureMin_Seasonal}
   \item \var{metric_TEPET_daily}
   \item \var{metric_Tmean_daily}
   \item \var{metric_Tmean_JJA}
   \item \var{metric_Tmean_monthly}
-  \item \var{metric_Tmean_monthly_clim}
+  \item \var{metric_Tmean_monthlyClim}
   \item \var{metric_Transpiration_Seasonal}
   \item \var{metric_TranspirationPeaks_v6}
   \item \var{metric_TranspirationSeasonality_v1}
