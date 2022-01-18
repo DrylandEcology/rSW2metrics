@@ -603,18 +603,26 @@ metric_DDDat5C0to100cm30bar <- function(
 #'   as numeric vectors with values for each soil layer.
 #' @param used_depth_range_cm A numeric vector of length two.
 #' @param SWP_limit_MPa A numeric value.
+#' @param method A character string.
 #'
 #' @return A list with elements "time" and "values" where values represent
-#'   available soil water in units of millimeters above \code{SWP_limit_MPa}
-#'   summed across \code{used_depth_range_cm}.
+#'   available soil water in units of millimeters above \code{SWP_limit_MPa}:
+#'   if \code{method} is \code{\dQuote{across_profile}},
+#'   then summed across \code{used_depth_range_cm},
+#'   if \code{method} is \code{\dQuote{by_layer}},
+#'   then columns contain values for each soil layer within
+#'    \code{used_depth_range_cm}.
 #'
 #' @md
 calc_SWA_mm <- function(
   sim_swc_daily,
   soils,
   used_depth_range_cm = NULL,
-  SWP_limit_MPa = -Inf
+  SWP_limit_MPa = -Inf,
+  method = c("across_profile", "by_layer")
 ) {
+  method <- match.arg(method)
+
   widths_cm <- calc_soillayer_weights(
     soil_depths_cm = soils[["depth_cm"]],
     used_depth_range_cm = used_depth_range_cm,
@@ -648,21 +656,22 @@ calc_SWA_mm <- function(
     )
     swa_by_layer[swa_by_layer < 0] <- 0
 
-    # Sum SWA across soil profile
-    swa_daily_values <- apply(
-      X = swa_by_layer,
-      MARGIN = 1,
-      FUN = sum
-    )
+    values <- if (method == "across_profile") {
+      # Sum SWA across soil profile
+      rowSums(swa_by_layer)
+
+    } else if (method == "by_layer") {
+      swa_by_layer
+    }
 
   } else {
     # No soil layers in the depth range
-    swa_daily_values <- rep(NA, nrow(sim_swc_daily[["time"]]))
+    values <- rep(NA, nrow(sim_swc_daily[["time"]]))
   }
 
   list(
     time = sim_swc_daily[["time"]],
-    values = list(swa_daily_values)
+    values = list(values)
   )
 }
 

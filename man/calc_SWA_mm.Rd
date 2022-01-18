@@ -8,7 +8,8 @@ calc_SWA_mm(
   sim_swc_daily,
   soils,
   used_depth_range_cm = NULL,
-  SWP_limit_MPa = -Inf
+  SWP_limit_MPa = -Inf,
+  method = c("across_profile", "by_layer")
 )
 }
 \arguments{
@@ -23,11 +24,17 @@ as numeric vectors with values for each soil layer.}
 \item{used_depth_range_cm}{A numeric vector of length two.}
 
 \item{SWP_limit_MPa}{A numeric value.}
+
+\item{method}{A character string.}
 }
 \value{
 A list with elements "time" and "values" where values represent
-available soil water in units of millimeters above \code{SWP_limit_MPa}
-summed across \code{used_depth_range_cm}.
+available soil water in units of millimeters above \code{SWP_limit_MPa}:
+if \code{method} is \var{\dQuote{across_profile}},
+then summed across \code{used_depth_range_cm},
+if \code{method} is \var{\dQuote{by_layer}},
+then columns contain values for each soil layer within
+\code{used_depth_range_cm}.
 }
 \description{
 We define available soil water \code{SWA} as the amount of soil water \code{SWC}

@@ -41,7 +41,7 @@ metric_SW2toTable_daily <- function(
   outputs_SW2toTable = c(
     "all", "meteo", "snow",
     "radiation", "waterbalance", "evapotranspiration",
-    "soiltemperature", "VWC", "SWP"
+    "soiltemperature", "VWC", "SWP", "SWAat30bar"
   ),
   share_soillayer_ids = NULL,
   ...
@@ -124,7 +124,7 @@ metric_SW2toTable_daily <- function(
     # VWC
     sim_vwc <- slot(slot(sim_data, var_vwc), "Day")
 
-    # SWC
+    # SWC (SOILWAT2 units, i.e., centimeters)
     sim_swc <- slot(slot(sim_data, var_swc), "Day")
 
     sim_sim <- if (nrow(sim_vwc) > 0) {
@@ -271,6 +271,27 @@ metric_SW2toTable_daily <- function(
       colnames(tmp) <- paste0("Sim_SWP_MPa_", soil_widths_str[ids_cols])
 
       data_sim[["SWP"]] <- tmp
+    }
+
+    if (any(c("all", "SWAat30bar") %in% outputs_SW2toTable)) {
+      tmp <- calc_SWA_mm(
+        sim_swc_daily = list(
+          values = list(swc = sim_swc[, 2 + ids_cols, drop = FALSE])
+        ),
+        soils = list(
+          depth_cm = soils[, "depth_cm"],
+          sand_frac = soils[, "sand_frac"],
+          clay_frac = soils[, "clay_frac"],
+          gravel_content = soils[, "gravel_content"]
+        ),
+        used_depth_range_cm = NULL,
+        SWP_limit_MPa = -3,
+        method = "by_layer"
+      )[["values"]][[1]]
+
+      colnames(tmp) <- paste0("Sim_SWAat30bar_mm_", soil_widths_str[ids_cols])
+
+      data_sim[["SWAat30bar"]] <- tmp
     }
 
     data_sim <- do.call(cbind, data_sim)
