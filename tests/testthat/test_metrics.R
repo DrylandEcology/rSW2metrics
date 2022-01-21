@@ -262,10 +262,17 @@ test_that("Check metrics", {
       )
     } else {
       # Check that no subannual timestep occurs in annual function name
-      for (ts_suba in names(list_subannual_timesteps())) {
-        expect_false(
-          grepl(!!ts_suba, !!fun_metrics[k1], ignore.case = TRUE)
-        )
+      # Avoid exceptions
+      tmp <- any(sapply(
+        "seasonality",
+        function(x) grepl(x, fun_metrics[k1], ignore.case = TRUE)
+      ))
+      if (!tmp) {
+        for (ts_suba in names(list_subannual_timesteps())) {
+          expect_false(
+            grepl(!!ts_suba, !!fun_metrics[k1], ignore.case = TRUE)
+          )
+        }
       }
     }
 
