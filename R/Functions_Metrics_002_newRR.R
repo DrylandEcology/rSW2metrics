@@ -607,9 +607,9 @@ metric_DDDat5C0to100cm30bar <- function(
 #'
 #' @return A list with elements "time" and "values" where values represent
 #'   available soil water in units of millimeters above \code{SWP_limit_MPa}:
-#'   if \code{method} is \code{\dQuote{across_profile}},
+#'   if \code{method} is \var{\dQuote{across_profile}},
 #'   then summed across \code{used_depth_range_cm},
-#'   if \code{method} is \code{\dQuote{by_layer}},
+#'   if \code{method} is \var{\dQuote{by_layer}},
 #'   then columns contain values for each soil layer within
 #'    \code{used_depth_range_cm}.
 #'

@@ -146,7 +146,8 @@ and columns represent soil layers
 (identified by column "site") and "groups"
 (identified by column "group" for different variables, soil layers,
 or sub-annual time steps:
-seasonal "season", quarterly "Q", monthly "mon", daily "doy");
+seasonal \var{\dQuote{season}}, quarterly \var{\dQuote{Q}},
+monthly \var{\dQuote{mon}}, daily \var{\dQuote{doy}});
 \item values of annual time series for different scenarios are present,
 if \code{is_out_ts}, in columns with names:
 \code{scX_YYYY} (where X is the scenario number and \code{YYYY} is the
@@ -178,7 +179,7 @@ sub-annual time steps include (case-insensitive):
 
 \section{Notes}{
 
-The metric \code{metric_SW2toTable_daily()} is an exception and produces
+The metric \code{\link[=metric_SW2toTable_daily]{metric_SW2toTable_daily()}} is an exception and produces
 a different type of output, i.e., spreadsheets of the most important
 daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
 }

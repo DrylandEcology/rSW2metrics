@@ -8,16 +8,16 @@
 #' @param dir_out_SW2toTable A character string. The path at which output
 #'   is stored on disk.
 #' @param format_share_SW2toTable A character string. The function produces
-#'   output files in format of either \var{rds} via \code{\link{saveRDS}} or
-#'   \var{csv} via \code{\link{write.csv}}.
+#'   output files in format of either \var{\dQuote{rds}} via [base::saveRDS()]
+#'   or \var{\dQuote{csv}} via [utils::write.csv()].
 #' @param outputs_SW2toTable A vector of character strings.
-#'   If \var{"all"}, then all implemented output variables are included.
+#'   If \var{\dQuote{all}}, then all implemented output variables are included.
 #' @param share_soillayer_ids A numeric vector. The indices of simulated
-#'   soil layers to include in the output files. If \code{NULL}, then
+#'   soil layers to include in the output files. If `NULL`, then
 #'   all simulated soil layers are included.
 #'
 #' @section Notes:
-#'   This is not a metric as any of the regular (\code{\link{metrics}})
+#'   This is not a metric as any of the regular [metrics]
 #'   produced by the package.
 #'
 #' @section Details:
@@ -25,13 +25,14 @@
 #'   utilizes a different output mechanism than the regular
 #'   metrics provided by the package. To make this possible, a few hacks
 #'   are required: \itemize{
-#'     \item The argument \code{out} is set to \var{across_years}
+#'     \item The argument `out` is set to \var{\dQuote{across_years}}
 #'           despite the fact that this function produces daily output.
 #'     \item The function returns dummy output that is processed by the
 #'           regular output mechanism of the package.
 #'  }
 #'
-#' @rdname SW2toTable
+#' @name SW2toTable
+#' @md
 #' @export
 metric_SW2toTable_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,

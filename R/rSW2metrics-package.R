@@ -80,12 +80,12 @@ rd_section_listing_metrics <- function() {
   )
 }
 
-#' End-user functions that calculate a specific \code{metric}
+#' End-user functions that calculate a specific `metric`
 #'
-#' These functions have a name that starts with \code{metric_}.
+#' These functions have a name that starts with `metric_`.
 #' They have at least the following arguments:
-#' \code{path}, \code{name_sw2_run}, \code{id_scen_used},
-#' \code{list_years_scen_used}, \code{out}, and \code{...}.
+#' `path`, `name_sw2_run`, `id_scen_used`,
+#' `list_years_scen_used`, `out`, and `...`.
 #'
 #'
 #' @param path A character string. The path to the simulation project folder
@@ -132,7 +132,8 @@ rd_section_listing_metrics <- function() {
 #'         (identified by column "site") and "groups"
 #'         (identified by column "group" for different variables, soil layers,
 #'         or sub-annual time steps:
-#'         seasonal "season", quarterly "Q", monthly "mon", daily "doy");
+#'         seasonal \var{\dQuote{season}}, quarterly \var{\dQuote{Q}},
+#'         monthly \var{\dQuote{mon}}, daily \var{\dQuote{doy}});
 #'       * values of annual time series for different scenarios are present,
 #'         if `is_out_ts`, in columns with names:
 #'         `scX_YYYY` (where X is the scenario number and `YYYY` is the
@@ -153,9 +154,9 @@ rd_section_listing_metrics <- function() {
 #' `Seasonal` (1 to 12 seasons per year); `quarterly`; `monthly`; and `daily`.
 #'
 #' @section Notes:
-#' The metric `metric_SW2toTable_daily()` is an exception and produces
+#' The metric [metric_SW2toTable_daily()] is an exception and produces
 #' a different type of output, i.e., spreadsheets of the most important
-#' daily `SOILWAT2` variables, see \code{\link{SW2toTable}}.
+#' daily `SOILWAT2` variables, see [`SW2toTable`].
 #'
 #' @evalRd rd_section_listing_metrics()
 #'

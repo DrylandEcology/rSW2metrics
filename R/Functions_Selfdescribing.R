@@ -160,13 +160,13 @@ list_soil_variables <- function() {
 
 #' List possible sub-annual time step identifiers
 #'
-#' Sub-annual time steps are organized via the column "group".
+#' Sub-annual time steps are organized via the column \dQuote{group}.
 #'
 #' @return A list with the implemented sub-annual time step identifiers
-#'   - seasonal: "seasonX" where X can be 1 to a value in `1:12`
-#'   - quarterly: "QX" where X in `1:4`
-#'   - monthly: "monX" where X in `01:12`
-#'   - daily: "doyX" where X in `001:366`
+#'   - seasonal: \var{\dQuote{seasonX}} where X can be 1 to a value in `1:12`
+#'   - quarterly: \var{\dQuote{QX}} where X in `1:4`
+#'   - monthly: \var{\dQuote{monX}} where X in `01:12`
+#'   - daily: \var{\dQuote{doyX}} where X in `001:366`
 #'
 #' @export
 #' @md
@@ -246,4 +246,3 @@ identify_metric_timestep <- function(submetrics) {
     )
   }
 }
-
