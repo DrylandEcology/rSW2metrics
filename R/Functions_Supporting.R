@@ -428,6 +428,7 @@ get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
 calc_univariate_from_sw2 <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used, group_by_month, first_month_of_year,
+  group_label = "season",
   req_ts = TRUE,
   sw2_tp, sw2_out, sw2_var,
   varnames_are_fixed = TRUE,
@@ -486,6 +487,15 @@ calc_univariate_from_sw2 <- function(
       if (has_periods) which(lengths(list_years_scen_used[[k]]) > 0) else 1
     }
 
+    group_labels <- paste0(
+      group_label,
+      formatC(
+        x[["groups_by_time"]],
+        width = ceiling(log10(1 + length(unique(x[["groups_by_time"]])))),
+        flag = 0
+      )
+    )
+
     res_periods <- list()
 
     for (k2 in seq_along(id_periods)) {
@@ -512,11 +522,11 @@ calc_univariate_from_sw2 <- function(
         x[["vals"]][ids],
         INDEX = if (req_ts) {
           list(
-            groups_by_time = x[["groups_by_time"]][ids],
+            groups_by_time = group_labels[ids],
             years = x[["years"]][ids]
           )
         } else {
-          list(groups_by_time = x[["groups_by_time"]][ids])
+          list(groups_by_time = group_labels[ids])
         },
         FUN = fun_across_time,
         ...
@@ -540,7 +550,14 @@ calc_univariate_from_sw2 <- function(
         data = unlist(res_periods),
         dim = c(length(group_by_month), length(id_periods)),
         dimnames = list(
-          group_by_month,
+          paste0(
+            group_label,
+            formatC(
+              group_by_month,
+              width = ceiling(log10(1 + length(unique(group_by_month)))),
+              flag = 0
+            )
+          ),
           if (use_all_yrs) {
             NULL
           } else {
@@ -563,6 +580,7 @@ calc_univariate_from_sw2 <- function(
 calc_multivariate_from_sw2 <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used, group_by_month, first_month_of_year,
+  group_label = "season",
   req_ts = TRUE,
   sw2_tp, sw2_outs, sw2_vars,
   varnames_are_fixed = TRUE,
@@ -618,6 +636,15 @@ calc_multivariate_from_sw2 <- function(
       if (has_periods) which(lengths(list_years_scen_used[[k]]) > 0) else 1
     }
 
+    group_labels <- paste0(
+      group_label,
+      formatC(
+        x[["groups_by_time"]],
+        width = ceiling(log10(1 + length(unique(x[["groups_by_time"]])))),
+        flag = 0
+      )
+    )
+
     res_periods <- list()
 
     for (k2 in seq_along(id_periods)) {
@@ -655,11 +682,11 @@ calc_multivariate_from_sw2 <- function(
         ),
         INDICES = if (req_ts) {
           list(
-            groups_by_time = x[["groups_by_time"]][ids],
+            groups_by_time = group_labels[ids],
             years = x[["years"]][ids]
           )
         } else {
-          list(groups_by_time = x[["groups_by_time"]][ids])
+          list(groups_by_time = group_labels[ids])
         },
         FUN = match.fun(fun_across_time),
         ...
@@ -669,13 +696,15 @@ calc_multivariate_from_sw2 <- function(
         matrix(
           as.vector(tmp),
           nrow = length(unique(group_by_month)),
-          ncol = length(unique(x[["years"]][ids]))
+          ncol = length(unique(x[["years"]][ids])),
+          dimnames = list(rownames(tmp), NULL)
         )
       } else {
         matrix(
           unlist(tmp),
           nrow = length(unique(group_by_month)),
-          byrow = TRUE
+          byrow = TRUE,
+          dimnames = list(rownames(tmp), NULL)
         )
       }
 
