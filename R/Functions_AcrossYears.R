@@ -212,9 +212,9 @@ aggs_across_years <- function(
 #' Coefficient of variation
 #' @noRd
 cv <- function(x, ...) {
-  tmp <- mean(x)
-  if (isTRUE(abs(tmp) > sqrt(.Machine$double.eps))) {
-    sd(x) / tmp
+  mx <- mean(x)
+  if (isTRUE(abs(mx) > sqrt(.Machine$double.eps))) {
+    sd(x) / mx
   } else {
     NA
   }
