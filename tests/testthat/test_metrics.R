@@ -36,6 +36,38 @@ test_that("Check metrics", {
   fun_metrics <- list_all_metrics()
 
 
+  # List of metrics that call outdated `calc_univariate_from_sw2()` or
+  # `calc_multivariate_from_sw2()` and cannot deal with varying
+  # simulation periods or non-simulated requested years
+  # -- instead of up-to-date `collect_sw2_sim_data()`
+  old_fun_metrics <- c(
+    "metric_SWA_Seasonal_top50cm",
+    "metric_SWP_SoilLayers_MeanMonthly",
+    "metric_DrySoilDays_Seasonal_wholeprofile",
+    "metric_DrySoilDays_Seasonal_top50cm",
+    "metric_PPT_Seasonal",
+    "metric_PET_Seasonal",
+    "metric_VWC_Seasonal_wholeprofile",
+    "metric_SemiDryDuration_Annual_top50cm",
+    "metric_SemiDryDuration_Annual_wholeprofile",
+    "metric_WetSoilDays_Seasonal_wholeprofile",
+    "metric_TemperatureMin_Seasonal",
+    "metric_ExtremeShortTermDryStress_Seasonal_top50cm",
+    "metric_WetSoilDays_Seasonal_top50cm",
+    "metric_NonDrySWA_Seasonal_wholeprofile",
+    "metric_Evaporation_Seasonal",
+    "metric_VWC_Seasonal_top50cm",
+    "metric_Transpiration_Seasonal",
+    "metric_TemperatureMax_Seasonal",
+    "metric_SWA_Seasonal_wholeprofile",
+    "metric_NonDrySWA_Seasonal_top50cm",
+    "metric_ExtremeShortTermDryStress_Seasonal_wholeprofile",
+    "metric_CorTP_Annual",
+    "metric_TemperatureMean_Seasonal",
+    "metric_FrostDays_Seasonal"
+  )
+
+
   #------ Timing (only if interactively used)
   do_timing <- interactive() && !testthat::is_testing()
   if (do_timing) {
@@ -53,6 +85,8 @@ test_that("Check metrics", {
   prjpars[["N_scen"]] <- 3
   prjpars[["id_scen_used"]] <- seq_len(prjpars[["N_scen"]])
 
+
+  #--- Simulation time periods
   years_sim_historical <- 1980:2010
   years_sim_future_projection <- 2006:2099
 
@@ -64,12 +98,47 @@ test_that("Check metrics", {
     )
   )
 
+  #--- Metric time periods
+  years_metrics_historical <- 1990:2010 # -> discard 1980:1989
+  years_metrics_future_projection <- 2050:2090 # -> discard 2006:2049, 2091:2099
+  stopifnot(
+    sum(years_metrics_historical %in% years_sim_historical) > 0,
+    sum(years_metrics_future_projection %in% years_sim_future_projection) > 0
+  )
+
+  prjpars[["years_timeseries_by_scen"]] <- c(
+    list(years_metrics_historical),
+    lapply(
+      prjpars[["id_scen_used"]][-1],
+      function(k) years_metrics_future_projection
+    )
+  )
+
+  prjpars[["years_aggs_by_scen"]] <- c(
+    list(list(hist = years_metrics_historical)),
+    lapply(
+      prjpars[["id_scen_used"]][-1],
+      function(k) list(nearterm = 2020:2059, longterm = 2060:2099)
+    )
+  )
+
+
+  #--- Seasonal metrics
+  #   1 = Winter = DJF, 2 = Spring = MAM, 3 = Summer = JJA, 4 = Fall = SON
+  prjpars[["season_by_month"]] <- c(rep(1, 2), rep(2:4, each = 3), 1)
+  # First season (winter) starts in December
+  prjpars[["first_month_of_year"]] <- 12
+
+
+
+
 
   #------ Put together rSOILWAT2 simulations and save to disk ------
   # Site = 1: rSOILWAT2 example data
   # Site = 2: as site 1, but with one only soil layer
+  # Site = 3: as site 1, but simulation starts/ends 20/10 years later
 
-  N_sites <- 2
+  N_sites <- 3
   run_rSFSW2_names <- paste0("rSW2metrics_rSOILWAT2testrun", seq_len(N_sites))
   dir_runs_rSFSW2 <- file.path(prjpars[["dir_sw2_output"]], run_rSFSW2_names)
   tmp <- sapply(
@@ -103,8 +172,23 @@ test_that("Check metrics", {
       sw2_in <- sw2_in_template
 
       # Simulation time
+      years <- if (s == 3) {
+        if (sc == 1) {
+          # start 20 years later but end 10 years later
+          # --> 1990:1999 requested but not simulated; discard 2011:2020
+          tmp <- 20 + years_sim_timeseries_by_scen[[sc]]
+          tmp[1:(length(tmp) - 10)]
+        } else {
+          # start 30 years later and end 20 years earlier
+          # --> 2080:2090 requested but not simulated; discard 2036:2049
+          tmp <- 30 + years_sim_timeseries_by_scen[[sc]]
+          tmp[1:(length(tmp) - 50)]
+        }
+      } else {
+        years_sim_timeseries_by_scen[[sc]]
+      }
+
       rSOILWAT2::swWeather_FirstYearHistorical(sw2_in) <- -1
-      years <- years_sim_timeseries_by_scen[[sc]]
       rSOILWAT2::swYears_StartYear(sw2_in) <- 0
       rSOILWAT2::swYears_EndYear(sw2_in) <- years[length(years)]
       rSOILWAT2::swYears_StartYear(sw2_in) <- years[1]
@@ -152,34 +236,9 @@ test_that("Check metrics", {
     )
   }
 
+
+
   #--- Calculate metrics for example simulation and compare with previous output
-  years_metrics_historical <- 1990:2010
-  stopifnot(years_metrics_historical %in% years_sim_historical)
-  years_metrics_future_projection <- 2050:2090
-  stopifnot(years_metrics_future_projection %in% years_sim_future_projection)
-
-  prjpars[["years_timeseries_by_scen"]] <- c(
-    list(years_metrics_historical),
-    lapply(
-      prjpars[["id_scen_used"]][-1],
-      function(k) years_metrics_future_projection
-    )
-  )
-
-  prjpars[["years_aggs_by_scen"]] <- c(
-    list(list(hist = years_metrics_historical)),
-    lapply(
-      prjpars[["id_scen_used"]][-1],
-      function(k) list(nearterm = 2020:2059, longterm = 2060:2099)
-    )
-  )
-
-  #   1 = Winter = DJF, 2 = Spring = MAM, 3 = Summer = JJA, 4 = Fall = SON
-  prjpars[["season_by_month"]] <- c(rep(1, 2), rep(2:4, each = 3), 1)
-  # First season (winter) starts in December
-  prjpars[["first_month_of_year"]] <- 12
-
-
   args_template <- list(
     path = prjpars[["dir_sw2_output"]],
     id_scen_used = prjpars[["id_scen_used"]],
@@ -187,7 +246,6 @@ test_that("Check metrics", {
     first_month_of_year = prjpars[["first_month_of_year"]],
     dir_out_SW2toTable = tempdir()
   )
-
 
 
 
@@ -204,15 +262,18 @@ test_that("Check metrics", {
       }
     )
 
+    N_sites_used <- if (fun_metrics[[k1]] %in% old_fun_metrics) 2 else N_sites
+    ids_used_runs <- seq_len(N_sites_used)
+
 
     #--- Call aggregation function for rSOILWAT2 input/output for each site `s`
     if (!do_timing) {
       res <- foo_metrics(
         fun = fun_metrics[k1],
         fun_args = fun_args,
-        run_rSFSW2_names = run_rSFSW2_names,
+        run_rSFSW2_names = run_rSFSW2_names[ids_used_runs],
         is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
-        N_sites = N_sites
+        N_sites = N_sites_used
       )
 
     } else {
@@ -220,9 +281,9 @@ test_that("Check metrics", {
         res <- foo_metrics(
           fun = fun_metrics[k1],
           fun_args = fun_args,
-          run_rSFSW2_names = run_rSFSW2_names,
+          run_rSFSW2_names = run_rSFSW2_names[ids_used_runs],
           is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
-          N_sites = N_sites
+          N_sites = N_sites_used
         )
       )["elapsed"]
     }
@@ -316,7 +377,10 @@ test_that("Check metrics", {
 
       if (file.exists(ftest_output)) {
         ref_output <- readRDS(ftest_output)
-        expect_equal(output, ref_output, label = fun_metrics[k1])
+
+        # TODO: update reference output and compare again on full output
+        ids <- output$site %in% run_rSFSW2_names[1:2]
+        expect_equal(output[ids, ], ref_output, label = fun_metrics[k1])
 
       } else {
         succeed(

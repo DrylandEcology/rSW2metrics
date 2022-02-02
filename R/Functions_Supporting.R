@@ -692,7 +692,10 @@ get_new_yearly_aggregations <- function(
           INDICES = x_daily[["time"]][, "Year"],
           FUN = function(x) {
             tmp <- rle(x[, 1])
-            if (any(tmp[["values"]] == 1)) {
+            if (anyNA(tmp[["values"]])) {
+              # Propagate NAs
+              NA
+            } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
               # Create index of days for each spell when
               # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
               ips <- seq_along(tmp[["lengths"]])
@@ -702,6 +705,7 @@ get_new_yearly_aggregations <- function(
               tapply(X = x[, 2], INDEX = ids, FUN = fun_time)
 
             } else {
+              # No days when `x_periods` is TRUE
               0
             }
           }
@@ -717,11 +721,15 @@ get_new_yearly_aggregations <- function(
         INDEX = x_daily[["time"]][, "Year"],
         FUN = function(x) {
           tmp <- rle(x)
-          if (any(tmp[["values"]] == 1)) {
+          if (anyNA(tmp[["values"]])) {
+            # Propagate NAs
+            NA
+          } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
             # Select duration of spells when
             # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
             tmp[["lengths"]][tmp[["values"]]]
           } else {
+            # No days when `x_periods` is TRUE
             0
           }
         }
@@ -761,10 +769,14 @@ calc_transp_seasonality <- function(x, time, probs) {
       ttot <- tdc[length(tdc)]
       c(
         ttot,
-        sapply(
-          ttot * probs,
-          function(v) which.min(v >= tdc)
-        )
+        if (is.na(ttot)) {
+          rep(NA, length(probs))
+        } else {
+          sapply(
+            ttot * probs,
+            function(v) which.min(v >= tdc)
+          )
+        }
       )
     }
   )
@@ -899,21 +911,24 @@ identify_peaks <- function(x, window, type = c("maxima", "minima")) {
 
 # Identify valley bottoms between peaks
 identify_valleys_between_peaks <- function(x, peaks) {
-  # Peaks located at start/end of value period
-  ids_peak_on_limits <- which(peaks %in% c(1, length(x)))
+  ids_edges <- range(which(!is.na(x)))
+
+  # Peaks located at start/end of non-NA value period
+  ids_peak_on_limits <- which(peaks %in% ids_edges)
 
   # Number of valleys
-  # (one on either side of a peak unless peak is on start/end)
+  # (one on either side of a peak unless peak is on start/end of data)
   n_valleys <- length(peaks) + 1 - length(ids_peak_on_limits)
 
   valleys <- rep(NA, n_valleys)
   iv <- 1
 
   for (k in seq_along(peaks)) {
-    if (k %in% ids_peak_on_limits) next
+    # Skip to next if current peak on an edge and more than one peak
+    if (k %in% ids_peak_on_limits && n_valleys > 1) next
 
     #--- Identify valley before peak
-    if (is.na(valleys[max(1, iv - 1)])) {
+    if (!(peaks[k] %in% ids_edges[1]) && is.na(valleys[max(1, iv - 1)])) {
       ids_inbetween <- seq.int(
         from = if (k > 1) peaks[k - 1] else 1,
         to = peaks[k]
@@ -929,17 +944,19 @@ identify_valleys_between_peaks <- function(x, peaks) {
     }
 
     #--- Identify valley after peak
-    ids_inbetween <- seq.int(
-      from = peaks[k],
-      to = if (k == length(peaks)) length(x) else peaks[k + 1]
-    )
+    if (!(peaks[k] %in% ids_edges[2])) {
+      ids_inbetween <- seq.int(
+        from = peaks[k],
+        to = if (k == length(peaks)) length(x) else peaks[k + 1]
+      )
 
-    tmpx <- min(x[ids_inbetween], na.rm = TRUE)
-    if (is.finite(tmpx) && isTRUE(tmpx < max(x, na.rm = TRUE))) {
-      valleys[iv] <-
-        ids_inbetween[1] - 1 +
-        central_candidate(which(x[ids_inbetween] <= tmpx))
-      iv <- iv + 1
+      tmpx <- min(x[ids_inbetween], na.rm = TRUE)
+      if (is.finite(tmpx) && isTRUE(tmpx < max(x, na.rm = TRUE))) {
+        valleys[iv] <-
+          ids_inbetween[1] - 1 +
+          central_candidate(which(x[ids_inbetween] <= tmpx))
+        iv <- iv + 1
+      }
     }
   }
 
@@ -1175,44 +1192,139 @@ format_daily_to_matrix <- function(x, time, out_labels, include_year) {
 
 
 #------ SEPARATE DATA FROM CALCULATIONS DEVELOPMENT ERA ------
+create_sw2simtime <- function(n) {
+  data.frame(
+    Year = rep(NA, n),
+    Month = NA,
+    Day = NA,
+    mode = NA
+  )
+}
+
+#' Prepare specified vs. requested time step `data.frame`
+#'
+#' @param xt A two-dimensional object with columns
+#'   `Year`,
+#'   `Month` (if `sw2_tp` equals "Month"), and
+#'   `Day` (if `sw2_tp` equals "Day"). Each row represents one time step
+#'   according to `sw2_tp`.
+#' @param req_years An integer vector of Calendar years. If missing, then
+#'   time steps contained in `xt` are used. If not missing and different than
+#'   years contained in `xt`, then time steps combined from requested and
+#'   simulated are used.
+#' @param sw2_tp A character string. The daily, monthly, or yearly time step
+#'   describing content of `xt` and determining the same output time step.
+#'
+#' @return A `data.frame` with four columns `Year`, `Month`, `Day`, `mode`.
+#'   Rows represent daily, monthly, or yearly time steps that combine
+#'   requested (if `req_years` was provided) and simulated (`xt`) time steps.
+#'   `mode` is `"nosim"` if a time step was not simulated (but requested),
+#'   `"sim_keep"` if a time step was simulated
+#'   (and requested or `req_years` is missing), or
+#'   `"sim_discard"` if a time step was simulated (but not requested).
+#'
+#' @section Notes:
+#'   The column `Day` contains day of year (and not day of month)!
+#'
+#' @examples
+#'  xty <- data.frame(Year = 1991:2020)
+#'  determine_sw2_sim_time(xty, sw2_tp = "Year")
+#'  determine_sw2_sim_time(xty, req_years = 1981:2010, sw2_tp = "Year")
+#'  determine_sw2_sim_time(xty, req_years = 2011:2030, sw2_tp = "Year")
+#'
+#' @export
+#' @md
 determine_sw2_sim_time <- function(
-  x,
-  years,
+  xt,
+  req_years,
   sw2_tp = c("Day", "Month", "Year")
 ) {
   sw2_tp <- match.arg(sw2_tp)
 
-  x_time <- matrix(
-    NA,
-    nrow = nrow(x[[1]]),
-    ncol = 3L,
-    dimnames = list(NULL, c("Year", "Month", "Day"))
-  )
+  years_sim <- unique(xt[, "Year"])
+  has_req_yrs <-
+    !missing(req_years) && length(req_years) > 0 &&
+    !setequal(req_years, years_sim)
 
-  x_time[, "Year"] <- x[[1]][, "Year"]
+  years_used <- if (has_req_yrs) {
+    sort(unique(c(req_years, years_sim)))
+  } else {
+    years_sim
+  }
 
-  if (sw2_tp == "Day") {
-    x_time[, "Day"] <- x[[1]][, "Day"]
 
-    tmp <- apply(
-      X = x_time[, c("Year", "Day"), drop = FALSE],
-      MARGIN = 1,
-      FUN = paste0,
-      collapse = "-"
-    )
-    x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1
+  if (sw2_tp == "Year") {
+    x_time <- create_sw2simtime(n = length(years_used))
 
-    if (anyNA(x_time[, "Month"])) {
-      # Apparently runs can be set up to have incorrect leap/nonleap-years;
-      # in those cases the last simulated day of some nonleap years is the
-      # 366-th day (which in reality doesn't exist) and
-      # for which `as.POSIXlt()` correctly produces an NA (with a warning)
-      # --> patch up and fill in month with 12 as if it were a leap year
-      x_time[is.na(x_time[, "Month"]), "Month"] <- 12
+    x_time[, "Year"] <- years_used
+
+    if (has_req_yrs) {
+      ids_sim <- x_time[, "Year"] %in% xt[, "Year"]
     }
 
   } else if (sw2_tp == "Month") {
-    x_time[, "Month"] <- x[[1]][, "Month"]
+    x_time <- create_sw2simtime(n = 12 * length(years_used))
+
+    x_time[, "Year"] <- rep(years_used, each = 12)
+    x_time[, "Month"] <- seq_len(12)
+
+    if (has_req_yrs) {
+      ids_sim <-
+        paste0(x_time[, "Year"], "-",  x_time[, "Month"]) %in%
+        paste0(xt[, "Year"], "-", xt[, "Month"])
+    }
+
+  } else if (sw2_tp == "Day") {
+    tmp_sim_seq <- paste0(xt[, "Year"], "-", xt[, "Day"])
+
+    req_ts_days <- as.POSIXlt(seq(
+      from = ISOdate(min(years_used), 1, 1, tz = "UTC"),
+      to = ISOdate(max(years_used), 12, 31, tz = "UTC"),
+      by = "1 day"
+    ))
+
+    x_time <- create_sw2simtime(n = length(req_ts_days))
+
+    x_time[, "Year"] <- 1900 + req_ts_days$year
+    x_time[, "Month"] <- 1 + req_ts_days$mon
+    x_time[, "Day"] <- 1 + req_ts_days$yday
+
+    # Apparently, SW2 output can be generated with incorrect leap/nonleap-years;
+    # in those cases the last simulated day of some nonleap years is the
+    # 366-th day (which in reality doesn't exist) and
+    # for which `as.POSIXlt()` correctly produces an NA (with a warning)
+    # --> add simulated non-existing leap-days
+    sim_ts_days <- as.POSIXlt(tmp_sim_seq, format = "%Y-%j", tz = "UTC")
+
+    if (anyNA(sim_ts_days)) {
+      x_time2 <- create_sw2simtime(n = nrow(xt))
+
+      x_time2[, "Year"] <- xt[, "Year"]
+      x_time2[, "Day"] <- xt[, "Day"]
+      x_time2[, "Month"] <- sim_ts_days$mon + 1
+      x_time2[is.na(sim_ts_days), "Month"] <- 12
+
+      tmp <- merge(x_time, x_time2, all = TRUE, sort = FALSE)
+      x_time <- tmp[order(tmp$Year, tmp$Day), , drop = FALSE]
+      rownames(x_time) <- NULL
+    }
+
+
+    if (has_req_yrs) {
+      ids_sim <-
+        paste0(x_time[, "Year"], "-",  x_time[, "Day"]) %in% tmp_sim_seq
+    }
+  }
+
+
+  if (has_req_yrs) {
+    ids_req <- x_time[, "Year"] %in% req_years
+    x_time[ids_sim & ids_req, "mode"] <- "sim_keep"
+    x_time[ids_sim & !ids_req, "mode"] <- "sim_discard"
+    x_time[!ids_sim & ids_req, "mode"] <- "nosim"
+
+  } else {
+    x_time[, "mode"] <- "sim_keep"
   }
 
   x_time
@@ -1321,23 +1433,40 @@ collect_sw2_sim_data <- function(
 
     #--- Extract time
     x_time <- determine_sw2_sim_time(
-      x,
-      years = unique(x[[1]][, "Year"]),
+      xt = x[[1]],
+      req_years = years,
       sw2_tp = out[["sw2_tp"]]
     )
 
+    n_nosim <- sum(x_time[, "mode"] == "nosim")
 
-    #--- Subset to requested years
-    if (!missing(years) && length(years) > 0) {
-      ids <- x_time[, "Year"] %in% years
 
-      if (any(!ids)) {
-        x_time <- x_time[ids, , drop = FALSE]
-        x_vals <- lapply(
-          x_vals,
-          function(x) if (is.null(dim(x))) x[ids] else x[ids, , drop = FALSE]
-        )
+    #--- Add entries for requested but not simulated time steps "nosim"
+    if (n_nosim > 0) {
+      n_sim <- nrow(x_time) - n_nosim
+      ids <- if (isTRUE(x_time[1, "mode"] == "nosim")) {
+        # "nosim" occurs before "sim_keep"
+        c(rep(NA, n_nosim), seq_len(n_sim))
+      } else {
+        # "nosim" occurs after "sim_keep"
+        c(seq_len(n_sim), rep(NA, n_nosim))
       }
+
+      x_vals <- lapply(
+        x_vals,
+        function(x) if (is.null(dim(x))) x[ids] else x[ids, , drop = FALSE]
+      )
+    }
+
+
+    #--- Removes entries for un-requested but simulated time steps "sim_discard"
+    ids <- which(x_time[, "mode"] == "sim_discard")
+    if (length(ids) > 0) {
+      x_time <- x_time[-ids, , drop = FALSE]
+      x_vals <- lapply(
+        x_vals,
+        function(x) if (is.null(dim(x))) x[-ids] else x[-ids, , drop = FALSE]
+      )
     }
 
 

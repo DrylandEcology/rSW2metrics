@@ -24,16 +24,30 @@ metric_land_cover_v1 <- function(
       )
     )
 
+    tmp_meteo <- cbind(
+      Year = sim_data[["wd"]][["time"]][, "Year"],
+      DOY = sim_data[["wd"]][["time"]][, "Day"],
+      Tmax_C = sim_data[["wd"]][["values"]][["tmax"]],
+      Tmin_C = sim_data[["wd"]][["values"]][["tmin"]],
+      PPT_cm = sim_data[["wd"]][["values"]][["ppt"]]
+    )
+
+    if (anyNA(tmp_meteo)) {
+      ids <- sim_data[["wd"]][["time"]][, "mode"] == "sim_keep"
+      warning(
+        "`metric_land_cover_v1(): ",
+        "simulated time period ",
+        paste0(range(sim_data[["wd"]][["time"]][ids, "Year"]), collapse = "-"),
+        " does not completely include requested years ",
+        paste0(range(sim_data[["wd"]][["time"]][, "Year"]), collapse = "-"),
+        "; land cover (based on climate conditions) will be valid only ",
+        "for simulated subset instead of full requested time period."
+      )
+      tmp_meteo <- tmp_meteo[ids, , drop = FALSE]
+    }
+
     clim <- rSOILWAT2::calc_SiteClimate(
-      weatherList = rSOILWAT2::dbW_dataframe_to_weatherData(
-        cbind(
-          Year = sim_data[["wd"]][["time"]][, "Year"],
-          DOY = sim_data[["wd"]][["time"]][, "Day"],
-          Tmax_C = sim_data[["wd"]][["values"]][["tmax"]],
-          Tmin_C = sim_data[["wd"]][["values"]][["tmin"]],
-          PPT_cm = sim_data[["wd"]][["values"]][["ppt"]]
-        )
-      ),
+      weatherList = rSOILWAT2::dbW_dataframe_to_weatherData(tmp_meteo),
       do_C4vars = TRUE
     )
 

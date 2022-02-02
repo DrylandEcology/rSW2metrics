@@ -207,7 +207,6 @@ calc_wetdry <- function(
     )
   }
 
-
   list(
     time = sim_swp_daily[["time"]],
     values = if (is_op_lt) {
@@ -259,12 +258,13 @@ calc_MDD_daily <- function(
     )
   )
 
-  # Temperature when all criteria are met
+  # Temperature when all criteria are met (propagate NAs in sm, dg, snw)
+  mdd <- rep(NA, length(dg))
   ids <- sm[["values"]][[1]] & dg & snw
-  mdd <- rep(0, length(ids))
-  mdd[ids] <-
-    sim_data[["temp_daily"]][["values"]][["tmean"]][ids] -
+  mdd[which(ids)] <-
+    sim_data[["temp_daily"]][["values"]][["tmean"]][which(ids)] -
     t_periods[["limit"]]
+  mdd[which(!ids)] <- 0
 
   list(
     time = sim_data[["swp_daily"]][["time"]],
@@ -833,11 +833,16 @@ calc_DSI <- function(
       X = dry_daily[["values"]][[1]],
       INDEX = dry_daily[["time"]][, "Year"],
       FUN = function(x) {
-        tmp <- rle(x)
-        if (any(tmp[["values"]] == 1)) {
-          tmp[["lengths"]][tmp[["values"]]]
+        if (anyNA(x)) {
+          # propagate NAs
+          NA
         } else {
-          0
+          tmp <- rle(x)
+          if (any(tmp[["values"]] == 1)) {
+            tmp[["lengths"]][tmp[["values"]]]
+          } else {
+            0
+          }
         }
       }
     )
@@ -1721,6 +1726,7 @@ metric_Tmean_monthly <- function(
 }
 
 #' Across-year average monthly mean air temperature
+#' @section Notes: Un-simulated but requested time steps propagate NAs.
 #' @noRd
 metric_Tmean_monthlyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -1740,6 +1746,7 @@ metric_Tmean_monthlyClim <- function(
 }
 
 #' Across-year average monthly precipitation amount [mm]
+#' @section Notes: Un-simulated but requested time steps propagate NAs.
 #' @noRd
 metric_PPT_monthlyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
