@@ -3,6 +3,7 @@
 export(aggs_across_years)
 export(calc_soillayer_weights)
 export(check_soillayer_availability)
+export(determine_sw2_sim_time)
 export(determine_used_soillayers)
 export(extract_metrics)
 export(list_all_input_collectors)
