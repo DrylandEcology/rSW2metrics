@@ -658,6 +658,7 @@ process_values_one_site <- function(
 
 
 #' Transform result into wide format suitable for spreadsheet concatenation
+#' @return A matrix or data.frame with at least one row.
 #' @noRd
 format_metric_1sim <- function(x, id) {
   if (is.list(x)) {
@@ -667,7 +668,7 @@ format_metric_1sim <- function(x, id) {
     ngs <- nrow(x[[1]])
 
     if (is.null(ngs)) {
-      c(id, 0, do.call(c, x))
+      matrix(c(id, 0, do.call(c, x)), nrow = 1)
 
     } else {
       ngls <- rownames(x[[1]])
@@ -688,13 +689,14 @@ format_metric_1sim <- function(x, id) {
     # Transform result into [1 x output columns] object
     ngs <- nrow(x)
 
-    if (is.null(ngs) || ngs == 1) {
+    tmp <- if (is.null(ngs) || ngs == 1) {
       c(id, 0, x)
 
     } else {
       c(id, 0, as.vector(t(x)))
     }
 
+    matrix(tmp, nrow = 1)
   }
 }
 
