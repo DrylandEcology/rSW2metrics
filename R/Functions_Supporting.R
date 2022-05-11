@@ -1208,10 +1208,10 @@ create_sw2simtime <- function(n) {
 #'   `Month` (if `sw2_tp` equals "Month"), and
 #'   `Day` (if `sw2_tp` equals "Day"). Each row represents one time step
 #'   according to `sw2_tp`.
-#' @param req_years An integer vector of Calendar years. If missing, then
-#'   time steps contained in `xt` are used. If not missing and different than
-#'   years contained in `xt`, then time steps combined from requested and
-#'   simulated are used.
+#' @param req_years An integer vector of Calendar years. If missing or `NULL`,
+#'   then time steps contained in `xt` are used.
+#'   If not missing and not `NULL` and different than years contained in `xt`,
+#'   then time steps combined from requested and simulated are used.
 #' @param sw2_tp A character string. The daily, monthly, or yearly time step
 #'   describing content of `xt` and determining the same output time step.
 #'
@@ -1236,7 +1236,7 @@ create_sw2simtime <- function(n) {
 #' @md
 determine_sw2_sim_time <- function(
   xt,
-  req_years,
+  req_years = NULL,
   sw2_tp = c("Day", "Month", "Year")
 ) {
   sw2_tp <- match.arg(sw2_tp)
@@ -1432,9 +1432,12 @@ collect_sw2_sim_data <- function(
 
 
     #--- Extract time
+    # `determine_sw2_sim_time()` is memoized and a missing `years` passed to
+    # argument `req_years` doesn't work correctly
+    # (see https://github.com/r-lib/memoise/issues/19)
     x_time <- determine_sw2_sim_time(
       xt = x[[1]],
-      req_years = years,
+      req_years = if (missing(years)) NULL else years,
       sw2_tp = out[["sw2_tp"]]
     )
 

@@ -29,6 +29,13 @@
   #--- Memoization
   # `memoise::memoise` v2.0.0 recommends to memoize package functions
   # when package is loaded
+
+  # We use `<<-` below to modify the package's namespace
+  # in order to prevent build time dependencies on `memoise`
+  # as recommended in <http://memoise.r-lib.org/reference/memoise.html#details>.
+  # We don't modify the global environment.
+  # See <https://github.com/r-lib/memoise/issues/76> for further details.
+
   determine_sw2_sim_time <<- memoise::memoize(
     f = determine_sw2_sim_time,
     omit_args = "x"

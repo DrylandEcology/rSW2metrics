@@ -4,7 +4,11 @@
 \alias{determine_sw2_sim_time}
 \title{Prepare specified vs. requested time step \code{data.frame}}
 \usage{
-determine_sw2_sim_time(xt, req_years, sw2_tp = c("Day", "Month", "Year"))
+determine_sw2_sim_time(
+  xt,
+  req_years = NULL,
+  sw2_tp = c("Day", "Month", "Year")
+)
 }
 \arguments{
 \item{xt}{A two-dimensional object with columns
@@ -13,10 +17,10 @@ determine_sw2_sim_time(xt, req_years, sw2_tp = c("Day", "Month", "Year"))
 \code{Day} (if \code{sw2_tp} equals "Day"). Each row represents one time step
 according to \code{sw2_tp}.}
 
-\item{req_years}{An integer vector of Calendar years. If missing, then
-time steps contained in \code{xt} are used. If not missing and different than
-years contained in \code{xt}, then time steps combined from requested and
-simulated are used.}
+\item{req_years}{An integer vector of Calendar years. If missing or \code{NULL},
+then time steps contained in \code{xt} are used.
+If not missing and not \code{NULL} and different than years contained in \code{xt},
+then time steps combined from requested and simulated are used.}
 
 \item{sw2_tp}{A character string. The daily, monthly, or yearly time step
 describing content of \code{xt} and determining the same output time step.}
