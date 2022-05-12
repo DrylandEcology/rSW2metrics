@@ -5,6 +5,18 @@ test_that("Test data availability", {
 })
 
 
+#--- rSOILWAT2 versions with reference output files available
+# NOTE: update reference output for new major/minor releases of rSOILWAT2
+#   * add new version number to `list_rSOILWAT2_versions`
+#   * set `create_new_reference_output` to TRUE
+#     (and re-set back to FALSE when completed)
+list_rSOILWAT2_versions <- c("5.0", "5.1", "5.2")
+create_new_reference_output <- FALSE
+
+# NA = detect currently installed version
+used_rSOILWAT2_version <- NA
+
+
 # Aggregation function for rSOILWAT2 input/output for each simulated site
 foo_metrics <- function(
   fun,
@@ -221,6 +233,10 @@ test_that("Check metrics", {
       swRunScenariosData[[sc]] <- sw2_in
       runDataSC <- rSOILWAT2::sw_exec(inputData = swRunScenariosData[[sc]])
 
+      if (is.na(used_rSOILWAT2_version)) {
+        used_rSOILWAT2_version <- rSOILWAT2::get_version(runDataSC)
+      }
+
       save(
         runDataSC,
         file = file.path(
@@ -235,6 +251,30 @@ test_that("Check metrics", {
       file = file.path(dir_runs_rSFSW2[s], "sw_input.RData")
     )
   }
+
+
+  #--- Deal with version numbers
+
+  # Update list of rSOILWAT2 version with next not-yet released one
+  # so that identification of data for specific major/minor works correctly
+  tmp <- as.numeric_version(
+    list_rSOILWAT2_versions[length(list_rSOILWAT2_versions)]
+  )
+  tmp[[c(1,2)]] <- as.integer(tmp[[c(1,2)]]) + 1
+  nextv <- as.character(tmp)
+
+  # Identify version
+  compv <- sapply(
+    sort(unique(c(list_rSOILWAT2_versions, nextv))),
+    function(ev) {
+      c(
+        isTRUE(used_rSOILWAT2_version >= ev),
+        isTRUE(used_rSOILWAT2_version < ev)
+      )
+    }
+  )
+
+  eqv <- compv[1, -ncol(compv)] & compv[2, -1]
 
 
 
@@ -356,39 +396,62 @@ test_that("Check metrics", {
 
 
     #--- Check output against stored copy of previous output
-    if (FALSE) {
-      # `testthat::expect_snapshot_value()` doesn't properly work
-      # for our situation as of v3.0.1:
-      # - style "deparse" leads to errors such 'could not find function "-"'
-      # - if a new metric is changed or added to the package,
-      #   then all tests that are sorted alphabetically later will fail,
-      #   likely because
-      #   * all snapshots are stored in the same huge file and
-      #   * differences are not resolve correctly
-      # - the function produces for style = "serialize" a snapshot of c. 12 MB
-      #   while saving individual "rds" consumes in total only 3.3 MB
-      expect_snapshot_value(x = output, style = "serialize")
+    # note: previous values depend on the (minor) version of rSOILWAT2
+    # skip if used rSOILWAT2 version differs too much from version used
+    #      to create values of previous output
 
-    } else {
-      ftest_output <- file.path(
-        dir_test_data,
-        paste0("ref_", fun_metrics[k1], ".rds")
-      )
+    if (any(eqv)) {
+      vtag <- paste0("v", names(eqv)[which(eqv)])
 
-      if (file.exists(ftest_output)) {
-        ref_output <- readRDS(ftest_output)
-
-        # TODO: update reference output and compare again on full output
-        ids <- output$site %in% run_rSFSW2_names[1:2]
-        expect_equal(output[ids, ], ref_output, label = fun_metrics[k1])
+      if (FALSE) {
+        # `testthat::expect_snapshot_value()` doesn't properly work
+        # for our situation as of v3.0.1:
+        # - style "deparse" leads to errors such 'could not find function "-"'
+        # - if a new metric is changed or added to the package,
+        #   then all tests that are sorted alphabetically later will fail,
+        #   likely because
+        #   * all snapshots are stored in the same huge file and
+        #   * differences are not resolve correctly
+        # - the function produces for style = "serialize" a snapshot of c. 12 MB
+        #   while saving individual "rds" consumes in total only 3.3 MB
+        expect_snapshot_value(x = output, style = "serialize")
 
       } else {
-        succeed(
-          message = paste("New reference stored for", shQuote(fun_metrics[k1]))
+        ftest_output <- file.path(
+          dir_test_data,
+          vtag,
+          paste0("ref_", fun_metrics[k1], ".rds")
         )
 
-        saveRDS(output, file = ftest_output, compress = "xz")
+        if (file.exists(ftest_output)) {
+          ref_output <- readRDS(ftest_output)
+
+          ids <- if (vtag == "v5.0") {
+            output$site %in% run_rSFSW2_names[1:2]
+          } else {
+            seq_len(nrow(output))
+          }
+          expect_equal(output[ids, ], ref_output, label = fun_metrics[k1])
+
+        } else if (create_new_reference_output) {
+          succeed(paste("New reference stored for", shQuote(fun_metrics[k1])))
+
+          dir.create(
+            dirname(ftest_output),
+            recursive = TRUE,
+            showWarnings = FALSE
+          )
+          saveRDS(output, file = ftest_output, compress = "xz")
+        }
       }
+
+    } else {
+      warning(
+        shQuote(fun_metrics[k1]),
+        ": comparisons against previous values skipped ",
+        "because installed rSOILWAT2 v", used_rSOILWAT2_version,
+        " differs too much from any version used to create reference values."
+      )
     }
   }
 
