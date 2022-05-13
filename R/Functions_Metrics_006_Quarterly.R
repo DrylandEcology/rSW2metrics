@@ -116,7 +116,8 @@ get_SWA_multilayer_quarterly <- function(
           sim_swc_daily = sim_data[["swc_daily"]],
           soils = soils,
           SWP_limit_MPa = SWP_limit_MPa,
-          used_depth_range_cm = range
+          used_depth_range_cm = range,
+          method = "across_profile"
         )
       }
     )

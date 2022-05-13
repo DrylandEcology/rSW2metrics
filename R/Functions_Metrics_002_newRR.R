@@ -717,7 +717,8 @@ get_SWA <- function(
       sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
-      used_depth_range_cm = used_depth_range_cm
+      used_depth_range_cm = used_depth_range_cm,
+      method = "across_profile"
     )
 
     res[[k1]] <- if (out == "ts_years") {

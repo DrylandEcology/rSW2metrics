@@ -83,7 +83,8 @@ get_SWA_JJA <- function(
       sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
-      used_depth_range_cm = used_depth_range_cm
+      used_depth_range_cm = used_depth_range_cm,
+      method = "across_profile"
     )
 
     # Helper variables
@@ -444,43 +445,74 @@ get_SWA_daily <- function(
   list_years_scen_used,
   out_label,
   include_year = FALSE,
-  out = "ts_years",
+  out = c("ts_years", "across_years"),
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
   ...
 ) {
+  out <- match.arg(out)
+
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    sim_data <- collect_sw2_sim_data(
-      path = path,
-      name_sw2_run = name_sw2_run,
-      id_scen = id_scen_used[k1],
-      years = list_years_scen_used[[k1]],
-      output_sets = list(
-        swc_daily = list(
-          sw2_tp = "Day",
-          sw2_outs = "SWCBULK",
-          sw2_vars = c(swc = "Lyr"),
-          varnames_are_fixed = FALSE
+    tmp <- lapply(
+      if (out == "across_years") {
+        list_years_scen_used[[k1]]
+      } else {
+        list(list_years_scen_used[[k1]])
+      },
+      function(yrs) {
+        browser()
+        sim_data <- collect_sw2_sim_data(
+          path = path,
+          name_sw2_run = name_sw2_run,
+          id_scen = id_scen_used[k1],
+          years = yrs,
+          output_sets = list(
+            swc_daily = list(
+              sw2_tp = "Day",
+              sw2_outs = "SWCBULK",
+              sw2_vars = c(swc = "Lyr"),
+              varnames_are_fixed = FALSE
+            )
+          )
         )
-      )
+
+        swa_daily <- calc_SWA_mm(
+          sim_swc_daily = sim_data[["swc_daily"]],
+          soils = soils,
+          SWP_limit_MPa = SWP_limit_MPa,
+          used_depth_range_cm = used_depth_range_cm,
+          method = "across_profile"
+        )
+
+        if (out == "across_years") {
+          format_daily_to_matrix(
+            x = tapply(
+              X = swa_daily[["values"]][[1]],
+              INDEX = swa_daily[["time"]][, "Day"],
+              FUN = mean
+            ),
+            time = list(Year = NA),
+            out_labels = out_label
+          )
+        } else {
+          format_daily_to_matrix(
+            x = swa_daily[["values"]][[1]],
+            time = swa_daily[["time"]],
+            out_labels = out_label,
+            include_year = include_year
+          )
+        }
+      }
     )
 
-    swa_daily <- calc_SWA_mm(
-      sim_swc_daily = sim_data[["swc_daily"]],
-      soils = soils,
-      SWP_limit_MPa = SWP_limit_MPa,
-      used_depth_range_cm = used_depth_range_cm
-    )
-
-    res[[k1]] <- format_daily_to_matrix(
-      x = swa_daily[["values"]][[1]],
-      time = swa_daily[["time"]],
-      out_labels = out_label,
-      include_year = include_year
-    )
+    res[[k1]] <- if (out == "across_years") {
+      do.call(cbind, tmp)
+    } else {
+      tmp[[1]]
+    }
   }
 
   res
@@ -511,6 +543,7 @@ metric_SWAat0to020cm39bar_daily <- function(
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     out_label = "SWAat0to020cm39bar_mm",
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
@@ -534,6 +567,7 @@ metric_SWAat0to100cm39bar_daily <- function(
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     out_label = "SWAat0to100cm39bar_mm",
     soils = soils,
     used_depth_range_cm = c(0, 100),
@@ -568,6 +602,7 @@ metric_SWAat20to100cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to100cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -600,6 +635,7 @@ metric_SWAat20to040cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to040cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -633,6 +669,7 @@ metric_SWAat40to060cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat40to060cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -666,6 +703,7 @@ metric_SWAat60to080cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat60to080cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -699,6 +737,7 @@ metric_SWAat80to100cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat80to100cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
