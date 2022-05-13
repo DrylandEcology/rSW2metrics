@@ -34,6 +34,7 @@
 \alias{metric_NonDrySWA_Seasonal_wholeprofile}
 \alias{metric_PET_Seasonal}
 \alias{metric_PPT_daily}
+\alias{metric_PPT_dailyClim}
 \alias{metric_PPT_JJA}
 \alias{metric_PPT_monthlyClim}
 \alias{metric_PPT_Seasonal}
@@ -48,6 +49,7 @@
 \alias{metric_SWA_Seasonal_top50cm}
 \alias{metric_SWA_Seasonal_wholeprofile}
 \alias{metric_SWAat0to020cm39bar_daily}
+\alias{metric_SWAat0to020cm39bar_dailyClim}
 \alias{metric_SWAat0to020cm39bar_JJA}
 \alias{metric_SWAat0to020to100cm39bar_quarterly}
 \alias{metric_SWAat0to100cm30bar}
@@ -57,6 +59,7 @@
 \alias{metric_SWAat20to040cm39bar_daily}
 \alias{metric_SWAat20to040cm39bar_JJA}
 \alias{metric_SWAat20to100cm39bar_daily}
+\alias{metric_SWAat20to100cm39bar_dailyClim}
 \alias{metric_SWAat20to100cm39bar_JJA}
 \alias{metric_SWAat40to060cm39bar_daily}
 \alias{metric_SWAat40to060cm39bar_JJA}
@@ -65,6 +68,8 @@
 \alias{metric_SWAat80to100cm39bar_daily}
 \alias{metric_SWAat80to100cm39bar_JJA}
 \alias{metric_SWP_SoilLayers_MeanMonthly}
+\alias{metric_SWPat0to020cm_dailyClim}
+\alias{metric_SWPat20to100cm_dailyClim}
 \alias{metric_TDDat5C}
 \alias{metric_TDDat5C_quarterly}
 \alias{metric_TemperatureMax_Seasonal}
@@ -72,6 +77,7 @@
 \alias{metric_TemperatureMin_Seasonal}
 \alias{metric_TEPET_daily}
 \alias{metric_Tmean_daily}
+\alias{metric_Tmean_dailyClim}
 \alias{metric_Tmean_JJA}
 \alias{metric_Tmean_monthly}
 \alias{metric_Tmean_monthlyClim}
@@ -218,6 +224,7 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_NonDrySWA_Seasonal_wholeprofile}
   \item \var{metric_PET_Seasonal}
   \item \var{metric_PPT_daily}
+  \item \var{metric_PPT_dailyClim}
   \item \var{metric_PPT_JJA}
   \item \var{metric_PPT_monthlyClim}
   \item \var{metric_PPT_Seasonal}
@@ -232,6 +239,7 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_SWA_Seasonal_top50cm}
   \item \var{metric_SWA_Seasonal_wholeprofile}
   \item \var{metric_SWAat0to020cm39bar_daily}
+  \item \var{metric_SWAat0to020cm39bar_dailyClim}
   \item \var{metric_SWAat0to020cm39bar_JJA}
   \item \var{metric_SWAat0to020to100cm39bar_quarterly}
   \item \var{metric_SWAat0to100cm30bar}
@@ -241,6 +249,7 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_SWAat20to040cm39bar_daily}
   \item \var{metric_SWAat20to040cm39bar_JJA}
   \item \var{metric_SWAat20to100cm39bar_daily}
+  \item \var{metric_SWAat20to100cm39bar_dailyClim}
   \item \var{metric_SWAat20to100cm39bar_JJA}
   \item \var{metric_SWAat40to060cm39bar_daily}
   \item \var{metric_SWAat40to060cm39bar_JJA}
@@ -249,6 +258,8 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_SWAat80to100cm39bar_daily}
   \item \var{metric_SWAat80to100cm39bar_JJA}
   \item \var{metric_SWP_SoilLayers_MeanMonthly}
+  \item \var{metric_SWPat0to020cm_dailyClim}
+  \item \var{metric_SWPat20to100cm_dailyClim}
   \item \var{metric_TDDat5C}
   \item \var{metric_TDDat5C_quarterly}
   \item \var{metric_TemperatureMax_Seasonal}
@@ -256,6 +267,7 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_TemperatureMin_Seasonal}
   \item \var{metric_TEPET_daily}
   \item \var{metric_Tmean_daily}
+  \item \var{metric_Tmean_dailyClim}
   \item \var{metric_Tmean_JJA}
   \item \var{metric_Tmean_monthly}
   \item \var{metric_Tmean_monthlyClim}

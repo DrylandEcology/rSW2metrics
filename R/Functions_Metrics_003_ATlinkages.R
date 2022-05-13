@@ -463,7 +463,6 @@ get_SWA_daily <- function(
         list(list_years_scen_used[[k1]])
       },
       function(yrs) {
-        browser()
         sim_data <- collect_sw2_sim_data(
           path = path,
           name_sw2_run = name_sw2_run,

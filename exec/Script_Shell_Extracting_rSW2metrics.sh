@@ -45,6 +45,7 @@ Rscript Script_to_Extract_Metric.R -o=NonDrySWA_Seasonal_top50cm -fun=metric_Non
 Rscript Script_to_Extract_Metric.R -o=NonDrySWA_Seasonal_wholeprofile -fun=metric_NonDrySWA_Seasonal_wholeprofile ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=PET_Seasonal -fun=metric_PET_Seasonal ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=PPT_daily -fun=metric_PPT_daily ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=PPT_dailyClim -fun=metric_PPT_dailyClim ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=PPT_JJA -fun=metric_PPT_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=PPT_monthlyClim -fun=metric_PPT_monthlyClim ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=PPT_Seasonal -fun=metric_PPT_Seasonal ${mode} ${parallel} ${prjoptions}
@@ -58,6 +59,7 @@ Rscript Script_to_Extract_Metric.R -o=SMTRs_annualClim -fun=metric_SMTRs ${mode}
 Rscript Script_to_Extract_Metric.R -o=SWA_Seasonal_top50cm -fun=metric_SWA_Seasonal_top50cm ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWA_Seasonal_wholeprofile -fun=metric_SWA_Seasonal_wholeprofile ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat0to020cm39bar_daily -fun=metric_SWAat0to020cm39bar_daily ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=SWAat0to020cm39bar_dailyClim -fun=metric_SWAat0to020cm39bar_dailyClim ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat0to020cm39bar_JJA -fun=metric_SWAat0to020cm39bar_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat0to020cm39bar_JJA -fun=metric_SWAat0to020cm39bar_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat0to020to100cm39bar_quarterly -fun=metric_SWAat0to020to100cm39bar_quarterly ${mode} ${parallel} ${prjoptions}
@@ -68,6 +70,7 @@ Rscript Script_to_Extract_Metric.R -o=SWAat0to100cm39bar_JJA -fun=metric_SWAat0t
 Rscript Script_to_Extract_Metric.R -o=SWAat20to040cm39bar_daily -fun=metric_SWAat20to040cm39bar_daily ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat20to040cm39bar_JJA -fun=metric_SWAat20to040cm39bar_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat20to100cm39bar_daily -fun=metric_SWAat20to100cm39bar_daily ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=SWAat20to100cm39bar_dailyClim -fun=metric_SWAat20to100cm39bar_dailyClim ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat20to100cm39bar_JJA -fun=metric_SWAat20to100cm39bar_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat40to060cm39bar_daily -fun=metric_SWAat40to060cm39bar_daily ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat40to060cm39bar_JJA -fun=metric_SWAat40to060cm39bar_JJA ${mode} ${parallel} ${prjoptions}
@@ -75,6 +78,8 @@ Rscript Script_to_Extract_Metric.R -o=SWAat60to080cm39bar_daily -fun=metric_SWAa
 Rscript Script_to_Extract_Metric.R -o=SWAat60to080cm39bar_JJA -fun=metric_SWAat60to080cm39bar_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat80to100cm39bar_daily -fun=metric_SWAat80to100cm39bar_daily ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SWAat80to100cm39bar_JJA -fun=metric_SWAat80to100cm39bar_JJA ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=SWPat0to020cm_dailyClim -fun=metric_SWPat0to020cm_dailyClim ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=SWPat20to100cm_dailyClim -fun=metric_SWPat20to100cm_dailyClim ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=TDDat5C_annual -fun=metric_TDDat5C ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=TDDat5C_quarterly -fun=metric_TDDat5C_quarterly ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=TemperatureMax_Seasonal -fun=metric_TemperatureMax_Seasonal ${mode} ${parallel} ${prjoptions}
@@ -82,6 +87,7 @@ Rscript Script_to_Extract_Metric.R -o=TemperatureMean_Seasonal -fun=metric_Tempe
 Rscript Script_to_Extract_Metric.R -o=TemperatureMin_Seasonal -fun=metric_TemperatureMin_Seasonal ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=TEPET_daily -fun=ref_metric_TEPET_daily ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Tmean_daily -fun=metric_Tmean_daily ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=Tmean_dailyClim -fun=metric_Tmean_dailyClim ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Tmean_JJA -fun=metric_Tmean_JJA ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Tmean_monthly -fun=metric_Tmean_monthly ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Tmean_monthlyClim -fun=metric_Tmean_monthlyClim ${mode} ${parallel} ${prjoptions}
