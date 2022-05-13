@@ -1247,6 +1247,9 @@ determine_sw2_sim_time <- function(
   req_years = NULL,
   sw2_tp = c("Day", "Month", "Year")
 ) {
+  # debugging un-memoized version:
+  # assignInNamespace("determine_sw2_sim_time", environment(rSW2metrics::determine_sw2_sim_time)$`_f`, "rSW2metrics") # nolint
+
   sw2_tp <- match.arg(sw2_tp)
 
   years_sim <- unique(xt[, "Year"])
@@ -1267,7 +1270,7 @@ determine_sw2_sim_time <- function(
     x_time[, "Year"] <- years_used
 
     if (has_req_yrs) {
-      ids_sim <- x_time[, "Year"] %in% xt[, "Year"]
+      ids_sim <- x_time[, "Year"] %in% years_sim
     }
 
   } else if (sw2_tp == "Month") {
@@ -1278,13 +1281,12 @@ determine_sw2_sim_time <- function(
 
     if (has_req_yrs) {
       ids_sim <-
-        paste0(x_time[, "Year"], "-",  x_time[, "Month"]) %in%
+        paste0(x_time[, "Year"], "-", x_time[, "Month"]) %in%
         paste0(xt[, "Year"], "-", xt[, "Month"])
     }
 
   } else if (sw2_tp == "Day") {
-    tmp_sim_seq <- paste0(xt[, "Year"], "-", xt[, "Day"])
-
+    # Create `x_time` for all used years
     req_ts_days <- as.POSIXlt(seq(
       from = ISOdate(min(years_used), 1, 1, tz = "UTC"),
       to = ISOdate(max(years_used), 12, 31, tz = "UTC"),
@@ -1297,30 +1299,48 @@ determine_sw2_sim_time <- function(
     x_time[, "Month"] <- 1 + req_ts_days$mon
     x_time[, "Day"] <- 1 + req_ts_days$yday
 
+
     # Apparently, SW2 output can be generated with incorrect leap/nonleap-years;
-    # in those cases the last simulated day of some nonleap years is the
-    # 366-th day (which in reality doesn't exist) and
-    # for which `as.POSIXlt()` correctly produces an NA (with a warning)
-    # --> add simulated non-existing leap-days
+    # if so, then the last simulated day of a nonleap year would
+    # incorrectly be the 366-th day (which in reality doesn't exist) and
+    # for which `as.POSIXlt()` correctly produces an NA (with a warning);
+    # similarly, the last simulated day of a leap year would
+    # incorrectly be the 365-th day (and the 366th-day would be missing)
+    # --> add simulated non-existing leap-days &
+    #     remove not simulated existing leap years
+    tmp_sim_seq <- paste0(xt[, "Year"], "-", xt[, "Day"])
     sim_ts_days <- as.POSIXlt(tmp_sim_seq, format = "%Y-%j", tz = "UTC")
+    has_leap_issues <- anyNA(sim_ts_days)
 
-    if (anyNA(sim_ts_days)) {
+    if (has_leap_issues) {
+      # Create `x_time` for simulated time period
       x_time2 <- create_sw2simtime(n = nrow(xt))
-
       x_time2[, "Year"] <- xt[, "Year"]
       x_time2[, "Day"] <- xt[, "Day"]
       x_time2[, "Month"] <- sim_ts_days$mon + 1
       x_time2[is.na(sim_ts_days), "Month"] <- 12
 
-      tmp <- merge(x_time, x_time2, all = TRUE, sort = FALSE)
-      x_time <- tmp[order(tmp$Year, tmp$Day), , drop = FALSE]
-      rownames(x_time) <- NULL
-    }
+      # Add requested but not simulated years from `x_time`
+      if (has_req_yrs) {
+        ids_notsim <- x_time[, "Year"] %in% setdiff(req_years, years_sim)
+        tmp <- merge(
+          x_time[ids_notsim, , drop = FALSE],
+          x_time2,
+          all = TRUE,
+          sort = FALSE
+        )
+        x_time <- tmp[order(tmp$Year, tmp$Day), , drop = FALSE]
+        rownames(x_time) <- NULL
 
+      } else {
+        # All used years are simulated years
+        x_time <- x_time2
+      }
+    }
 
     if (has_req_yrs) {
       ids_sim <-
-        paste0(x_time[, "Year"], "-",  x_time[, "Day"]) %in% tmp_sim_seq
+        paste0(x_time[, "Year"], "-", x_time[, "Day"]) %in% tmp_sim_seq
     }
   }
 
@@ -1334,6 +1354,11 @@ determine_sw2_sim_time <- function(
   } else {
     x_time[, "mode"] <- "sim_keep"
   }
+
+  stopifnot(
+    !anyNA(x_time[, "mode"]),
+    nrow(x_time) >= nrow(xt)
+  )
 
   x_time
 }
