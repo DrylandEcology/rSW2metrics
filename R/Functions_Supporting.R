@@ -1028,6 +1028,7 @@ peak_size_v2 <- function(
 
 
 #' @param years An integer vector. The sequence of years that `x` covers.
+#'   If a climatology, then set `years` to `NA`.
 #' @noRd
 #' @md
 format_monthly_to_matrix <- function(x, years, out_labels) {
@@ -1141,7 +1142,10 @@ get_variable_in_months <- function(
   res
 }
 
-format_daily_to_matrix <- function(x, time, out_labels, include_year) {
+#' @param time
+#'   If a climatology, then set `time = list(Years = NA)`
+#' @noRd
+format_daily_to_matrix <- function(x, time, out_labels, include_year = FALSE) {
   if (!is.list(x)) {
     x <- list(x)
   }
@@ -1156,21 +1160,25 @@ format_daily_to_matrix <- function(x, time, out_labels, include_year) {
     ndoy <- paste(rep(out_labels, each = 366), ndoy, sep = "_")
   }
 
-  years <- unique(if (is.list(time)) time[["Year"]] else time[, "Year"])
+  ts_years <- if (is.list(time)) time[["Year"]] else time[, "Year"]
+  years <- unique(ts_years)
   doys366 <- seq_len(366)
   doys365 <- seq_len(365)
 
   x_template <- array(dim = c(366, length(years)))
-
+  is_clim <- isTRUE(is.na(years))
 
   tmp <- lapply(
     seq_along(x),
     function(k1) {
       xtmp <- x_template
-      ttmp <- if (is.list(time)) time[["Year"]] else time[, "Year"]
       for (k2 in seq_along(years)) {
-        doys <- if (rSW2utils::isLeapYear(years[k2])) doys366 else doys365
-        xtmp[doys, k2] <- x[[k1]][ttmp == years[k2]]
+        if (is_clim) {
+          xtmp[seq_along(x[[k1]]), k2] <- x[[k1]]
+        } else {
+          doys <- if (rSW2utils::isLeapYear(years[k2])) doys366 else doys365
+          xtmp[doys, k2] <- x[[k1]][ts_years == years[k2]]
+        }
       }
       xtmp
     }
