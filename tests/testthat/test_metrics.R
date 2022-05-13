@@ -260,7 +260,7 @@ test_that("Check metrics", {
   tmp <- as.numeric_version(
     list_rSOILWAT2_versions[length(list_rSOILWAT2_versions)]
   )
-  tmp[[c(1,2)]] <- as.integer(tmp[[c(1,2)]]) + 1
+  tmp[[c(1, 2)]] <- as.integer(tmp[[c(1, 2)]]) + 1
   nextv <- as.character(tmp)
 
   # Identify version

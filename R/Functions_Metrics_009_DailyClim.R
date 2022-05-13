@@ -261,7 +261,7 @@ calc_SWP_MPa <- function(
       )
 
     } else if (method == "by_layer") {
-      # (ii) convert SWC [cm] to matric VWC [cm/cm] (correct for coarse fragments)
+      # (ii) convert SWC [cm] to matric VWC [cm/cm] (coarse fragments!)
       x <- sweep(
         sim_swc_daily[, id_slyrs, drop = FALSE],
         MARGIN = 2,
