@@ -1348,24 +1348,13 @@ metric_Climate_annual <- function(
       ),
 
       # Temperature range (difference between tmax and tmin)
-      Trange_diurnal_C = tapply(
+      Trange_diurnal_C_annual = unname(tapply(
         X =
           sim_data[["day"]][["values"]][["tmax"]] -
           sim_data[["day"]][["values"]][["tmin"]],
         INDEX = sim_data[["day"]][["time"]][, "Year"],
         FUN = mean
-      ),
-      format_yearly_to_matrix(
-        x = tapply(
-          X =
-            sim_data[["day"]][["values"]][["tmax"]] -
-            sim_data[["day"]][["values"]][["tmin"]],
-          INDEX = sim_data[["day"]][["time"]][, "Year"],
-          FUN = mean
-        ),
-        years = ts_years,
-        out_labels = "Trange_diurnal_C"
-      ),
+      )),
 
       # SD of mean temperature
       format_yearly_to_matrix(
