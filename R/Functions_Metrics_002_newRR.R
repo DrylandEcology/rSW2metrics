@@ -1083,20 +1083,12 @@ get_SW2flux <- function(
       )
     )
 
-    foo <- switch(
-      EXPR = timestep,
-      yearly = format_yearly_to_matrix,
-      monthly = format_monthly_to_matrix
+    res[[k1]] <- format_values_to_matrix(
+      x = unname(lapply(sim_data[["val"]][["values"]], transform)),
+      ts_years = sim_data[["val"]][["time"]][, "Year"],
+      out_label = out_labels,
+      timestep = timestep
     )
-
-    ts_years <- unique(sim_data[["val"]][["time"]][, "Year"])
-
-    res[[k1]] <- foo(
-      x = lapply(sim_data[["val"]][["values"]], transform),
-      years = ts_years,
-      out_labels = out_labels
-    )
-
 
     if (include_year) {
       res[[k1]] <- rbind(
@@ -1300,52 +1292,32 @@ metric_Climate_annual <- function(
     # Helper variables
     ts_years <- sim_data[["yr"]][["time"]][, "Year"]
 
-    PPTinJAS <- tapply(
+    PPTinJAS <- unname(tapply(
       X = sim_data[["mon"]][["values"]][["ppt"]],
       INDEX = sim_data[["mon"]][["time"]][, "Year"],
       FUN = function(x) sum(x[7:9])
-    )
+    ))
 
 
     # Output
     res[[k1]] <- rbind(
       # Potential evapotranspiration
-      format_yearly_to_matrix(
-        x = 10 * sim_data[["yr"]][["values"]][["pet"]],
-        years = ts_years,
-        out_labels = "PET_mm"
-      ),
+      PET_mm_annual = 10 * sim_data[["yr"]][["values"]][["pet"]],
 
       # Climatic water deficit
-      format_yearly_to_matrix(
-        x = 10 * (
-          sim_data[["yr"]][["values"]][["pet"]] -
+      CWD_mm_annual = 10 * (
+        sim_data[["yr"]][["values"]][["pet"]] -
           sim_data[["yr"]][["values"]][["et"]]
-        ),
-        years = ts_years,
-        out_labels = "CWD_mm"
       ),
 
-      # Maximum temperature (mean across year)
-      format_yearly_to_matrix(
-        x = sim_data[["yr"]][["values"]][["tmax"]],
-        years = ts_years,
-        out_labels = "Tmax_mean_C"
-      ),
+      # Maximum temperature
+      Tmax_mean_C_annual = sim_data[["yr"]][["values"]][["tmax"]],
 
       # Mean temperature
-      format_yearly_to_matrix(
-        x = sim_data[["yr"]][["values"]][["tmean"]],
-        years = ts_years,
-        out_labels = "Tmean_mean_C"
-      ),
+      Tmean_mean_C_annual = sim_data[["yr"]][["values"]][["tmean"]],
 
-      # Minimum temperature (mean across year)
-      format_yearly_to_matrix(
-        x = sim_data[["yr"]][["values"]][["tmin"]],
-        years = ts_years,
-        out_labels = "Tmin_mean_C"
-      ),
+      # Minimum temperature
+      Tmin_mean_C_annual = sim_data[["yr"]][["values"]][["tmin"]],
 
       # Temperature range (difference between tmax and tmin)
       Trange_diurnal_C_annual = unname(tapply(
@@ -1357,108 +1329,60 @@ metric_Climate_annual <- function(
       )),
 
       # SD of mean temperature
-      format_yearly_to_matrix(
-        x = tapply(
-          X = sim_data[["day"]][["values"]][["tmean"]],
-          INDEX = sim_data[["day"]][["time"]][, "Year"],
-          FUN = sd
-        ),
-        years = ts_years,
-        out_labels = "Tmean_C_SD"
-      ),
+      Tmean_C_SD_annual = unname(tapply(
+        X = sim_data[["day"]][["values"]][["tmean"]],
+        INDEX = sim_data[["day"]][["time"]][, "Year"],
+        FUN = sd
+      )),
 
       # Temperature of hottest month
-      format_yearly_to_matrix(
-        x = tapply(
-          X = sim_data[["mon"]][["values"]][["tmean"]],
-          INDEX = sim_data[["mon"]][["time"]][, "Year"],
-          FUN = max
-        ),
-        years = ts_years,
-        out_labels = "Tmean_hottestmonth_C"
-      ),
+      Tmean_hottestmonth_C_annual = unname(tapply(
+        X = sim_data[["mon"]][["values"]][["tmean"]],
+        INDEX = sim_data[["mon"]][["time"]][, "Year"],
+        FUN = max
+      )),
 
       # Temperature of coldest month
-      format_yearly_to_matrix(
-        x = tapply(
-          X = sim_data[["mon"]][["values"]][["tmean"]],
-          INDEX = sim_data[["mon"]][["time"]][, "Year"],
-          FUN = min
-        ),
-        years = ts_years,
-        out_labels = "Tmean_coldestmonth_C"
-      ),
+      Tmean_coldestmonth_C_annual = unname(tapply(
+        X = sim_data[["mon"]][["values"]][["tmean"]],
+        INDEX = sim_data[["mon"]][["time"]][, "Year"],
+        FUN = min
+      )),
 
       # Precipitation
-      format_yearly_to_matrix(
-        x = 10 * sim_data[["yr"]][["values"]][["ppt"]],
-        years = ts_years,
-        out_labels = "PPT_mm"
-      ),
+      PPT_mm_annual = 10 * sim_data[["yr"]][["values"]][["ppt"]],
 
-      format_yearly_to_matrix(
-        x = 10 * sim_data[["yr"]][["values"]][["rain"]],
-        years = ts_years,
-        out_labels = "Rain_mm"
-      ),
+      Rain_mm_annual = 10 * sim_data[["yr"]][["values"]][["rain"]],
 
-      format_yearly_to_matrix(
-        x = 10 * sim_data[["yr"]][["values"]][["snow_fall"]],
-        years = ts_years,
-        out_labels = "Snowfall_mm"
-      ),
+      Snowfall_mm_annual = 10 * sim_data[["yr"]][["values"]][["snow_fall"]],
 
-      format_yearly_to_matrix(
-        x = 10 * sim_data[["yr"]][["values"]][["swe"]],
-        years = ts_years,
-        out_labels = "Snowpack_SWE_mm"
-      ),
+      Snowpack_SWE_mm_annual = 10 * sim_data[["yr"]][["values"]][["swe"]],
 
       # Ratio of rain to all precipitation
-      format_yearly_to_matrix(
-        x =
-          sim_data[["yr"]][["values"]][["rain"]] /
-          sim_data[["yr"]][["values"]][["ppt"]],
-        years = ts_years,
-        out_labels = "Rain_to_PPT"
-      ),
+      Rain_to_PPT_annual =
+        sim_data[["yr"]][["values"]][["rain"]] /
+        sim_data[["yr"]][["values"]][["ppt"]],
+
 
       # Ratio of July, August, and September precipitation to annual
-      format_yearly_to_matrix(
-        x = PPTinJAS / sim_data[["yr"]][["values"]][["ppt"]],
-        years = ts_years,
-        out_labels = "PPTinJAS_to_PPT"
-      ),
+      PPTinJAS_to_PPT_annual = PPTinJAS / sim_data[["yr"]][["values"]][["ppt"]],
 
       # Sum of precipitation in months of July, August, and September
-      format_yearly_to_matrix(
-        x = 10 * PPTinJAS,
-        years = ts_years,
-        out_labels = "PPTinJAS_mm"
-      ),
+      PPTinJAS_mm_annual = 10 * PPTinJAS,
 
       # Precipitation of the wettest month
-      format_yearly_to_matrix(
-        x = 10 * tapply(
-          X = sim_data[["mon"]][["values"]][["ppt"]],
-          INDEX = sim_data[["mon"]][["time"]][, "Year"],
-          FUN = max
-        ),
-        years = ts_years,
-        out_labels = "PPT_wettestmonth_mm"
-      ),
-
+      PPT_wettestmonth_mm_annual = 10 * unname(tapply(
+        X = sim_data[["mon"]][["values"]][["ppt"]],
+        INDEX = sim_data[["mon"]][["time"]][, "Year"],
+        FUN = max
+      )),
 
       # Precipitation of the driest month
-      format_yearly_to_matrix(
-        x = 10 * tapply(
-          X = sim_data[["mon"]][["values"]][["ppt"]],
-          INDEX = sim_data[["mon"]][["time"]][, "Year"],
-          FUN = min
-        ),
-        years = ts_years,
-        out_labels = "PPT_driestmonth_mm"
-      )
+      PPT_driestmonth_mm_annual = 10 * unname(tapply(
+        X = sim_data[["mon"]][["values"]][["ppt"]],
+        INDEX = sim_data[["mon"]][["time"]][, "Year"],
+        FUN = min
+      ))
     )
 
 
@@ -1520,52 +1444,56 @@ metric_Climate_monthly <- function(
 
 
     # Helper variables
-    ts_years <- unique(sim_data[["mon"]][["time"]][, "Year"])
-
+    ts_years <- sim_data[["mon"]][["time"]][, "Year"]
 
     # Output
     res[[k1]] <- rbind(
       # Potential evapotranspiration
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = 10 * sim_data[["mon"]][["values"]][["pet"]],
-        years = ts_years,
-        out_labels = "PET_mm"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "PET_mm"
       ),
 
       # Climatic water deficit
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = 10 * (
           sim_data[["mon"]][["values"]][["pet"]] -
             sim_data[["mon"]][["values"]][["et"]]
         ),
-        years = ts_years,
-        out_labels = "CWD_mm"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "CWD_mm"
       ),
 
       # Maximum temperature (mean across year)
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = sim_data[["mon"]][["values"]][["tmax"]],
-        years = ts_years,
-        out_labels = "Tmax_mean_C"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "Tmax_mean_C"
       ),
 
       # Mean temperature
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = sim_data[["mon"]][["values"]][["tmean"]],
-        years = ts_years,
-        out_labels = "Tmean_mean_C"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "Tmean_mean_C"
       ),
 
       # Minimum temperature (mean across year)
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = sim_data[["mon"]][["values"]][["tmin"]],
-        years = ts_years,
-        out_labels = "Tmin_mean_C"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "Tmin_mean_C"
       ),
 
       # Temperature range (difference between tmax and tmin)
-      format_monthly_to_matrix(
-        x = t(tapply(
+      format_values_to_matrix(
+        x = as.vector(t(tapply(
           X =
             sim_data[["day"]][["values"]][["tmax"]] -
             sim_data[["day"]][["values"]][["tmin"]],
@@ -1574,55 +1502,62 @@ metric_Climate_monthly <- function(
             sim_data[["day"]][["time"]][, "Month"]
           ),
           FUN = mean
-        )),
-        years = ts_years,
-        out_labels = "Trange_diurnal_C"
+        ))),
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "Trange_diurnal_C"
       ),
 
       # SD of mean temperature
-      format_monthly_to_matrix(
-        x = t(tapply(
+      format_values_to_matrix(
+        x = as.vector(t(tapply(
           X = sim_data[["day"]][["values"]][["tmean"]],
           INDEX = list(
             sim_data[["day"]][["time"]][, "Year"],
             sim_data[["day"]][["time"]][, "Month"]
           ),
           FUN = sd
-        )),
-        years = ts_years,
-        out_labels = "Tmean_C_SD"
+        ))),
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "Tmean_C_SD"
       ),
 
       # Precipitation
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = 10 * sim_data[["mon"]][["values"]][["ppt"]],
-        years = ts_years,
-        out_labels = "PPT_mm"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "PPT_mm"
       ),
 
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = 10 * sim_data[["mon"]][["values"]][["rain"]],
-        years = ts_years,
-        out_labels = "Rain_mm"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "Rain_mm"
       ),
 
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = 10 * sim_data[["mon"]][["values"]][["snow_fall"]],
-        years = ts_years,
-        out_labels = "Snowfall_mm"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "Snowfall_mm"
       ),
 
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = 10 * sim_data[["mon"]][["values"]][["swe"]],
-        years = ts_years,
-        out_labels = "Snowpack_SWE_mm"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "Snowpack_SWE_mm"
       ),
 
       # Monthly snowmelt
-      format_monthly_to_matrix(
+      format_values_to_matrix(
         x = 10 * sim_data[["mon"]][["values"]][["snowmelt"]],
-        years = ts_years,
-        out_labels = "Snowmelt_mm"
+        ts_years = ts_years,
+        timestep = "monthly",
+        out_label = "Snowmelt_mm"
       )
     )
 
@@ -1673,20 +1608,22 @@ calc_Tmean_monthly <- function(
         )
 
         if (out == "ts_years") {
-          format_monthly_to_matrix(
+          format_values_to_matrix(
             x = sim_data[["mon"]][["values"]][["tmean"]],
-            years = unique(sim_data[["mon"]][["time"]][, "Year"]),
-            out_labels = "Tmean_C"
+            ts_years = sim_data[["mon"]][["time"]][, "Year"],
+            timestep = "monthly",
+            out_label = "Tmean_C"
           )
         } else if (out == "across_years") {
-          format_monthly_to_matrix(
+          format_values_to_matrix(
             x = calc_climatology(
               X = sim_data[["mon"]][["values"]][["tmean"]],
               INDEX = sim_data[["mon"]][["time"]][, "Month"],
               FUN = fun_aggs_across_yrs
             ),
-            years = NA,
-            out_labels = "Tmean_C"
+            ts_years = NA,
+            timestep = "monthly",
+            out_label = "Tmean_C"
           )
         }
       }
@@ -1770,14 +1707,15 @@ metric_PPT_monthlyClim <- function(
           )
         )
 
-        format_monthly_to_matrix(
+        format_values_to_matrix(
           x = calc_climatology(
             X = 10 * sim_data[["mon"]][["values"]][["ppt"]],
             INDEX = sim_data[["mon"]][["time"]][, "Month"],
             FUN = fun_aggs_across_yrs
           ),
-          years = NA,
-          out_labels = "PPT_mm"
+          ts_years = NA,
+          timestep = "monthly",
+          out_label = "PPT_mm"
         )
       }
     )

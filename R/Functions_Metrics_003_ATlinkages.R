@@ -100,14 +100,15 @@ get_SWA_JJA <- function(
       FUN = mean
     )
 
-    res[[k1]] <- format_yearly_to_matrix(
-      x = list(tapply(
+    res[[k1]] <- format_values_to_matrix(
+      x = list(unname(tapply(
         X = x_monthly[["x"]],
         INDEX = x_monthly["Year"],
         FUN = function(x) mean(x[6:8])
-      )),
-      years = ts_years,
-      out_labels = out_label
+      ))),
+      ts_years = ts_years,
+      timestep = "yearly",
+      out_label = out_label
     )
 
     if (include_year) {
@@ -390,10 +391,11 @@ metric_PPT_daily <- function(
       )
     )
 
-    res[[k1]] <- format_daily_to_matrix(
+    res[[k1]] <- format_values_to_matrix(
       x = 10 * sim_data[["day"]][["values"]][["ppt"]],
-      time = sim_data[["day"]][["time"]],
-      out_labels = "PPT_mm",
+      ts_years = sim_data[["day"]][["time"]][["Year"]],
+      timestep = "daily",
+      out_label = "PPT_mm",
       include_year = include_year
     )
   }
@@ -428,10 +430,11 @@ metric_Tmean_daily <- function(
       )
     )
 
-    res[[k1]] <- format_daily_to_matrix(
+    res[[k1]] <- format_values_to_matrix(
       x = sim_data[["day"]][["values"]][["tmean"]],
-      time = sim_data[["day"]][["time"]],
-      out_labels = "Tmean_C",
+      ts_years = sim_data[["day"]][["time"]][["Year"]],
+      timestep = "daily",
+      out_label = "Tmean_C",
       include_year = include_year
     )
   }
@@ -488,20 +491,22 @@ get_SWA_daily <- function(
         )
 
         if (out == "across_years") {
-          format_daily_to_matrix(
+          format_values_to_matrix(
             x = calc_climatology(
               X = swa_daily[["values"]][[1]],
               INDEX = swa_daily[["time"]][, "Day"],
               FUN = fun_aggs_across_yrs
             ),
-            time = list(Year = NA),
-            out_labels = out_label
+            ts_years = NA,
+            timestep = "daily",
+            out_label = out_label
           )
         } else {
-          format_daily_to_matrix(
+          format_values_to_matrix(
             x = swa_daily[["values"]][[1]],
-            time = swa_daily[["time"]],
-            out_labels = out_label,
+            ts_years = swa_daily[["time"]][["Year"]],
+            timestep = "daily",
+            out_label = out_label,
             include_year = include_year
           )
         }
@@ -772,10 +777,11 @@ metric_DR_daily <- function(
       )
     )
 
-    res[[k1]] <- format_daily_to_matrix(
+    res[[k1]] <- format_values_to_matrix(
       x = 10 * sim_data[["day"]][["values"]][["dr"]],
-      time = sim_data[["day"]][["time"]],
-      out_labels = "DR_mm",
+      ts_years = sim_data[["day"]][["time"]][["Year"]],
+      timestep = "daily",
+      out_label = "DR_mm",
       include_year = include_year
     )
   }
@@ -819,22 +825,25 @@ metric_TEPET_daily <- function(
     t_daily <- 10 * apply(sim_data[["day"]][["values"]][["t"]], 1, sum)
 
     res[[k1]] <- rbind(
-      format_daily_to_matrix(
+      format_values_to_matrix(
         x = t_daily,
-        time = sim_data[["day"]][["time"]],
-        out_labels = "T_mm",
+        ts_years = sim_data[["day"]][["time"]][["Year"]],
+        timestep = "daily",
+        out_label = "T_mm",
         include_year = include_year
       ),
-      format_daily_to_matrix(
-        x = 10 * sim_data[["day"]][["values"]][["et"]] - t_daily,
-        time = sim_data[["day"]][["time"]],
-        out_labels = "E_mm",
+      format_values_to_matrix(
+        x = 10 * unname(sim_data[["day"]][["values"]][["et"]]) - t_daily,
+        ts_years = sim_data[["day"]][["time"]][["Year"]],
+        timestep = "daily",
+        out_label = "E_mm",
         include_year = include_year
       ),
-      format_daily_to_matrix(
-        x = 10 * sim_data[["day"]][["values"]][["pet"]],
-        time = sim_data[["day"]][["time"]],
-        out_labels = "PET_mm",
+      format_values_to_matrix(
+        x = 10 * unname(sim_data[["day"]][["values"]][["pet"]]),
+        ts_years = sim_data[["day"]][["time"]][["Year"]],
+        timestep = "daily",
+        out_label = "PET_mm",
         include_year = include_year
       )
     )

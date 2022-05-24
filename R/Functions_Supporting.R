@@ -1027,67 +1027,6 @@ peak_size_v2 <- function(
 }
 
 
-#' @param years An integer vector. The sequence of years that `x` covers.
-#'   If a climatology, then set `years` to `NA`.
-#' @noRd
-#' @md
-format_monthly_to_matrix <- function(x, years, out_labels) {
-  if (!is.list(x) && length(out_labels) == 1) {
-    x <- list(x)
-  }
-
-  nmon <- paste0("mon", formatC(seq_len(12), width = 2, flag = "0"))
-  if (
-    !missing(out_labels) &&
-    length(out_labels) > 0 &&
-    all(nchar(out_labels) > 0)
-  ) {
-    nmon <- paste(rep(out_labels, each = 12), nmon, sep = "_")
-  }
-
-
-  tmp <- lapply(
-    seq_along(x),
-    function(k) {
-      array(
-        data = x[[k]],
-        dim = c(12, length(years))
-      )
-    }
-  )
-
-  res <- do.call(rbind, tmp)
-  rownames(res) <- nmon
-
-  res
-}
-
-format_yearly_to_matrix <- function(x, years, out_labels) {
-  nyr <- "annual"
-  if (
-    !missing(out_labels) &&
-    length(out_labels) > 0 &&
-    all(nchar(out_labels) > 0)
-  ) {
-    nyr <- paste(out_labels, nyr, sep = "_")
-  }
-
-  nx <- if (is.list(x) && all(lengths(x) == length(years))) {
-    length(x)
-  } else {
-    1
-  }
-
-  matrix(
-    data = unlist(x),
-    nrow = nx,
-    ncol = length(years),
-    dimnames = list(nyr, NULL),
-    byrow = TRUE
-  )
-}
-
-
 #------ ATLINKAGES DEVELOPMENT ERA ------
 get_variable_in_months <- function(
   path, name_sw2_run, id_scen_used,
@@ -1117,18 +1056,19 @@ get_variable_in_months <- function(
       )
     )
 
-    # Helper variables
-    ts_years <- unique(tmp_mon[[1]][["time"]][, "Year"])
 
     # Calculate and format
-    res[[k1]] <- format_yearly_to_matrix(
-      x = var_scaler * tapply(
+    ts_years <- unique(tmp_mon[[1]][["time"]][, "Year"])
+
+    res[[k1]] <- format_values_to_matrix(
+      x = var_scaler * unname(tapply(
         X = tmp_mon[[1]][["values"]][[sw2_var]],
         INDEX = tmp_mon[[1]][["time"]][, "Year"],
         FUN = function(x) fun_time(x[months])
-      ),
-      years = ts_years,
-      out_labels = var_label
+      )),
+      ts_years = ts_years,
+      timestep = "yearly",
+      out_label = var_label
     )
 
     if (include_year) {
@@ -1142,50 +1082,144 @@ get_variable_in_months <- function(
   res
 }
 
-#' @param time
-#'   If a climatology, then set `time = list(Years = NA)`
+
+#------ FORMAT VALUES ------
+#' Convert daily, monthly, or yearly values to a matrix
+#'
+#' @param x A numeric vector (or a list with a vector), data.frame, or a matrix.
+#'   Rows represent time and columns separate variables.
+#' @param ts_years A numeric vector.
+#'   The time series of years that the rows of `x` represent.
+#'   If a climatology, then set `ts_years` to `NA`.
+#' @param out_label A character vector. The labels representing columns of `x`.
+#' @param timestep A character string.
+#' @param include_year A logical value. If `TRUE` then adds a first row of
+#'   years.
+#'
+#' @return A matrix where columns represent years and
+#'   rows represent within-year values
+#'   (repeated blocks if multiple elements/columns in `x`), i.e.,
+#'   none for yearly,
+#'   month of year 1 through 12 for monthly,
+#'   or day of year 1 through 366 for daily time step.
+#'   Row names are constructed from the combinations of time step,
+#'   the names of `x` (if any), and `out_label` (if not `NULL`).
+#'
+#' @examples
+#' format_values_to_matrix(
+#'   data.frame(a = 1:10, b = 20:29),
+#'   ts_years = 1:10,
+#'   timestep = "yearly",
+#'   out_label = NULL
+#' )
+#' format_values_to_matrix(
+#'   data.frame(a = 1:10, b = 20:29),
+#'   ts_years = NA,
+#'   timestep = "yearly",
+#'   out_label = LETTERS[1:10]
+#' )
+#'
 #' @noRd
-format_daily_to_matrix <- function(x, time, out_labels, include_year = FALSE) {
-  if (!is.list(x)) {
-    x <- list(x)
-  }
-
-  ndoy <- paste0("doy", formatC(seq_len(366), width = 3, flag = "0"))
-
-  if (
-    !missing(out_labels) &&
-    length(out_labels) > 0 &&
-    all(nchar(out_labels) > 0)
-  ) {
-    ndoy <- paste(rep(out_labels, each = 366), ndoy, sep = "_")
-  }
-
-  ts_years <- if (is.list(time)) time[["Year"]] else time[, "Year"]
+#' @md
+format_values_to_matrix <- function(
+  x,
+  ts_years,
+  timestep = c("daily", "monthly", "yearly"),
+  out_label = NULL,
+  include_year = FALSE
+) {
+  timestep <- match.arg(timestep)
   years <- unique(ts_years)
-  doys366 <- seq_len(366)
-  doys365 <- seq_len(365)
-
-  x_template <- array(dim = c(366, length(years)))
   is_clim <- isTRUE(is.na(years))
 
-  tmp <- lapply(
-    seq_along(x),
-    function(k1) {
-      xtmp <- x_template
-      for (k2 in seq_along(years)) {
-        if (is_clim) {
-          xtmp[seq_along(x[[k1]]), k2] <- x[[k1]]
-        } else {
-          doys <- if (rSW2utils::isLeapYear(years[k2])) doys366 else doys365
-          xtmp[doys, k2] <- x[[k1]][ts_years == years[k2]]
-        }
-      }
-      xtmp
+  if (!is.list(x)) {
+    if (is.matrix(x)) {
+      ns_x <- colnames(x)
+      x <- as.data.frame(x)
+      colnames(x) <- ns_x
+    } else {
+      x <- list(x)
     }
+  }
+
+  if (timestep == "daily") {
+    doys366 <- seq_len(366)
+    doys365 <- seq_len(365)
+    x_template <- array(dim = c(366, length(years)))
+  }
+
+
+  #--- Determine row names
+  tmp <- list(
+    switch(
+      EXPR = timestep,
+      yearly = "annual",
+      monthly = paste0("mon", formatC(seq_len(12), width = 2, flag = "0")),
+      daily = paste0("doy", formatC(doys366, width = 3, flag = "0"))
+    ),
+    names(x),
+    out_label
   )
 
-  res <- do.call(rbind, tmp)
-  rownames(res) <- ndoy
+  ns_row <- apply(
+    expand.grid(tmp[lengths(tmp) > 0]),
+    MARGIN = 1,
+    FUN = function(x) paste0(rev(x), collapse = "_")
+  )
+
+
+  #--- Format as matrix (columns represent years)
+
+  if (timestep == "yearly") {
+    tmp <- unlist(x)
+
+    res <- matrix(
+      data = tmp,
+      nrow = if (is_clim) {
+        length(tmp)
+      } else if (all(lengths(x) == length(ts_years))) {
+        length(x)
+      } else {
+        1
+      },
+      ncol = length(ts_years),
+      dimnames = list(ns_row, NULL),
+      byrow = TRUE
+    )
+
+  } else {
+    tmp <- if (timestep == "monthly") {
+      lapply(
+        seq_along(x),
+        function(k) {
+          array(
+            data = x[[k]],
+            dim = c(12, length(years))
+          )
+        }
+      )
+
+    } else if (timestep == "daily") {
+      lapply(
+        seq_along(x),
+        function(k1) {
+          xtmp <- x_template
+          for (k2 in seq_along(years)) {
+            if (is_clim) {
+              xtmp[seq_along(x[[k1]]), k2] <- x[[k1]]
+            } else {
+              doys <- if (rSW2utils::isLeapYear(years[k2])) doys366 else doys365
+              xtmp[doys, k2] <- x[[k1]][ts_years == years[k2]]
+            }
+          }
+          xtmp
+        }
+      )
+    }
+
+    res <- do.call(rbind, tmp)
+    rownames(res) <- ns_row
+  }
 
   if (include_year) {
     res <- rbind(Year = years, res)
@@ -1193,7 +1227,6 @@ format_daily_to_matrix <- function(x, time, out_labels, include_year = FALSE) {
 
   res
 }
-
 
 
 

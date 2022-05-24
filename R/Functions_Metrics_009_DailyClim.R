@@ -32,14 +32,15 @@ metric_Tmean_dailyClim <- function(
           )
         )
 
-        format_daily_to_matrix(
+        format_values_to_matrix(
           x = calc_climatology(
             X = sim_data[["day"]][["values"]][["tmean"]],
             INDEX = sim_data[["day"]][["time"]][, "Day"],
             FUN = fun_aggs_across_yrs
           ),
-          time = list(Year = NA),
-          out_labels = "Tmean_C"
+          ts_years = NA,
+          timestep = "daily",
+          out_label = "Tmean_C"
         )
       }
     )
@@ -84,14 +85,15 @@ metric_PPT_dailyClim <- function(
           )
         )
 
-        format_daily_to_matrix(
+        format_values_to_matrix(
           x = calc_climatology(
             X = 10 * sim_data[["day"]][["values"]][["ppt"]],
             INDEX = sim_data[["day"]][["time"]][, "Day"],
             FUN = fun_aggs_across_yrs
           ),
-          time = list(Year = NA),
-          out_labels = "PPT_mm"
+          ts_years = NA,
+          timestep = "daily",
+          out_label = "PPT_mm"
         )
       }
     )
@@ -355,16 +357,18 @@ get_SWP_daily <- function(
         )
 
         if (out == "across_years") {
-          format_daily_to_matrix(
-            x = swp_daily[["values"]][[1]],
-            time = list(Year = NA),
-            out_labels = out_label
+          format_values_to_matrix(
+            x = swp_daily[["values"]],
+            ts_years = NA,
+            timestep = "daily",
+            out_label = out_label
           )
         } else {
-          format_daily_to_matrix(
-            x = swp_daily[["values"]][[1]],
-            time = swp_daily[["time"]],
-            out_labels = out_label,
+          format_values_to_matrix(
+            x = swp_daily[["values"]],
+            ts_years = sim_data[["swc_daily"]][["time"]][["Year"]],
+            timestep = "daily",
+            out_label = out_label,
             include_year = include_year
           )
         }

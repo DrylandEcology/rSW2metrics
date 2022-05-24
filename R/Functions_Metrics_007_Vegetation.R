@@ -153,16 +153,11 @@ get_veg_biomass_v2 <- function(
       )
     )
 
-    foo <- switch(
-      EXPR = timestep,
-      yearly = format_yearly_to_matrix,
-      monthly = format_monthly_to_matrix
-    )
-
-    res[[k1]] <- foo(
-      x = sim_data[["val"]][["values"]],
-      years = unique(sim_data[["val"]][["time"]][, "Year"]),
-      out_labels = tmp_veg
+    res[[k1]] <- format_values_to_matrix(
+      x = unname(sim_data[["val"]][["values"]]),
+      ts_years = sim_data[["val"]][["time"]][, "Year"],
+      timestep = timestep,
+      out_label = tmp_veg
     )
   }
 
@@ -251,20 +246,15 @@ get_veg_biomass_v1 <- function(
       fail = FALSE
     )
 
-    foo <- switch(
-      EXPR = timestep,
-      yearly = format_yearly_to_matrix,
-      monthly = format_monthly_to_matrix
-    )
-
-    res[[k1]] <- foo(
-      x = c(
+    res[[k1]] <- format_values_to_matrix(
+      x = unname(c(
         sim_data[["val"]][["values"]][tmp_veg_tbm],
         Biomass_litter = list(rep(NA, nrow(sim_data[["val"]][["time"]]))),
         sim_data[["val"]][["values"]][tmp_veg_lbm]
-      ),
-      years = unique(sim_data[["val"]][["time"]][, "Year"]),
-      out_labels = tmp_veg_metrics
+      )),
+      ts_years = sim_data[["val"]][["time"]][, "Year"],
+      timestep = timestep,
+      out_label = tmp_veg_metrics
     )
   }
 
