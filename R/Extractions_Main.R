@@ -471,6 +471,7 @@ extract_metrics <- function(args) {
       } else {
         prjpars[["years_aggs_by_scen"]]
       },
+      fun_aggs_across_yrs = prjpars[["fun_aggs_across_yrs"]],
       group_by_month = prjpars[["season_by_month"]],
       first_month_of_year = prjpars[["first_month_of_year"]]
     )

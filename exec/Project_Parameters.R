@@ -50,6 +50,12 @@ years_timeseries_by_scen <- c(
 
 
 #--- Across-year aggregations of metrics
+# Two options for across-year summaries
+#  1) Request across-year summaries for time-series metric,
+#     i.e., pass options `-add_aggs_across_yrs` and `-ts` on the command line
+#  2) Request a climatology metric, i.e., a metric that ends in "Clim"
+
+# Years over which option `-add_aggs_across_yrs` summarizes
 years_aggs_by_scen <- c(
   list(list(hist = years_historical)),
   lapply(
@@ -58,7 +64,7 @@ years_aggs_by_scen <- c(
   )
 )
 
-# `fun_aggs_across_yrs` required only if `-add_aggs_across_yrs` and `-ts`
+# Function that produces across-year summaries
 fun_aggs_across_yrs <- rSW2metrics::mean_cv_trend
 
 

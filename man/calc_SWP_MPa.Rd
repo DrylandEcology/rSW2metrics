@@ -10,7 +10,8 @@ calc_SWP_MPa(
   soils,
   used_depth_range_cm = NULL,
   method = c("across_profile", "by_layer"),
-  out = c("ts_years", "across_years")
+  out = c("ts_years", "across_years"),
+  fun_aggs_across_yrs = mean
 )
 }
 \arguments{
@@ -28,6 +29,9 @@ as numeric vectors with values for each soil layer.}
 \item{method}{A character string.}
 
 \item{out}{A character string.}
+
+\item{fun_aggs_across_yrs}{A function that calculates across-year
+summaries that returns a named or unnamed vector.}
 }
 \value{
 A list with elements "time" and "values" where values represent

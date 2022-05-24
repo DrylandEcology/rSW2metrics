@@ -95,6 +95,15 @@ check_metric_arguments <- function(out, req_soil_vars) {
         "for function ", shQuote(fun_name)
       )
     }
+
+    if (!"fun_aggs_across_yrs" %in% names(fun_args)) {
+      stop(
+        "'fun_aggs_across_yrs' ",
+        "is a required argument ",
+        "for function ", shQuote(fun_name)
+      )
+    }
+
   } else if (out %in% "raw") {
   }
 

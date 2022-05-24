@@ -1642,6 +1642,7 @@ metric_Climate_monthly <- function(
 calc_Tmean_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "across_years"),
+  fun_aggs_across_yrs = mean,
   ...
 ) {
   res <- list()
@@ -1679,10 +1680,10 @@ calc_Tmean_monthly <- function(
           )
         } else if (out == "across_years") {
           format_monthly_to_matrix(
-            x = tapply(
+            x = calc_climatology(
               X = sim_data[["mon"]][["values"]][["tmean"]],
               INDEX = sim_data[["mon"]][["time"]][, "Month"],
-              FUN = mean
+              FUN = fun_aggs_across_yrs
             ),
             years = NA,
             out_labels = "Tmean_C"
@@ -1721,6 +1722,7 @@ metric_Tmean_monthly <- function(
 metric_Tmean_monthlyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  fun_aggs_across_yrs = mean,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -1731,6 +1733,7 @@ metric_Tmean_monthlyClim <- function(
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
+    fun_aggs_across_yrs = fun_aggs_across_yrs,
     ...
   )
 }
@@ -1741,6 +1744,7 @@ metric_Tmean_monthlyClim <- function(
 metric_PPT_monthlyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  fun_aggs_across_yrs = mean,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -1767,10 +1771,10 @@ metric_PPT_monthlyClim <- function(
         )
 
         format_monthly_to_matrix(
-          x = tapply(
+          x = calc_climatology(
             X = 10 * sim_data[["mon"]][["values"]][["ppt"]],
             INDEX = sim_data[["mon"]][["time"]][, "Month"],
-            FUN = mean
+            FUN = fun_aggs_across_yrs
           ),
           years = NA,
           out_labels = "PPT_mm"

@@ -446,6 +446,7 @@ get_SWA_daily <- function(
   out_label,
   include_year = FALSE,
   out = c("ts_years", "across_years"),
+  fun_aggs_across_yrs = mean,
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
@@ -488,10 +489,10 @@ get_SWA_daily <- function(
 
         if (out == "across_years") {
           format_daily_to_matrix(
-            x = tapply(
+            x = calc_climatology(
               X = swa_daily[["values"]][[1]],
               INDEX = swa_daily[["time"]][, "Day"],
-              FUN = mean
+              FUN = fun_aggs_across_yrs
             ),
             time = list(Year = NA),
             out_labels = out_label

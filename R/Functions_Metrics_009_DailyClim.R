@@ -5,6 +5,7 @@
 metric_Tmean_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  fun_aggs_across_yrs = mean,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -32,10 +33,10 @@ metric_Tmean_dailyClim <- function(
         )
 
         format_daily_to_matrix(
-          x = tapply(
+          x = calc_climatology(
             X = sim_data[["day"]][["values"]][["tmean"]],
             INDEX = sim_data[["day"]][["time"]][, "Day"],
-            FUN = mean
+            FUN = fun_aggs_across_yrs
           ),
           time = list(Year = NA),
           out_labels = "Tmean_C"
@@ -56,6 +57,7 @@ metric_Tmean_dailyClim <- function(
 metric_PPT_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  fun_aggs_across_yrs = mean,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -83,10 +85,10 @@ metric_PPT_dailyClim <- function(
         )
 
         format_daily_to_matrix(
-          x = tapply(
+          x = calc_climatology(
             X = 10 * sim_data[["day"]][["values"]][["ppt"]],
             INDEX = sim_data[["day"]][["time"]][, "Day"],
-            FUN = mean
+            FUN = fun_aggs_across_yrs
           ),
           time = list(Year = NA),
           out_labels = "PPT_mm"
@@ -107,6 +109,7 @@ metric_PPT_dailyClim <- function(
 metric_SWAat0to020cm39bar_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  fun_aggs_across_yrs = mean,
   soils,
   ...
 ) {
@@ -128,6 +131,7 @@ metric_SWAat0to020cm39bar_dailyClim <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
+    fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWAat0to020cm39bar_mm",
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
@@ -141,6 +145,7 @@ metric_SWAat0to020cm39bar_dailyClim <- function(
 metric_SWAat20to100cm39bar_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  fun_aggs_across_yrs = mean,
   soils,
   ...
 ) {
@@ -162,6 +167,7 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
+    fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWAat20to100cm39bar_mm",
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
@@ -196,6 +202,8 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
 #' @param used_depth_range_cm A numeric vector of length two.
 #' @param method A character string.
 #' @param out A character string.
+#' @param fun_aggs_across_yrs A function that calculates across-year
+#'   summaries that returns a named or unnamed vector.
 #'
 #' @return A list with elements "time" and "values" where values represent
 #'  soil water potential in units `MPa`:
@@ -216,7 +224,8 @@ calc_SWP_MPa <- function(
   soils,
   used_depth_range_cm = NULL,
   method = c("across_profile", "by_layer"),
-  out = c("ts_years", "across_years")
+  out = c("ts_years", "across_years"),
+  fun_aggs_across_yrs = mean
 ) {
   method <- match.arg(method)
   out <- match.arg(out)
@@ -234,31 +243,17 @@ calc_SWP_MPa <- function(
   if (length(id_slyrs) > 0) {
     widths_cm <- widths_cm[id_slyrs]
 
-    values <- if (method == "across_profile") {
+    if (method == "across_profile") {
       # (i) aggregate SWC [cm] across soil layers (if requested)
       x <- rowSums(
         sim_swc_daily[, id_slyrs, drop = FALSE]
       )
 
-      # (ii) convert SWC [cm] to matric VWC [cm/cm] (remove coarse fragments)
+      # (ii) convert SWC [cm] to matric VWC [cm/cm] (coarse fragments!)
       x <- x / sum(widths_cm * (1 - soils[["gravel_content"]][id_slyrs]))
 
-      # (iii) aggregate across years (if requested)
-      if (out == "across_years") {
-        tmp <- tapply(X = x, INDEX = time, FUN = mean)
-        x <- unname(tmp)
-        used_time <- as.integer(names(tmp))
-
-      } else if (out == "ts_years") {
-        used_time <- time
-      }
-
-      # (iv) translate matric VWC to SWP [MPa]
-      rSOILWAT2::VWCtoSWP(
-        x,
-        sand = weighted.mean(soils[["sand_frac"]][id_slyrs], widths_cm),
-        clay = weighted.mean(soils[["clay_frac"]][id_slyrs], widths_cm)
-      )
+      sand_used <- weighted.mean(soils[["sand_frac"]][id_slyrs], widths_cm)
+      clay_used <- weighted.mean(soils[["clay_frac"]][id_slyrs], widths_cm)
 
     } else if (method == "by_layer") {
       # (ii) convert SWC [cm] to matric VWC [cm/cm] (coarse fragments!)
@@ -269,37 +264,40 @@ calc_SWP_MPa <- function(
         FUN = "/"
       )
 
-      if (out == "across_years") {
-        # (iii) aggregate across years (if requested)
-        tmp <- aggregate(
-          x,
-          by = list(time = time),
-          FUN = mean
-        )
-        x <- tmp[, -1, drop = FALSE]
-        used_time <- tmp[, "time", drop = TRUE]
+      colnames(x) <- paste0("L", seq_len(ncol(x)))
 
-      } else if (out == "ts_years") {
-        used_time <- time
-      }
-
-      # (iv) translate matric VWC to SWP [MPa]
-      rSOILWAT2::VWCtoSWP(
-        x,
-        sand = soils[["sand_frac"]][id_slyrs],
-        clay = soils[["clay_frac"]][id_slyrs]
-      )
+      sand_used <- soils[["sand_frac"]][id_slyrs]
+      clay_used <- soils[["clay_frac"]][id_slyrs]
     }
+
+
+    # (iii) aggregate across years (if requested)
+    if (out == "across_years") {
+      x <- calc_climatology(X = x, INDEX = time, FUN = fun_aggs_across_yrs)
+      used_time <- unique(time)
+
+    } else if (out == "ts_years") {
+      used_time <- time
+    }
+
+    # (iv) translate matric VWC to SWP [MPa]
+    values <- as.data.frame(rSOILWAT2::VWCtoSWP(
+      as.matrix(x),
+      sand = sand_used,
+      clay = clay_used
+    ))
+    # `rSOILWAT2::VWCtoSWP()` currently removes column names
+    colnames(values) <- colnames(x)
 
   } else {
     # No soil layers in the depth range
     used_time <- switch(out, ts_years = time, across_years = unique(time))
-    values <- rep_len(NA, length.out = length(used_time))
+    values <- as.data.frame(rep_len(NA, length.out = length(used_time)))
   }
 
   list(
     time = used_time,
-    values = list(values)
+    values = values
   )
 }
 
@@ -311,8 +309,9 @@ get_SWP_daily <- function(
   list_years_scen_used,
   soils,
   used_depth_range_cm = NULL,
-  method = c("across_profile", "by_layer"),
+  method = "across_profile",
   out = c("ts_years", "across_years"),
+  fun_aggs_across_yrs = mean,
   out_label = "SWP_MPa",
   include_year = FALSE,
   ...
@@ -351,7 +350,8 @@ get_SWP_daily <- function(
           soils = soils,
           used_depth_range_cm = used_depth_range_cm,
           method = "across_profile",
-          out = out
+          out = out,
+          fun_aggs_across_yrs = fun_aggs_across_yrs
         )
 
         if (out == "across_years") {
@@ -387,6 +387,7 @@ get_SWP_daily <- function(
 metric_SWPat0to020cm_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  fun_aggs_across_yrs = mean,
   soils,
   ...
 ) {
@@ -408,6 +409,7 @@ metric_SWPat0to020cm_dailyClim <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
+    fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWPat0to020cm_MPa",
     soils = soils,
     used_depth_range_cm = used_depth_range_cm
@@ -420,6 +422,7 @@ metric_SWPat0to020cm_dailyClim <- function(
 metric_SWPat20to100cm_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  fun_aggs_across_yrs = mean,
   soils,
   ...
 ) {
@@ -441,6 +444,7 @@ metric_SWPat20to100cm_dailyClim <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
+    fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWPat20to100cm_MPa",
     soils = soils,
     used_depth_range_cm = used_depth_range_cm

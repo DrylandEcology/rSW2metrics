@@ -284,7 +284,10 @@ test_that("Check metrics", {
     id_scen_used = prjpars[["id_scen_used"]],
     group_by_month = prjpars[["season_by_month"]],
     first_month_of_year = prjpars[["first_month_of_year"]],
-    dir_out_SW2toTable = tempdir()
+    dir_out_SW2toTable = tempdir(),
+    # We use `mean` for across-year summaries for historical reasons;
+    # this would be `prjpars[["fun_aggs_across_yrs"]]` in production
+    fun_aggs_across_yrs = mean
   )
 
 
