@@ -511,7 +511,7 @@ get_swp_weighted <- function(
 }
 
 
-get_new_yearly_aggregations <- function(
+calc_new_yearly_aggregations <- function(
   x_daily,
   temp_monthly,
   fun_time, # sum

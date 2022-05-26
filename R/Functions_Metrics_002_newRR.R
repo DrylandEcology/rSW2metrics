@@ -1,6 +1,12 @@
 
 #------ New metrics ------
 
+# Type of functions
+#  * `metric_*()` load simulations and calculate a specific response
+#  * `get_*()` functions load simulations and calculate a response
+#  * `calc_*()` functions calculate a response
+
+
 get_rh <- function(path, name_sw2_run, id_scen, years) {
   # Extract a variable from outputs as template
   res <- extract_from_sw2(
@@ -96,6 +102,10 @@ get_vpd <- function(
 
 
 #--- CWD = climatic water deficit [mm] = PET - ET
+calc_CWD_mm <- function(pet_cm, et_cm) {
+  10 * (pet_cm - et_cm)
+}
+
 metric_CWD <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
@@ -133,15 +143,15 @@ metric_CWD <- function(
     cwd_daily <- list(
       time = sim_data[["day"]][["time"]],
       values = list(
-        cwd = 10 * (
-          sim_data[["day"]][["values"]][["pet"]] -
-          sim_data[["day"]][["values"]][["et"]]
+        cwd = calc_CWD_mm(
+          pet_cm = sim_data[["day"]][["values"]][["pet"]],
+          et_cm = sim_data[["day"]][["values"]][["et"]]
         )
       )
     )
 
     res[[k1]] <- if (out == "ts_years") {
-      t(get_new_yearly_aggregations(
+      t(calc_new_yearly_aggregations(
         x_daily = cwd_daily,
         # (Monthly) mean air temperature
         temp_monthly = sim_data[["mon"]],
@@ -168,7 +178,8 @@ metric_CWD <- function(
 # wet based on any(SWC[i] > SWC_limit)
 # dry based on all(SWC[i] < SWC_limit)
 calc_wetdry <- function(
-  sim_swp_daily,
+  swp_daily_negbar,
+  time_daily,
   soils,
   used_depth_range_cm = NULL,
   sm_periods = list(op = `>`, limit = -Inf)
@@ -181,21 +192,21 @@ calc_wetdry <- function(
     id_slyrs <- determine_used_soillayers(
       soil_depths_cm = soils[["depth_cm"]],
       used_depth_range_cm = used_depth_range_cm,
-      n_slyrs_has = ncol(sim_swp_daily[["values"]][["swp"]])
+      n_slyrs_has = ncol(swp_daily_negbar)
     )
 
     # Days that meet soil moisture criterion
     sm <- do.call(
       what = sm_periods[["op"]],
       args = list(
-        - 1 / 10 * sim_swp_daily[["values"]][["swp"]][, id_slyrs, drop = FALSE],
+        - 1 / 10 * swp_daily_negbar[, id_slyrs, drop = FALSE],
         sm_periods[["limit"]]
       )
     )
 
   } else {
     # Shortcut for infinite soil moisture limits --> no need for actual data
-    tmp <- rep(TRUE, nrow(sim_swp_daily[["time"]]))
+    tmp <- rep(TRUE, nrow(time_daily))
 
     sm <- matrix(
       data = if (is_op_lt) {
@@ -208,7 +219,7 @@ calc_wetdry <- function(
   }
 
   list(
-    time = sim_swp_daily[["time"]],
+    time = time_daily,
     values = if (is_op_lt) {
       # wet: op = `>` --> wet(profile) = any(wet[i])
       list(apply(sm, 1, any))
@@ -233,7 +244,8 @@ calc_MDD_daily <- function(
 
   # Daily wet/dry conditions
   sm <- calc_wetdry(
-    sim_swp_daily = sim_data[["swp_daily"]],
+    swp_daily_negbar = sim_data[["swp_daily"]][["values"]][["swp"]],
+    time_daily = sim_data[["swp_daily"]][["time"]],
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     sm_periods = sm_periods
@@ -336,7 +348,7 @@ metric_TDDat5C <- function(
 
     # Aggregate daily TDD to annual values
     res[[k1]] <- if (out == "ts_years") {
-      t(get_new_yearly_aggregations(
+      t(calc_new_yearly_aggregations(
         x_daily = tdd_daily,
         fun_time = sum,
         fun_extreme = max,
@@ -420,7 +432,7 @@ metric_WDDat5C0to100cm15bar <- function(
 
     # Aggregate daily WDD to annual values
     res[[k1]] <- if (out == "ts_years") {
-      t(get_new_yearly_aggregations(
+      t(calc_new_yearly_aggregations(
         x_daily = wdd_daily,
         temp_monthly = sim_data[["temp_monthly"]],
         fun_time = sum,
@@ -438,7 +450,7 @@ metric_WDDat5C0to100cm15bar <- function(
 
 
 #--- DDD = Dry degree days [C x day] = MDD(op = `<`, limit_MPa = -3.0 MPa)
-calc_DDD_yearly <- function(
+get_DDD_yearly <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out = c("ts_years", "raw"),
@@ -489,7 +501,7 @@ calc_DDD_yearly <- function(
     )
 
     res[[k1]] <- if (out == "ts_years") {
-      t(get_new_yearly_aggregations(
+      t(calc_new_yearly_aggregations(
         x_daily = ddd_daily,
         fun_time = sum,
         fun_extreme = max,
@@ -517,7 +529,7 @@ metric_DDDat5C0to030cm30bar <- function(
     req_soil_vars = "depth_cm"
   ))
 
-  calc_DDD_yearly(
+  get_DDD_yearly(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
@@ -544,7 +556,7 @@ metric_DDDat5C0to100cm30bar <- function(
     req_soil_vars = "depth_cm"
   ))
 
-  calc_DDD_yearly(
+  get_DDD_yearly(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
@@ -722,7 +734,7 @@ get_SWA <- function(
     )
 
     res[[k1]] <- if (out == "ts_years") {
-      t(get_new_yearly_aggregations(
+      t(calc_new_yearly_aggregations(
         x_daily = swa_daily,
         temp_monthly = sim_data[["mon"]],
         fun_time = mean,
@@ -791,8 +803,43 @@ metric_SWAat0to100cm39bar <- function(
 
 #--- DSI = Duration of dry soil intervals at -1.5 and -3.0 SWP thresholds
 
-# dry based on MDD
 calc_DSI <- function(
+  swp_daily_negbar,
+  time_daily,
+  soils,
+  used_depth_range_cm,
+  SWP_limit_MPa
+) {
+  # Daily wet/dry conditions
+  dry_daily <- calc_wetdry(
+    swp_daily_negbar = swp_daily_negbar,
+    time_daily = time_daily,
+    soils = soils,
+    used_depth_range_cm = used_depth_range_cm,
+    sm_periods = list(op = `<`, limit = SWP_limit_MPa)
+  )
+
+  tapply(
+    X = dry_daily[["values"]][[1]],
+    INDEX = dry_daily[["time"]][, "Year"],
+    FUN = function(x) {
+      if (anyNA(x)) {
+        # propagate NAs
+        NA
+      } else {
+        tmp <- rle(x)
+        if (any(tmp[["values"]] == 1)) {
+          tmp[["lengths"]][tmp[["values"]]]
+        } else {
+          0
+        }
+      }
+    }
+  )
+}
+
+
+get_DSI <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out = c("ts_years", "raw"),
@@ -822,31 +869,14 @@ calc_DSI <- function(
       )
     )
 
-    # Daily wet/dry conditions
-    dry_daily <- calc_wetdry(
-      sim_swp_daily = sim_data[["swp_daily"]],
+    tmp_dsi <- calc_DSI(
+      swp_daily_negbar = sim_data[["swp_daily"]][["values"]][["swp"]],
+      time_daily = sim_data[["swp_daily"]][["time"]],
       soils = soils,
       used_depth_range_cm = used_depth_range_cm,
-      sm_periods = list(op = `<`, limit = SWP_limit_MPa)
+      SWP_limit_MPa = SWP_limit_MPa
     )
 
-    tmp_dsi <- tapply(
-      X = dry_daily[["values"]][[1]],
-      INDEX = dry_daily[["time"]][, "Year"],
-      FUN = function(x) {
-        if (anyNA(x)) {
-          # propagate NAs
-          NA
-        } else {
-          tmp <- rle(x)
-          if (any(tmp[["values"]] == 1)) {
-            tmp[["lengths"]][tmp[["values"]]]
-          } else {
-            0
-          }
-        }
-      }
-    )
 
     if (out == "ts_years") {
 
@@ -887,7 +917,7 @@ metric_DSIat0to100cm15bar <- function(
     req_soil_vars = "depth_cm"
   ))
 
-  calc_DSI(
+  get_DSI(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
@@ -912,7 +942,7 @@ metric_DSIat0to100cm30bar <- function(
     req_soil_vars = "depth_cm"
   ))
 
-  calc_DSI(
+  get_DSI(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
@@ -930,7 +960,7 @@ metric_DSIat0to100cm30bar <- function(
 # (StDev of DOY)
 # For the last event before mid-year and first event after mid-year where
 # mid-year = July 15 (circa summer solstice + 1 month)
-get_frost_doy <- function(
+calc_frost_doy <- function(
   sim_tmin_daily,
   Temp_limit_C = -5,
   hemisphere_NS = c("N", "S"),
@@ -992,7 +1022,7 @@ metric_FrostDaysAtNeg5C <- function(
       )
     )
 
-    res[[k1]] <- t(get_frost_doy(
+    res[[k1]] <- t(calc_frost_doy(
       sim_tmin_daily = sim_data[["day"]],
       Temp_limit_C = -5
     ))
@@ -1001,8 +1031,18 @@ metric_FrostDaysAtNeg5C <- function(
   res
 }
 
+
+
 # CorTempPPT: Correlation between monthly temperature and
 # precipitation by year
+calc_CorTempPPT <- function(mon_temp, mon_ppt, mon_year) {
+  as.vector(by(
+    data = cbind(mon_ppt, mon_temp),
+    INDICES = mon_year,
+    FUN = function(x) cor(x[, 1], x[, 2])
+  ))
+}
+
 metric_CorTempPPT <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
@@ -1030,14 +1070,12 @@ metric_CorTempPPT <- function(
       )
     )
 
-    tmp <- as.vector(by(
-      data = cbind(
-        sim_data[["mon"]][["values"]][["tmin"]],
-        sim_data[["mon"]][["values"]][["ppt"]]
-      ),
-      INDICES = sim_data[["mon"]][["time"]][, "Year"],
-      FUN = function(x) cor(x[, 1], x[, 2])
-    ))
+    tmp <- calc_CorTempPPT(
+      # TODO: why `tmin` and not `tmean`?
+      mon_temp = sim_data[["mon"]][["values"]][["tmin"]],
+      mon_ppt =  sim_data[["mon"]][["values"]][["ppt"]],
+      mon_year = sim_data[["mon"]][["time"]][, "Year"]
+    )
 
     res[[k1]] <- if (include_year) {
       rbind(
@@ -1574,7 +1612,7 @@ metric_Climate_monthly <- function(
 }
 
 
-calc_Tmean_monthly <- function(
+get_Tmean_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "across_years"),
   fun_aggs_across_yrs = mean,
@@ -1643,7 +1681,7 @@ metric_Tmean_monthly <- function(
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
 
-  calc_Tmean_monthly(
+  get_Tmean_monthly(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
@@ -1664,7 +1702,7 @@ metric_Tmean_monthlyClim <- function(
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
 
-  calc_Tmean_monthly(
+  get_Tmean_monthly(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
