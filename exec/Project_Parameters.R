@@ -55,7 +55,7 @@ years_timeseries_by_scen <- c(
 #     i.e., pass options `-add_aggs_across_yrs` and `-ts` on the command line
 #  2) Request a climatology metric, i.e., a metric that ends in "Clim"
 
-# Years over which option `-add_aggs_across_yrs` summarizes
+# Years over values are summarized
 years_aggs_by_scen <- c(
   list(list(hist = years_historical)),
   lapply(

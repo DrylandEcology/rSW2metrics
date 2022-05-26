@@ -1862,3 +1862,262 @@ metric_AI <- function(
 
   res
 }
+
+
+
+#' 19 predictors of resilience & resistance indicators
+#'
+#' @section Notes:
+#'   Argument `fun_aggs_across_yrs` is ignored.
+#'
+#' @references JC Chambers et al. (in prep)
+#'
+#' @noRd
+metric_RR2022predictors_annualClim <- function(
+  path,
+  name_sw2_run,
+  id_scen_used,
+  list_years_scen_used,
+  out = "across_years",
+  soils,
+  ...
+) {
+  stopifnot(check_metric_arguments(
+    out = match.arg(out),
+    req_soil_vars = "depth_cm"
+  ))
+
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    tmp <- lapply(
+      list_years_scen_used[[k1]],
+      function(yrs) {
+        sim_data <- collect_sw2_sim_data(
+          path = path,
+          name_sw2_run = name_sw2_run,
+          id_scen = id_scen_used[k1],
+          years = yrs,
+          output_sets = list(
+            swp_daily = list(
+              sw2_tp = "Day",
+              sw2_outs = "SWPMATRIC",
+              sw2_vars = c(swp = "Lyr"),
+              varnames_are_fixed = FALSE
+            ),
+            temp_daily = list(
+              sw2_tp = "Day",
+              sw2_outs = "TEMP",
+              sw2_vars = c(tmean = "avg_C"),
+              varnames_are_fixed = TRUE
+            ),
+            swe_daily = list(
+              sw2_tp = "Day",
+              sw2_outs = "SNOWPACK",
+              sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
+              varnames_are_fixed = TRUE
+            ),
+            day = list(
+              sw2_tp = "Day",
+              sw2_outs = c("TEMP", "TEMP", "PET", "AET"),
+              sw2_vars = c(
+                tmax = "max_C",
+                tmin = "min_C",
+                pet = "pet_cm",
+                et = "evapotr_cm"
+              ),
+              varnames_are_fixed = TRUE
+            ),
+            mon = list(
+              sw2_tp = "Month",
+              sw2_outs = c("PRECIP", "TEMP", "TEMP"),
+              sw2_vars = c(ppt = "ppt", tmean = "avg_C", tmin = "min_C"),
+              varnames_are_fixed = TRUE
+            ),
+            yr = list(
+              sw2_tp = "Year",
+              sw2_outs = c("PRECIP", "PRECIP", "TEMP", "PET", "AET", "DEEPSWC"),
+              sw2_vars = c(
+                ppt = "ppt",
+                rain = "rain",
+                tmean = "avg_C",
+                pet = "pet_cm",
+                et = "evapotr_cm",
+                drainage = "lowLayerDrain_cm"
+              ),
+              varnames_are_fixed = TRUE
+            )
+          )
+        )
+
+
+        #--- Intermediate variables
+        tmp_cwd <- calc_new_yearly_aggregations(
+          x_daily = list(
+            time = sim_data[["day"]][["time"]],
+            values = list(
+              cwd = calc_CWD_mm(
+                pet_cm = sim_data[["day"]][["values"]][["pet"]],
+                et_cm = sim_data[["day"]][["values"]][["et"]]
+              )
+            )
+          ),
+          temp_monthly = sim_data[["mon"]], # (Monthly) mean air temperature
+          fun_time = sum,
+          fun_extreme = max,
+          output = c("seasonal_variability", "seasonality")
+        )
+
+        # DDDat5C0to100cm30bar
+        tmp_ddd <- calc_MDD_daily(
+          sim_data = sim_data,
+          soils = soils,
+          used_depth_range_cm = c(0, 100),
+          t_periods = list(op = `>`, limit = 5),
+          sm_periods = list(op = `<`, limit = -3)
+        )
+
+        # DSIat0to100cm15bar-mean
+        tmp_dsi <- mapply(
+          mean,
+          calc_DSI(
+            swp_daily_negbar = sim_data[["swp_daily"]][["values"]][["swp"]],
+            time_daily = sim_data[["swp_daily"]][["time"]],
+            soils = soils,
+            used_depth_range_cm = c(0, 100),
+            SWP_limit_MPa = -1.5
+          )
+        )
+
+
+        #--- RandomForest R&R predictors (2022-Feb-07)
+        as.matrix(list(
+          # Annual mean temperature
+          #   Tmean_mean -- TA-MAT_C__mean
+          Tmean_mean = mean(sim_data[["yr"]][["values"]][["tmean"]]),
+
+          # Temperature range (difference between tmax and tmin)
+          #   Trange_diurnal_mean -- Climate-Trange_diurnal_C_annual__mean
+          Trange_diurnal_mean = mean(
+            tapply(
+              X =
+                sim_data[["day"]][["values"]][["tmax"]] -
+                sim_data[["day"]][["values"]][["tmin"]],
+              INDEX = sim_data[["day"]][["time"]][, "Year"],
+              FUN = mean
+            )
+          ),
+
+          # Mean temperature of coldest month
+          #   Tmean_coldestmonth_mean --
+          #     Climate-Tmean_coldestmonth_C_annual__mean
+          Tmean_coldestmonth_mean = mean(
+            tmp_tcold <- tapply(
+              X = sim_data[["mon"]][["values"]][["tmean"]],
+              INDEX = sim_data[["mon"]][["time"]][, "Year"],
+              FUN = min
+            )
+          ),
+
+          #   Tmean_coldestmonth_sd -- Climate-Tmean_coldestmonth_C_annual__sd
+          Tmean_coldestmonth_sd = sd(tmp_tcold),
+
+          # Mean temperature of hottest month
+          #   Tmean_hottestmonth_sd -- Climate-Tmean_hottestmonth_C_annual__sd
+          Tmean_hottestmonth_sd = sd(
+            tapply(
+              X = sim_data[["mon"]][["values"]][["tmean"]],
+              INDEX = sim_data[["mon"]][["time"]][, "Year"],
+              FUN = max
+            )
+          ),
+
+          # Annual precipitation amount
+          #   PPT_mean -- PPT-MAP_mm__mean
+          PPT_mean = 10 * mean(
+            tmp_ppt <- sim_data[["yr"]][["values"]][["ppt"]]
+          ),
+
+          #   PPT_cv -- PPT-MAP_mm__cv
+          PPT_cv = cv(tmp_ppt),
+
+          # Annual rainfall amount
+          #   Rain_mean -- Climate-Rain_mm_annual__mean
+          Rain_mean = 10 * mean(sim_data[["yr"]][["values"]][["rain"]]),
+
+          # Precipitation amount in months of July, August, and September
+          #   PPTinJAS_mean -- Climate-PPTinJAS_mm_annual__mean
+          PPTinJAS_mean = 10 * mean(
+            tapply(
+              X = sim_data[["mon"]][["values"]][["ppt"]],
+              INDEX = sim_data[["mon"]][["time"]][, "Year"],
+              FUN = function(x) sum(x[7:9])
+            )
+          ),
+
+          # Precipitation amount of the driest month
+          #   PPT_driestmonth_mean -- Climate-PPT_driestmonth_mm_annual__mean
+          PPT_driestmonth_mean = 10 * mean(
+            tapply(
+              X = sim_data[["mon"]][["values"]][["ppt"]],
+              INDEX = sim_data[["mon"]][["time"]][, "Year"],
+              FUN = min
+            )
+          ),
+
+          # Potential evapotranspiration
+          #   PET_cv -- Climate-PET_mm_annual__cv
+          PET_cv = cv(sim_data[["yr"]][["values"]][["pet"]]),
+
+          # Evapotranspiration
+          #   ET_cv -- ET-ET_mm_annual__cv
+          ET_cv = cv(sim_data[["yr"]][["values"]][["et"]]),
+
+          # Climatic water deficit
+          #   CWD_mean -- CWD-values__mean
+          CWD_mean = mean(
+            calc_CWD_mm(
+              pet_cm = sim_data[["yr"]][["values"]][["pet"]],
+              et_cm = sim_data[["yr"]][["values"]][["et"]]
+            )
+          ),
+
+          #   CWD_mon_corr_temp_mean -- CWD-seasonality__mean
+          CWD_mon_corr_temp_mean = mean(tmp_cwd[, "seasonality"]),
+
+          #   CWD_mon_cv_mean -- CWD-seasonal_variability__mean
+          CWD_mon_cv_mean = mean(tmp_cwd[, "seasonal_variability"]),
+
+          #   DDD_mean -- DDDat5C0to100cm30bar-values__mean
+          DDD_mean = mean(
+            tapply(
+              X = tmp_ddd[["values"]][["mdd"]],
+              INDEX = tmp_ddd[["time"]][, "Year"],
+              FUN = sum
+            )
+          ),
+
+          #   DSI_duration_mean -- DSIat0to100cm15bar-mean__mean
+          DSI_duration_mean = mean(tmp_dsi),
+
+          #   CorTempPPT_mean -- CorTempPPT-seasonality__mean
+          CorTempPPT_mean = mean(
+            calc_CorTempPPT(
+              # TODO: why `tmin` and not `tmean`?
+              mon_temp = sim_data[["mon"]][["values"]][["tmin"]],
+              mon_ppt =  sim_data[["mon"]][["values"]][["ppt"]],
+              mon_year = sim_data[["mon"]][["time"]][, "Year"]
+            )
+          ),
+
+          #   DeepDrainage_mean -- DR-DeepDrainage_mm_annual__mean
+          DeepDrainage_mean = mean(sim_data[["yr"]][["values"]][["drainage"]])
+        ))
+      }
+    )
+
+    res[[k1]] <- do.call(cbind, tmp)
+  }
+
+  res
+}

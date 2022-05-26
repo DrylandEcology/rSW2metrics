@@ -42,6 +42,7 @@
 \alias{metric_Radiation_monthly}
 \alias{metric_RecruitmentIndex_v4}
 \alias{metric_RecruitmentIndex_v5}
+\alias{metric_RR2022predictors_annualClim}
 \alias{metric_SemiDryDuration_Annual_top50cm}
 \alias{metric_SemiDryDuration_Annual_wholeprofile}
 \alias{metric_SMTRs}
@@ -232,6 +233,7 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_Radiation_monthly}
   \item \var{metric_RecruitmentIndex_v4}
   \item \var{metric_RecruitmentIndex_v5}
+  \item \var{metric_RR2022predictors_annualClim}
   \item \var{metric_SemiDryDuration_Annual_top50cm}
   \item \var{metric_SemiDryDuration_Annual_wholeprofile}
   \item \var{metric_SMTRs}
