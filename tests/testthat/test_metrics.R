@@ -398,6 +398,23 @@ test_that("Check metrics", {
     }
 
 
+    #--- Check that output is a data.frame
+    # with character vectors (for `site` and `group`) and
+    # with numeric/logical vectors (for metric values/SW2toTable)
+    expect_equal(
+      sapply(
+        output,
+        function(x) {
+          !is.list(x) &&
+            is.vector(x) &&
+            typeof(x) %in% c("character", "integer", "double", "logical")
+        }
+      ),
+      rep(TRUE, ncol(output)),
+      ignore_attr = "names"
+    )
+
+
     #--- Check output against stored copy of previous output
     # note: previous values depend on the (minor) version of rSOILWAT2
     # skip if used rSOILWAT2 version differs too much from version used
@@ -429,7 +446,7 @@ test_that("Check metrics", {
         if (file.exists(ftest_output)) {
           ref_output <- readRDS(ftest_output)
 
-          ids <- if (vtag == "v5.0") {
+          ids <- if (vtag == "v5.0" && nrow(output) > nrow(ref_output)) {
             output$site %in% run_rSFSW2_names[1:2]
           } else {
             seq_len(nrow(output))

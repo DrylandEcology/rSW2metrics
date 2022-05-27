@@ -1991,7 +1991,7 @@ metric_RR2022predictors_annualClim <- function(
 
 
         #--- RandomForest R&R predictors (2022-Feb-07)
-        as.matrix(list(
+        as.matrix(c(
           # Annual mean temperature
           #   Tmean_mean -- TA-MAT_C__mean
           Tmean_mean = mean(sim_data[["yr"]][["values"]][["tmean"]]),
