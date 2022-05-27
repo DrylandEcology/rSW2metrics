@@ -1120,7 +1120,6 @@ get_variable_in_months <- function(
 #' )
 #'
 #' @noRd
-#' @md
 format_values_to_matrix <- function(
   x,
   ts_years,
@@ -1274,7 +1273,6 @@ create_sw2simtime <- function(n) {
 #'  determine_sw2_sim_time(xty, req_years = 2011:2030, sw2_tp = "Year")
 #'
 #' @export
-#' @md
 determine_sw2_sim_time <- function(
   xt,
   req_years = NULL,

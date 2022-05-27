@@ -51,7 +51,6 @@
 #'
 #' @docType package
 #' @name rSW2metrics
-#' @md
 "_PACKAGE"
 
 
@@ -162,7 +161,6 @@ rd_section_listing_metrics <- function() {
 #'
 #' @eval rd_alias_metrics()
 #' @name metrics
-#' @md
 NULL
 
 

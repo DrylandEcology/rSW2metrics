@@ -85,7 +85,6 @@
 #'   combine = FALSE
 #' )
 #'
-#' @md
 #' @export
 aggs_across_years <- function(
   x,
@@ -436,7 +435,6 @@ calc_climatology_1var <- function(
 #' )
 #'
 #' @export
-#' @md
 calc_climatology <- function(X, INDEX, FUN, ...) {
   if (!is.list(X)) {
     X <- if (NCOL(X) == 1) list(X) else as.data.frame(X)

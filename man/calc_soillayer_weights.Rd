@@ -23,8 +23,8 @@ than selected by \code{used_depth_range_cm} from \code{soil_depths_cm}.}
 }
 \value{
 A numeric vector of the same length as \code{soil_depths_cm}.
-  The values correspond to soil layer widths that fall within the
-  selected zone. Other values, outside the zone, are set to \code{NA}.
+The values correspond to soil layer widths that fall within the
+selected zone. Other values, outside the zone, are set to \code{NA}.
 }
 \description{
 Determine widths (as weights) of soil layers within a zone

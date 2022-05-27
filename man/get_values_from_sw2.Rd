@@ -32,7 +32,7 @@ within \code{path}.}
 month. If no grouping is requested, then provide,
 e.g., \code{rep(0, 12)}.}
 
-\item{first_month_of_year}{An integer value. The number of the month [1-12]
+\item{first_month_of_year}{An integer value. The number of the month \link{1-12}
 when the "year" should start, e.g., \code{10} for "water-year".
 Note: incomplete years, i.e., the first and last year will be discarded.}
 
@@ -53,17 +53,17 @@ are interpreted as regular expressions
 }
 \value{
 A list with three elements: \itemize{
-  \item \var{vals} A list with one element for each \code{sw2_var}. Each
-        element is a vector of values for that \code{sw2_var},
-        if \code{varnames_are_fixed} is \code{TRUE}; otherwise, a vector
-        or matrix where columns represent all the \pkg{SOILWAT2} output
-        corresponding to that \code{sw2_var} interpreted as
-        regular expression.
-        The length of vectors (or the number of rows) corresponds to the
-        number time steps requested by \code{sw2_tp}.
-  \item \var{year} A vector of calendar years for each time step.
-  \item \var{groups_by_time} A vector of group ID, based on
-        \code{group_by_month}, for each time step.
+\item \var{vals} A list with one element for each \code{sw2_var}. Each
+element is a vector of values for that \code{sw2_var},
+if \code{varnames_are_fixed} is \code{TRUE}; otherwise, a vector
+or matrix where columns represent all the \pkg{SOILWAT2} output
+corresponding to that \code{sw2_var} interpreted as
+regular expression.
+The length of vectors (or the number of rows) corresponds to the
+number time steps requested by \code{sw2_tp}.
+\item \var{year} A vector of calendar years for each time step.
+\item \var{groups_by_time} A vector of group ID, based on
+\code{group_by_month}, for each time step.
 }
 }
 \description{

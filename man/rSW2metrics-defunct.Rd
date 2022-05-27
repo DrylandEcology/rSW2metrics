@@ -39,7 +39,7 @@ Defunct functions
 }
 \section{Notes}{
 
-  `list_all_metrics()` uses the only argument `...`
-  to recognize a metric as defunct.
+\code{list_all_metrics()} uses the only argument \code{...}
+to recognize a metric as defunct.
 }
 

@@ -624,8 +624,6 @@ metric_DDDat5C0to100cm30bar <- function(
 #'   if \code{method} is \var{\dQuote{by_layer}},
 #'   then columns contain values for each soil layer within
 #'    \code{used_depth_range_cm}.
-#'
-#' @md
 calc_SWA_mm <- function(
   sim_swc_daily,
   soils,

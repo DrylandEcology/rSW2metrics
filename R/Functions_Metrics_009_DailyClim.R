@@ -218,8 +218,6 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
 #'     then rows contain values for each time step,
 #'   * if `out` is `"across_years"`,
 #'     then rows contain averaged values across unique time steps.
-#'
-#' @md
 calc_SWP_MPa <- function(
   sim_swc_daily,
   time,

@@ -32,7 +32,6 @@
 #'  }
 #'
 #' @name SW2toTable
-#' @md
 #' @export
 metric_SW2toTable_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,

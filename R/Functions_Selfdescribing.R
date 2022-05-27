@@ -178,7 +178,6 @@ list_soil_variables <- function() {
 #'   - daily: \var{\dQuote{doyX}} where X in `001:366`
 #'
 #' @export
-#' @md
 list_subannual_timesteps <- function() {
   list(
     seasonal = "season[[:digit:]]{1,2}",
