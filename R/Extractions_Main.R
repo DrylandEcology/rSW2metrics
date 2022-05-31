@@ -412,7 +412,7 @@ extract_metrics <- function(args) {
   # Index across runs
   indexes <- seq_along(run_rSFSW2_names)
 
-  if (length(args[["runids"]]) == 1 && args[["runids"]] < 1) {
+  if (!(length(args[["runids"]]) == 1 && args[["runids"]] < 1)) {
     # subset to available runs that were requested
     indexes <- intersect(indexes, args[["runids"]])
   }
