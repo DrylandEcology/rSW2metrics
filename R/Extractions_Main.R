@@ -27,6 +27,39 @@ ref_extraction_arguments <- function() {
 #'
 #' @return A named list with the processed arguments.
 #'
+#' @section Details:
+#' The available command-line options are
+#'   * `-o=output_filename`: output file name (without extension)
+#'   * `-fun=fun_metric`: name of a metric function
+#'   * `-fparam=param_filename`: file name of the R script with parameters; see
+#'     `system.file("exec", "Project_Parameters.R", package = "rSW2metrics")`
+#'     for a template
+#'   * `-mode=[{TRUE,test}|{FALSE,full,any,}]`: option for running a test;
+#'     if `TRUE` or `test`, then the metric function is extracting only from
+#'     the first `ntests` runs;
+#'     all available runs are extracted (default)
+#'     if option is missing or contains any other value
+#'   * `-ntests=x`: number of runs used if in test mode (`-mode`) with a default
+#'     of `x=100`
+#'   * `-ncores=x`: size of parallel (socket) cluster used to extract
+#'     `fun_metric` from runs (default `x=1`)
+#'   * `-cllog=[{TRUE,}|{FALSE,any}]`: logging activity on cluster to disk
+#'     (default `FALSE`)
+#'   * `-add_aggs_across_yrs=[{TRUE,}|{FALSE,any}]`: across-year summaries
+#'     (defined by `fun_aggs_across_yrs()` from `fparam`) added to output
+#'     if option is present and `fun_metric` produces time-series output
+#'
+#' @examples
+#' process_arguments(
+#'   c(
+#'    "-o=AI_annual",
+#'    "-fun=metric_AI",
+#'    "-fparam=Project_Parameters.R",
+#'    "-add_aggs_across_yrs",
+#'    "-ncores=2"
+#'   )
+#' )
+#'
 #' @export
 process_arguments <- function(x) {
   res <- list()
