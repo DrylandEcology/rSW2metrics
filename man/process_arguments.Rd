@@ -32,6 +32,15 @@ all available runs are extracted (default)
 if option is missing or contains any other value
 \item \code{-ntests=x}: number of runs used if in test mode (\code{-mode}) with a default
 of \code{x=100}
+\item \code{-runids=r1:r2}: sequence of runs defined by first \code{r1} and last \code{r2} run
+(from available runs) from which metrics are extracted;
+\itemize{
+\item if missing and in full mode (\code{-mode}),
+then all available runs are used (default);
+\item if missing and in test mode, then option \code{-ntests} is used;
+\item if in test mode and both \code{-ntests} and \code{-runids} are present, then
+\code{-runids} takes precedence
+}
 \item \code{-ncores=x}: size of parallel (socket) cluster used to extract
 \code{fun_metric} from runs (default \code{x=1})
 \item \verb{-cllog=[\{TRUE,\}|\{FALSE,any\}]}: logging activity on cluster to disk

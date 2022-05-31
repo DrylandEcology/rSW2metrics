@@ -62,6 +62,25 @@ test_that("Check command-line options", {
   expect_equal(tmp[["ntests"]], 23)
 
 
+  #--- Check sequence of runs
+  tmp <- process_arguments(args_must_have)
+  expect_equal(tmp[["runids"]], -1)
+
+  tmp <- process_arguments(c(args_must_have, "-mode=test"))
+  expect_true(check_extraction_arguments(tmp))
+  expect_equal(tmp[["runids"]], seq_len(tmp[["ntests"]]))
+
+  tmp <- process_arguments(c(args_must_have, "-runids=10:20"))
+  expect_true(check_extraction_arguments(tmp))
+  expect_equal(tmp[["runids"]], 10:20)
+
+  expect_error(process_arguments(c(args_must_have, "-runids=10")))
+  expect_error(process_arguments(c(args_must_have, "-runids=-1:20")))
+  expect_error(suppressWarnings(
+    process_arguments(c(args_must_have, "-runids=NA:NA"))
+  ))
+
+
   #--- Check size of parallel cluster
   tmp <- process_arguments(c(args_must_have, "-ncores=23"))
   expect_true(check_extraction_arguments(tmp))

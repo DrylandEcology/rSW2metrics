@@ -5,14 +5,14 @@ ref_extraction_arguments <- function() {
     # command line options
     options = c(
       "-o", "-fun", "-fparam",
-      "-mode", "-ntests",
+      "-mode", "-ntests", "-runids",
       "-ncores", "-cllog",
       "-add_aggs_across_yrs"
     ),
     # argument names created from command line options
     args = c(
       "tag_filename", "fun_name", "filename_params",
-      "do_full", "ntests",
+      "do_full", "ntests", "runids",
       "ncores", "cl_log",
       "add_aggs_across_yrs"
     ),
@@ -41,6 +41,13 @@ ref_extraction_arguments <- function() {
 #'     if option is missing or contains any other value
 #'   * `-ntests=x`: number of runs used if in test mode (`-mode`) with a default
 #'     of `x=100`
+#'   * `-runids=r1:r2`: sequence of runs defined by first `r1` and last `r2` run
+#'     (from available runs) from which metrics are extracted;
+#'       * if missing and in full mode (`-mode`),
+#'         then all available runs are used (default);
+#'       * if missing and in test mode, then option `-ntests` is used;
+#'       * if in test mode and both `-ntests` and `-runids` are present, then
+#'         `-runids` takes precedence
 #'   * `-ncores=x`: size of parallel (socket) cluster used to extract
 #'     `fun_metric` from runs (default `x=1`)
 #'   * `-cllog=[{TRUE,}|{FALSE,any}]`: logging activity on cluster to disk
@@ -128,6 +135,23 @@ process_arguments <- function(x) {
     res[["ntests"]] <- 100L
   }
 
+  # Sequence of runs
+  id <- args[, 1] %in% "-runids"
+  if (any(id)) {
+    tmp <- strsplit(args[id, 2], split = ":", fixed = TRUE)
+    tmp <- as.integer(tmp[[1]])
+    if (length(tmp) != 2 || anyNA(tmp) || any(tmp < 1)) {
+      stop("Sequence of runs to process is misspecified (option -`runids`).")
+    }
+    res[["runids"]] <- tmp[1]:tmp[2]
+  } else {
+    res[["runids"]] <- if (res[["do_full"]]) {
+      -1 # all available runs
+    } else {
+      seq_len(res[["ntests"]])
+    }
+  }
+
   # Size of parallel cluster
   id <- args[, 1] %in% "-ncores"
   if (any(id)) {
@@ -199,6 +223,8 @@ check_extraction_arguments <- function(x) {
       x[["ntests"]] > 0
     )
   }
+
+  stopifnot(is.finite(x[["runids"]]))
 
   stopifnot(
     is.integer(x[["ncores"]]),
@@ -384,11 +410,13 @@ extract_metrics <- function(args) {
 
 
   # Index across runs
-  indexes <- if (args[["do_full"]]) {
-    seq_along(run_rSFSW2_names)
-  } else {
-    seq_len(min(args[["ntests"]], length(run_rSFSW2_names)))
+  indexes <- seq_along(run_rSFSW2_names)
+
+  if (length(args[["runids"]]) == 1 && args[["runids"]] < 1) {
+    # subset to available runs that were requested
+    indexes <- intersect(indexes, args[["runids"]])
   }
+
 
   # Check cores
   tmp <- parallel::detectCores() - 1
