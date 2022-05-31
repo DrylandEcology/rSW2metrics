@@ -114,9 +114,8 @@ process_arguments <- function(x) {
   id <- args[, 1] %in% "-mode"
   if (any(id)) {
     res[["do_full"]] <-
-      !("test" %in% args[id, 2]) ||
-      is.na(args[id, 2]) ||
-      isFALSE(as.logical(args[id, 2]))
+      !("test" %in% args[id, 2]) && !isTRUE(as.logical(args[id, 2])) ||
+      is.na(args[id, 2])
   } else {
     res[["do_full"]] <- TRUE
   }
