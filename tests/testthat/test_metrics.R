@@ -10,7 +10,7 @@ test_that("Test data availability", {
 #   * add new version number to `list_rSOILWAT2_versions`
 #   * set `create_new_reference_output` to TRUE
 #     (and re-set back to FALSE when completed)
-list_rSOILWAT2_versions <- c("5.0", "5.1", "5.2")
+list_rSOILWAT2_versions <- c("5.0", "5.1", "5.2", "5.3")
 create_new_reference_output <- FALSE
 
 # NA = detect currently installed version
