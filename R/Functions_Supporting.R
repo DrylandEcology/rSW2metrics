@@ -341,9 +341,11 @@ weighted_mean_across_soillayers <- function(x, w) {
 #' @param group_by_month An integer vector of length 12. The group IDs of each
 #'   month. If no grouping is requested, then provide,
 #'   e.g., \code{rep(0, 12)}.
-#' @param first_month_of_year An integer value. The number of the month [1-12]
-#'   when the "year" should start, e.g., \code{10} for "water-year".
-#'   Note: incomplete years, i.e., the first and last year will be discarded.
+#' @param first_month_of_year An integer value. The number of the
+#'   month `[1-12]` when the "year" should start,
+#'   e.g., `10` for a "water-year" that starts in October.
+#'   Note: the first and last year are incomplete and will be discarded
+#'   if `first_month_of_year` is not `1`.
 #' @param sw2_tp A character string. One of the \pkg{rSOILWAT2} output time
 #'   slots. Note: currently, only \dQuote{Month} and \dQuote{Day} are
 #'   implemented.
@@ -369,6 +371,8 @@ weighted_mean_across_soillayers <- function(x, w) {
 #'   \item \var{groups_by_time} A vector of group ID, based on
 #'         \code{group_by_month}, for each time step.
 #' }
+#'
+#' @md
 get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
   group_by_month, first_month_of_year,
   sw2_tp, sw2_out, sw2_var, varnames_are_fixed = TRUE

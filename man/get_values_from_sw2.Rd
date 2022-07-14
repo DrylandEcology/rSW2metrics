@@ -32,9 +32,11 @@ within \code{path}.}
 month. If no grouping is requested, then provide,
 e.g., \code{rep(0, 12)}.}
 
-\item{first_month_of_year}{An integer value. The number of the month \link{1-12}
-when the "year" should start, e.g., \code{10} for "water-year".
-Note: incomplete years, i.e., the first and last year will be discarded.}
+\item{first_month_of_year}{An integer value. The number of the
+month \verb{[1-12]} when the "year" should start,
+e.g., \code{10} for a "water-year" that starts in October.
+Note: the first and last year are incomplete and will be discarded
+if \code{first_month_of_year} is not \code{1}.}
 
 \item{sw2_tp}{A character string. One of the \pkg{rSOILWAT2} output time
 slots. Note: currently, only \dQuote{Month} and \dQuote{Day} are
