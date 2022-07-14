@@ -27,7 +27,7 @@ metric_Climate_quarterly <- function(
           sw2_tp = "Day",
           sw2_outs = c("TEMP", "PRECIP"),
           sw2_vars = c(`tmean-C` = "avg_C", `ppt-mm` = "ppt"),
-          varnames_are_fixed = FALSE
+          varnames_are_fixed = TRUE
         )
       )
     )

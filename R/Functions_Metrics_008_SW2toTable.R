@@ -229,21 +229,38 @@ metric_SW2toTable_daily <- function(
     }
 
     if (any(c("all", "soiltemperature") %in% outputs_SW2toTable)) {
-      tmp <- slot(
-        slot(sim_data, "SOILTEMP"),
-        "Day"
-      )[, 2 + ids_cols, drop = FALSE]
-      colnames(tmp) <- paste0(
+      v_rSW2 <- getNamespaceVersion("rSOILWAT2")
+
+      if (v_rSW2 >= as.numeric_version("5.3.1")) {
+        tmp_sl <- rSOILWAT2::get_soiltemp_avg(sim_data, "Day")
+        tmp_sf <- rSOILWAT2::get_surfacetemp_avg(sim_data, "Day")
+
+      } else if (v_rSW2 < as.numeric_version("5.3.0")) {
+        #--- temperature at depth of each soil layer
+        tmp_sl <- slot(
+          slot(sim_data, "SOILTEMP"),
+          "Day"
+        )[, 2 + ids_cols, drop = FALSE]
+
+        #--- soil surface temperature
+        tmp_sf <- slot(slot(sim_data, "TEMP"), "Day")[, "surfaceTemp_C"]
+
+      } else {
+        stop(
+          "Cannot process soil temperature values correctly; ",
+          "please upgrade 'rSOILWAT2' to v5.3.1 or later."
+        )
+      }
+
+      colnames(tmp_sl) <- paste0(
         "Sim_SoilTemp_C_",
         soil_lowerdepths_str[ids_cols]
       )
 
+      #--- combine temperature at surface and at soil layers
       data_sim[["soiltemperature"]] <- cbind(
-        Sim_SurfaceTemp_C = slot(
-          slot(sim_data, "TEMP"),
-          "Day"
-        )[, "surfaceTemp_C"],
-        tmp
+        Sim_SurfaceTemp_C = tmp_sf,
+        tmp_sl
       )
     }
 
@@ -251,6 +268,7 @@ metric_SW2toTable_daily <- function(
       tmp <- if (nrow(sim_vwc) > 0) {
         sim_vwc[, 2 + ids_cols, drop = FALSE]
       } else if (nrow(sim_swc) > 0) {
+        # calculate VWC as SWC / depth
         sweep(
           sim_swc[, 2 + ids_cols, drop = FALSE],
           MARGIN = 2,
