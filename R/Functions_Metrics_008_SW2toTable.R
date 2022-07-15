@@ -229,21 +229,49 @@ metric_SW2toTable_daily <- function(
     }
 
     if (any(c("all", "soiltemperature") %in% outputs_SW2toTable)) {
-      v_rSW2 <- getNamespaceVersion("rSOILWAT2")
 
-      if (v_rSW2 >= as.numeric_version("5.3.1")) {
-        tmp_sl <- rSOILWAT2::get_soiltemp_avg(sim_data, "Day")
-        tmp_sf <- rSOILWAT2::get_surfacetemp_avg(sim_data, "Day")
+      if (getNamespaceVersion("rSOILWAT2") >= as.numeric_version("5.3.1")) {
+        tmp_st <- rSOILWAT2::get_soiltemp(
+          sim_data,
+          timestep = "Day",
+          levels = c("min", "avg", "max"),
+          surface = TRUE,
+          soillayers = ids_cols
+        )
 
-      } else if (v_rSW2 < as.numeric_version("5.3.0")) {
-        #--- temperature at depth of each soil layer
+        tmp_sf <- do.call(cbind, lapply(tmp_st, function(x) x[, 1]))
+        colnames(tmp_sf) <- paste0("Sim_SurfaceTemp_C_", names(tmp_st))
+
+        tmp_sl <- do.call(cbind, lapply(tmp_st, function(x) x[, -1]))
+        colnames(tmp_sl) <- unlist(
+          lapply(
+            names(tmp_st),
+            function(k) {
+              paste0("Sim_SoilTemp_C_", k, "_", soil_lowerdepths_str[ids_cols])
+            }
+          )
+        )
+
+        tmp_soiltemp <- cbind(tmp_sf, tmp_sl)
+
+      } else if (!rSOILWAT2::check_version(sim_data, "5.3.0")) {
+        #--- average temperature at depth of each soil layer
         tmp_sl <- slot(
           slot(sim_data, "SOILTEMP"),
           "Day"
         )[, 2 + ids_cols, drop = FALSE]
+        colnames(tmp_sl) <- paste0(
+          "Sim_SoilTemp_C_",
+          soil_lowerdepths_str[ids_cols]
+        )
 
-        #--- soil surface temperature
+        #--- average soil surface temperature
         tmp_sf <- slot(slot(sim_data, "TEMP"), "Day")[, "surfaceTemp_C"]
+
+        tmp_soiltemp <- cbind(
+          Sim_SurfaceTemp_C = tmp_sf,
+          tmp_sl
+        )
 
       } else {
         stop(
@@ -252,16 +280,8 @@ metric_SW2toTable_daily <- function(
         )
       }
 
-      colnames(tmp_sl) <- paste0(
-        "Sim_SoilTemp_C_",
-        soil_lowerdepths_str[ids_cols]
-      )
-
       #--- combine temperature at surface and at soil layers
-      data_sim[["soiltemperature"]] <- cbind(
-        Sim_SurfaceTemp_C = tmp_sf,
-        tmp_sl
-      )
+      data_sim[["soiltemperature"]] <- tmp_soiltemp
     }
 
     if (any(c("all", "VWC") %in% outputs_SW2toTable)) {
