@@ -6,7 +6,12 @@ check_all_output_available_of_run <- function(
   files <- list.files(file.path(path_to_run), full.names = TRUE)
 
   fnum <- length(files)
-  fsizes <- sapply(files, function(f) file.size(f), USE.NAMES = FALSE)
+  fsizes <- vapply(
+    files,
+    function(f) file.size(f),
+    FUN.VALUE = NA_real_,
+    USE.NAMES = FALSE
+  )
 
   # Expect: One output file per scenario plus one file for inputs
   isTRUE(all(
@@ -42,9 +47,10 @@ check_all_output_available_of_run <- function(
 #' @export
 shorten_run_names <- function(run_names, element_sep = "_", N_discard = 2) {
   discard <- seq_len(N_discard)
-  sapply(
+  vapply(
     strsplit(run_names, split = element_sep, fixed = TRUE),
-    function(x) paste(x[- discard], collapse = element_sep)
+    function(x) paste(x[- discard], collapse = element_sep),
+    FUN.VALUE = NA_character_
   )
 }
 
@@ -78,7 +84,10 @@ prepare_soils_for_site <- function(
     )
     names(idss) <- names_soil_variables
 
-    stopifnot(sapply(idss, is.finite), sapply(idss, length) == 1)
+    stopifnot(
+      vapply(idss, is.finite, FUN.VALUE = NA),
+      vapply(idss, length, FUN.VALUE = NA_integer_) == 1L
+    )
 
     # Prepare soil variable values
     used_soil <- lapply(
@@ -534,7 +543,6 @@ calc_new_yearly_aggregations <- function(
   #   - mean/sum per year
   #   - mean/sum per month: CV across months, cor(., temperature)
   #   - moving mean across 5- and 10-day windows: extreme across smoothed days
-
   output <- match.arg(output, several.ok = TRUE)
 
   stopifnot(length(x_daily[["values"]]) == 1)
@@ -542,7 +550,6 @@ calc_new_yearly_aggregations <- function(
   years <- unique(x_daily[["time"]][, "Year"])
 
   res <- matrix(
-    data = NA,
     nrow = length(years),
     ncol = length(output) + as.integer(include_year),
     dimnames = list(NULL, if (include_year) c("Year", output) else output)
@@ -690,7 +697,7 @@ calc_new_yearly_aggregations <- function(
         !missing(fun_extreme), !is.null(fun_extreme)
       )
 
-      res[, "extreme_value_consecutive_periods"] <- sapply(
+      res[, "extreme_value_consecutive_periods"] <- vapply(
         X = by(
           data = cbind(x_periods, x_daily[["values"]][[1]]),
           INDICES = x_daily[["time"]][, "Year"],
@@ -714,7 +721,8 @@ calc_new_yearly_aggregations <- function(
             }
           }
         ),
-        FUN = fun_extreme
+        FUN = fun_extreme,
+        FUN.VALUE = NA_real_
       )
     }
 
@@ -740,18 +748,20 @@ calc_new_yearly_aggregations <- function(
       )
 
       if ("mean_duration_consecutive_periods_days" %in% output) {
-        res[, "mean_duration_consecutive_periods_days"] <- sapply(
+        res[, "mean_duration_consecutive_periods_days"] <- vapply(
           X = x_consecutive_periods_days,
-          FUN = mean
+          FUN = mean,
+          FUN.VALUE = NA_real_
         )
       }
 
       if ("extreme_duration_consecutive_periods_days" %in% output) {
         stopifnot(!missing(fun_extreme), !is.null(fun_extreme))
 
-        res[, "extreme_duration_consecutive_periods_days"] <- sapply(
+        res[, "extreme_duration_consecutive_periods_days"] <- vapply(
           X = x_consecutive_periods_days,
-          FUN = fun_extreme
+          FUN = fun_extreme,
+          FUN.VALUE = NA_real_
         )
       }
     }
@@ -774,11 +784,12 @@ calc_transp_seasonality <- function(x, time, probs) {
       c(
         ttot,
         if (is.na(ttot)) {
-          rep(NA, length(probs))
+          rep(NA_integer_, length(probs))
         } else {
-          sapply(
+          vapply(
             ttot * probs,
-            function(v) which.min(v >= tdc)
+            function(v) which.min(v >= tdc),
+            FUN.VALUE = NA_integer_
           )
         }
       )
@@ -985,12 +996,13 @@ peak_size_v1 <- function(pids, peak_type = c("value", "volume"), values) {
     vids <- unique(c(1, valleys, length(values)))
 
     # Sum smoothed transpiration from left to right valley bottoms per peak
-    pvals <- sapply(
+    pvals <- vapply(
       pids,
       function(p) {
         tmp <- findInterval(p, vids)
         sum(values[vids[tmp]:vids[tmp + 1]], na.rm = TRUE)
-      }
+      },
+      FUN.VALUE = NA_real_
     )
   }
 
@@ -1018,12 +1030,13 @@ peak_size_v2 <- function(
     vids <- sort(unique(c(1, valleys1, valleys2, length(values))))
 
     # Sum smoothed transpiration from left to right valley bottoms per peak
-    pvals <- sapply(
+    pvals <- vapply(
       pids,
       function(p) {
         tmp <- findInterval(p, vids)
         sum(values[vids[tmp]:vids[tmp + 1]], na.rm = TRUE)
-      }
+      },
+      FUN.VALUE = NA_real_
     )
   }
 

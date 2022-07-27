@@ -4,14 +4,15 @@
 list_all_metrics <- function() {
   tmp <- ls(getNamespace("rSW2metrics"))
   tmp <- tmp[startsWith(tmp, "metric_")]
-  tmp <- tmp[sapply(tmp, function(x) is.function(get0(x)))]
+  tmp <- tmp[vapply(tmp, function(x) is.function(get0(x)), FUN.VALUE = NA)]
   # Exclude defunct metrics, i.e., those with `...` as the only argument
-  tmpa <- sapply(
+  tmpa <- vapply(
     tmp,
     function(foo) {
       frmls <- formals(foo)
       isTRUE(length(frmls) == 1 && names(frmls) == "...")
-    }
+    },
+    FUN.VALUE = NA
   )
   tmp[!tmpa]
 }
@@ -61,12 +62,14 @@ check_metric_arguments <- function(out, req_soil_vars) {
   }
 
   if (out %in% "ts_years") {
-    if (
-      !(
-        isTRUE(inherits(fun_args[["list_years_scen_used"]], "list")) &&
-          all(sapply(fun_args[["list_years_scen_used"]], is.numeric))
-      )
-    ) {
+    tmp_is_list <- inherits(fun_args[["list_years_scen_used"]], "list")
+    tmp_is_numeric <- vapply(
+      fun_args[["list_years_scen_used"]],
+      is.numeric,
+      FUN.VALUE = NA
+    )
+
+    if (!(isTRUE(tmp_is_list) && all(tmp_is_numeric))) {
       stop(
         "'list_years_scen_used' ",
         "should be a list with integer vectors ",
@@ -75,20 +78,19 @@ check_metric_arguments <- function(out, req_soil_vars) {
     }
 
   } else if (out %in% "across_years") {
-    if (
-      !(
-        isTRUE(inherits(fun_args[["list_years_scen_used"]], "list")) &&
-          all(
-            sapply(fun_args[["list_years_scen_used"]], inherits, what = "list")
-          ) &&
-          all(
-            unlist(lapply(
-              fun_args[["list_years_scen_used"]],
-              function(x) sapply(x, is.numeric)
-            ))
-          )
-      )
-    ) {
+    tmp_is_list <- inherits(fun_args[["list_years_scen_used"]], "list")
+    tmp_is_list2 <- vapply(
+      fun_args[["list_years_scen_used"]],
+      inherits,
+      what = "list",
+      FUN.VALUE = NA
+    )
+    tmp_is_numeric <- unlist(lapply(
+      fun_args[["list_years_scen_used"]],
+      function(x) vapply(x, is.numeric, FUN.VALUE = NA)
+    ))
+
+    if (!(isTRUE(tmp_is_list) && all(tmp_is_list2) && all(tmp_is_numeric))) {
       stop(
         "'list_years_scen_used' ",
         "should be a list of lists with integer vectors ",
@@ -119,9 +121,10 @@ check_metric_arguments <- function(out, req_soil_vars) {
 
       has_vars <-
         req_soil_vars %in% names(fun_args[["soils"]]) &
-        sapply(
+        vapply(
           req_soil_vars,
-          function(x) !is.null(fun_args[["soils"]][[x]])
+          function(x) !is.null(fun_args[["soils"]][[x]]),
+          FUN.VALUE = NA
         )
 
       if (!all(has_vars)) {
@@ -150,7 +153,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
 list_all_input_collectors <- function() {
   tmp <- ls(getNamespace("rSW2metrics"))
   tmp <- tmp[startsWith(tmp, "collect_input_")]
-  tmp[sapply(tmp, function(x) is.function(get0(x)))]
+  tmp[vapply(tmp, function(x) is.function(get0(x)), FUN.VALUE = NA)]
 }
 
 
@@ -199,13 +202,18 @@ identify_submetric_timesteps <- function(submetrics) {
   tag_timesteps2 <- unlist(tag_timesteps)
   names(tag_timesteps2) <- rep(names(tag_timesteps), lengths(tag_timesteps))
 
-  sapply(
+  vapply(
     submetrics,
     function(mm) {
-      tmp <- sapply(tag_timesteps2, function(val) grepl(val, mm))
+      tmp <- vapply(
+        tag_timesteps2,
+        function(val) grepl(val, mm),
+        FUN.VALUE = NA
+      )
       res <- names(tag_timesteps2)[tmp]
       if (length(res) == 0) "yearly" else res
-    }
+    },
+    FUN.VALUE = NA_character_
   )
 }
 
@@ -220,11 +228,14 @@ identify_metric_timestep <- function(submetrics) {
 
   tag_timesteps <- list_subannual_timesteps()
 
-  tmp <- sapply(
+  tmp <- vapply(
     tag_timesteps,
     function(tss) {
-      all(sapply(tss, function(val) any(grepl(val, submetrics))))
-    }
+      all(
+        vapply(tss, function(val) any(grepl(val, submetrics)), FUN.VALUE = NA)
+      )
+    },
+    FUN.VALUE = NA
   )
 
   timestep <- names(tmp)[tmp]

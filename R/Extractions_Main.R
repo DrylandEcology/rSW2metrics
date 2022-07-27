@@ -73,9 +73,10 @@ process_arguments <- function(x) {
 
   tmp <- strsplit(x, split = "=", fixed = TRUE)
   tmp <- unlist(
-    sapply(
+    vapply(
       tmp,
-      function(x) if (length(x) == 2) x else c(x[[1]], NA)
+      function(x) if (length(x) == 2L) x else c(x[[1]], NA),
+      FUN.VALUE = rep(NA_character_, 2L)
     )
   )
   args <- matrix(
@@ -194,10 +195,11 @@ process_arguments <- function(x) {
 }
 
 check_extraction_arguments <- function(x) {
-  hasnot_args <- !sapply(
+  hasnot_args <- !vapply(
     ref_extraction_arguments()[["args"]],
     exists,
-    where = x
+    where = x,
+    FUN.VALUE = NA
   )
 
   if (any(hasnot_args)) {
@@ -287,10 +289,11 @@ check_project_parameters <- function(x, args) {
 
 
   #---
-  hasnot_params <- !sapply(
+  hasnot_params <- !vapply(
     required_project_parameters(),
     exists,
-    where = x
+    where = x,
+    FUN.VALUE = NA
   )
 
   if (any(hasnot_params)) {

@@ -153,7 +153,7 @@ test_that("Check metrics", {
   N_sites <- 3
   run_rSFSW2_names <- paste0("rSW2metrics_rSOILWAT2testrun", seq_len(N_sites))
   dir_runs_rSFSW2 <- file.path(prjpars[["dir_sw2_output"]], run_rSFSW2_names)
-  tmp <- sapply(
+  tmp <- lapply(
     dir_runs_rSFSW2,
     dir.create,
     recursive = TRUE,
@@ -264,14 +264,15 @@ test_that("Check metrics", {
   nextv <- as.character(tmp)
 
   # Identify version
-  compv <- sapply(
+  compv <- vapply(
     sort(unique(c(list_rSOILWAT2_versions, nextv))),
     function(ev) {
       c(
         isTRUE(used_rSOILWAT2_version >= ev),
         isTRUE(used_rSOILWAT2_version < ev)
       )
-    }
+    },
+    FUN.VALUE = rep(NA, 2L)
   )
 
   eqv <- compv[1, -ncol(compv)] & compv[2, -1]
@@ -335,7 +336,7 @@ test_that("Check metrics", {
     #--- Check that output contains columns for each requested year x scenario
     N_yrs_expected <- sum(lengths(fun_args[["list_years_scen_used"]]))
     expect_identical(
-      sapply(res, ncol) - 2L,
+      vapply(res, ncol, FUN.VALUE = NA_integer_) - 2L,
       rep(N_yrs_expected, length(res))
     )
 
@@ -367,9 +368,10 @@ test_that("Check metrics", {
     } else {
       # Check that no subannual timestep occurs in annual function name
       # Avoid exceptions
-      tmp <- any(sapply(
+      tmp <- any(vapply(
         "seasonality",
-        function(x) grepl(x, fun_metrics[k1], ignore.case = TRUE)
+        function(x) grepl(x, fun_metrics[k1], ignore.case = TRUE),
+        FUN.VALUE = NA
       ))
       if (!tmp) {
         for (ts_suba in names(list_subannual_timesteps())) {
@@ -402,13 +404,14 @@ test_that("Check metrics", {
     # with character vectors (for `site` and `group`) and
     # with numeric/logical vectors (for metric values/SW2toTable)
     expect_equal(
-      sapply(
+      vapply(
         output,
         function(x) {
           !is.list(x) &&
             is.vector(x) &&
             typeof(x) %in% c("character", "integer", "double", "logical")
-        }
+        },
+        FUN.VALUE = NA
       ),
       rep(TRUE, ncol(output)),
       ignore_attr = "names"

@@ -90,20 +90,22 @@ test_that("Across-year aggregations", {
         # Expect that output contains function output names
         expect_true(
           all(
-            sapply(
+            vapply(
               list_names_FUN[[k3]],
               function(x) any(grepl(x, x = colnames(res)))
-            )
+            ),
+            FUN.VALUE = NA
           )
         )
 
         # Expect that output contains input column names (if any were present)
         expect_true(
           all(
-            sapply(
+            vapply(
               list_names_X[[k1]],
               function(x) is.null(x) || any(grepl(x, x = colnames(res)))
-            )
+            ),
+            FUN.VALUE = NA
           )
         )
 

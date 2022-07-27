@@ -1978,15 +1978,16 @@ metric_RR2022predictors_annualClim <- function(
         )
 
         # DSIat0to100cm15bar-mean
-        tmp_dsi <- mapply(
-          mean,
+        tmp_dsi <- vapply(
           calc_DSI(
             swp_daily_negbar = sim_data[["swp_daily"]][["values"]][["swp"]],
             time_daily = sim_data[["swp_daily"]][["time"]],
             soils = soils,
             used_depth_range_cm = c(0, 100),
             SWP_limit_MPa = -1.5
-          )
+          ),
+          mean,
+          FUN.VALUE = NA_real_
         )
 
 

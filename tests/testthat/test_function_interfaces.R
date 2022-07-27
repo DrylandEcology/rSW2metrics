@@ -62,7 +62,8 @@ test_that("check parameters of get_* functions", {
   # List all `get_*()`
   tmp <- ls(getNamespace("rSW2metrics"))
   tmp <- tmp[startsWith(tmp, "get_")]
-  funs_check <- tmp[sapply(tmp, function(x) is.function(get0(x)))]
+  ids <- vapply(tmp, function(x) is.function(get0(x)), FUN.VALUE = NA)
+  funs_check <- tmp[ids]
 
   for (fun in funs_check) {
     ff <- formals(fun)
@@ -90,7 +91,8 @@ test_that("check parameters of calc_* functions", {
   tmp <- ls(getNamespace("rSW2metrics"))
   tmp <- tmp[startsWith(tmp, "calc_")]
   tmp <- setdiff(tmp, excluded_calcfuns)
-  funs_check <- tmp[sapply(tmp, function(x) is.function(get0(x)))]
+  ids <- vapply(tmp, function(x) is.function(get0(x)), FUN.VALUE = NA)
+  funs_check <- tmp[ids]
 
   for (fun in funs_check) {
     ff <- formals(fun)

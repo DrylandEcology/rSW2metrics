@@ -99,7 +99,7 @@ aggs_across_years <- function(
 
   stopifnot(
     inherits(list_years, "list"),
-    sapply(list_years, is.numeric),
+    vapply(list_years, is.numeric, FUN.VALUE = NA),
     !grepl("_", varnames_fun, fixed = TRUE),
     length(varnames_fun) > 0
   )
@@ -126,10 +126,11 @@ aggs_across_years <- function(
 
   # If no id_scens provided, then apply list_years to each available id_scen
   if (is.null(id_scens)) {
-    tmp <- sapply(
+    tmp <- vapply(
       strsplit(cn_vars, split = "_", fixed = TRUE),
       `[`,
-      j = 1
+      j = 1,
+      FUN.VALUE = NA_character_
     )
 
     id_scens <- unique(as.integer(sub("sc", "", tmp, fixed = TRUE)))
@@ -147,11 +148,12 @@ aggs_across_years <- function(
   tags_sc_aggs <- lapply(
     seq_along(id_scens),
     function(k1) {
-      unname(sapply(
+      unname(lapply(
         list_years[[k1]],
         function(yrs) {
           paste0("sc", id_scens[k1], "_", yrs[[1]], "-", yrs[length(yrs)])
-        }
+        },
+        FUN.VALUE = NA_character_
       ))
     }
   )
