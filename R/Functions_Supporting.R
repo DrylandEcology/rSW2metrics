@@ -227,9 +227,9 @@ check_soillayer_availability <- function(
     if (!all(ids)) {
       msg <- paste(
         "Requested soil depth(s) at",
-        paste(used_depth_range_cm[strict][!ids], collapse = ", "),
+        toString(used_depth_range_cm[strict][!ids]),
         "are not available in the simulated set of soil layers of",
-        paste(sim_soil_depths_cm, collapse = ", ")
+        toString(sim_soil_depths_cm)
       )
 
       if (match.arg(type) == "error") stop(msg) else warning(msg)

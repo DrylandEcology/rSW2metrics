@@ -112,7 +112,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
       if (any(tmp <- !(req_soil_vars %in% names(list_soil_variables())))) {
         stop(
           "Requested soil variable(s) ",
-          paste(shQuote(req_soil_vars[tmp]), collapse = ", "),
+          toString(shQuote(req_soil_vars[tmp])),
           " are not implemented, see `list_soil_variables()`."
         )
       }
@@ -127,7 +127,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
       if (!all(has_vars)) {
         stop(
           "Requested soil variable(s) ",
-          paste(shQuote(req_soil_vars[!has_vars]), collapse = ", "),
+          toString(shQuote(req_soil_vars[!has_vars])),
           " are missing from 'soils' object."
         )
       }
@@ -233,7 +233,7 @@ identify_metric_timestep <- function(submetrics) {
   if (length(timestep) > 1) {
     stop(
       "More than one time step detected ",
-      paste(shQuote(timestep), collapse = ", ")
+      toString(shQuote(timestep))
     )
 
   } else if (length(timestep) == 0) {

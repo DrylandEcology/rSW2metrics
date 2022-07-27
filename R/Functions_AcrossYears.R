@@ -165,7 +165,7 @@ aggs_across_years <- function(
   if (any(rn_aggs %in% colnames(x))) {
     warning(
       "Argument 'x' contains (some) requested across-year aggregated columns: ",
-      paste0(shQuote(rn_aggs[rn_aggs %in% colnames(x)]), collapse = ", ")
+      toString(shQuote(rn_aggs[rn_aggs %in% colnames(x)]))
     )
   }
 

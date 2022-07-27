@@ -88,7 +88,7 @@ process_arguments <- function(x) {
   if (length(tmp) > 0) {
     warning(
       "Arguments ",
-      paste0(shQuote(tmp), collapse = ", "),
+      toString(shQuote(tmp)),
       " are not implemented."
     )
   }
@@ -203,7 +203,7 @@ check_extraction_arguments <- function(x) {
   if (any(hasnot_args)) {
     stop(
       "The following required extraction arguments are missing: ",
-      paste0(shQuote(names(hasnot_args)[hasnot_args]), collapse = ", ")
+      toString(shQuote(names(hasnot_args)[hasnot_args]))
     )
   }
 
@@ -296,7 +296,7 @@ check_project_parameters <- function(x, args) {
   if (any(hasnot_params)) {
     stop(
       "The following required project parameters are missing: ",
-      paste0(shQuote(names(hasnot_params)[hasnot_params]), collapse = ", ")
+      toString(shQuote(names(hasnot_params)[hasnot_params]))
     )
   }
 
@@ -880,7 +880,7 @@ formatted_metric_1sim <- function(
   if (!all(has_arg_names)) {
     stop(
       "`foo_args` is missing the named element(s): ",
-      paste0(shQuote(req_arg_names[!has_arg_names]), collapse = ", ")
+      toString(shQuote(req_arg_names[!has_arg_names]))
     )
   }
 
