@@ -61,7 +61,7 @@ required_get_arguments <- c(
 test_that("check parameters of get_* functions", {
   # List all `get_*()`
   tmp <- ls(getNamespace("rSW2metrics"))
-  tmp <- tmp[grepl("^get_", tmp)]
+  tmp <- tmp[startsWith(tmp, "get_")]
   funs_check <- tmp[sapply(tmp, function(x) is.function(get0(x)))]
 
   for (fun in funs_check) {
@@ -88,7 +88,7 @@ excluded_calcfuns <- c(
 test_that("check parameters of calc_* functions", {
   # List all `calc_*()`
   tmp <- ls(getNamespace("rSW2metrics"))
-  tmp <- tmp[grepl("^calc_", tmp)]
+  tmp <- tmp[startsWith(tmp, "calc_")]
   tmp <- setdiff(tmp, excluded_calcfuns)
   funs_check <- tmp[sapply(tmp, function(x) is.function(get0(x)))]
 

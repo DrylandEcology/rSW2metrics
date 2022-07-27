@@ -3,7 +3,7 @@
 #' @export
 list_all_metrics <- function() {
   tmp <- ls(getNamespace("rSW2metrics"))
-  tmp <- tmp[grepl("^metric_", tmp)]
+  tmp <- tmp[startsWith(tmp, "metric_")]
   tmp <- tmp[sapply(tmp, function(x) is.function(get0(x)))]
   # Exclude defunct metrics, i.e., those with `...` as the only argument
   tmpa <- sapply(
@@ -149,7 +149,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
 #' @export
 list_all_input_collectors <- function() {
   tmp <- ls(getNamespace("rSW2metrics"))
-  tmp <- tmp[grepl("^collect_input_", tmp)]
+  tmp <- tmp[startsWith(tmp, "collect_input_")]
   tmp[sapply(tmp, function(x) is.function(get0(x)))]
 }
 
