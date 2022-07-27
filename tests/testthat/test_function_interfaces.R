@@ -16,9 +16,9 @@ test_that("Check parameters of outside-facing metrics", {
     ff <- formals(fun)
 
     tmp <- !(required_metrics_arguments %in% names(ff))
-    tmp_args <- required_metrics_arguments[tmp]
-    expect_equal(
-      tmp_args, character(0),
+    expect_identical(
+      required_metrics_arguments[tmp],
+      character(0),
       label = paste(shQuote(fun), "is missing required arguments:")
     )
 
@@ -43,9 +43,8 @@ test_that("Check parameters of input collectors", {
     ff <- formals(fun)
 
     tmp <- !(required_inputcollectors_arguments %in% names(ff))
-    tmp_args <- required_inputcollectors_arguments[tmp]
-    expect_equal(
-      tmp_args,
+    expect_identical(
+      required_inputcollectors_arguments[tmp],
       character(0),
       label = paste(shQuote(fun), "is missing required arguments:")
     )
@@ -69,9 +68,8 @@ test_that("check parameters of get_* functions", {
     ff <- formals(fun)
 
     tmp <- !(required_get_arguments %in% names(ff))
-    tmp_args <- required_get_arguments[tmp]
-    expect_equal(
-      tmp_args,
+    expect_identical(
+      required_get_arguments[tmp],
       character(0),
       label = paste(shQuote(fun), "is missing required arguments:")
     )
@@ -98,9 +96,8 @@ test_that("check parameters of calc_* functions", {
     ff <- formals(fun)
 
     tmp <- excluded_calc_arguments %in% names(ff)
-    tmp_args <- excluded_calc_arguments[tmp]
-    expect_equal(
-      tmp_args,
+    expect_identical(
+      excluded_calc_arguments[tmp],
       character(0),
       label = paste(shQuote(fun), "has excluded arguments:")
     )

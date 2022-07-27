@@ -58,7 +58,7 @@ test_that("Simulated vs requested time", {
     )
 
     # Expect: output equal to simulated time steps
-    expect_equal(tmp[, !!tp_vars[vids]], xtt[, !!tp_vars[vids]])
+    expect_identical(tmp[, !!tp_vars[vids]], xtt[, !!tp_vars[vids]])
 
     # Expect: only mode is "sim_keep"
     expect_setequal(tmp[, "mode"], "sim_keep")
@@ -88,7 +88,7 @@ test_that("Simulated vs requested time", {
       # Expect: simulated time steps and "sim_*" portion of output are equal
       ttt <- tmp[tmp$mode %in% c("sim_keep", "sim_discard"), vids]
       rownames(ttt) <- NULL
-      expect_equal(ttt, xtt[, vids])
+      expect_identical(ttt, xtt[, vids])
 
       # Expect: simulated years do not show up in "nosim" output
       expect_true(all(!xtt[, "Year"] %in% tmp[tmp$mode == "nosim", "Year"]))
@@ -98,20 +98,26 @@ test_that("Simulated vs requested time", {
 
       if (k2 == 1) {
         # Requested years are equal to simulated years
-        expect_equal(tmprle[["values"]], "sim_keep")
-        expect_equal(tmprle[["lengths"]], nrow(tmp))
+        expect_identical(tmprle[["values"]], "sim_keep")
+        expect_identical(tmprle[["lengths"]], nrow(tmp))
 
       } else if (k2 == 2) {
         # Requested years start earlier and end later than simulated years
-        expect_equal(tmprle[["values"]], c("nosim", "sim_keep", "nosim"))
+        expect_identical(tmprle[["values"]], c("nosim", "sim_keep", "nosim"))
 
       } else if (k2 == 3) {
         # Request years start earlier than and end during simulated years
-        expect_equal(tmprle[["values"]], c("nosim", "sim_keep", "sim_discard"))
+        expect_identical(
+          tmprle[["values"]],
+          c("nosim", "sim_keep", "sim_discard")
+        )
 
       } else if (k2 == 4) {
         # Request years start during and end later than simulated years
-        expect_equal(tmprle[["values"]], c("sim_discard", "sim_keep", "nosim"))
+        expect_identical(
+          tmprle[["values"]],
+          c("sim_discard", "sim_keep", "nosim")
+        )
       }
     }
   }

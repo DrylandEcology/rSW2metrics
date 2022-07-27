@@ -59,20 +59,20 @@ test_that("Check command-line options", {
   #--- Check number of test runs
   tmp <- process_arguments(c(args_must_have, "-ntests=23"))
   expect_true(check_extraction_arguments(tmp))
-  expect_equal(tmp[["ntests"]], 23)
+  expect_identical(tmp[["ntests"]], 23L)
 
 
   #--- Check sequence of runs
   tmp <- process_arguments(args_must_have)
-  expect_equal(tmp[["runids"]], -1)
+  expect_identical(tmp[["runids"]], -1L)
 
   tmp <- process_arguments(c(args_must_have, "-mode=test"))
   expect_true(check_extraction_arguments(tmp))
-  expect_equal(tmp[["runids"]], seq_len(tmp[["ntests"]]))
+  expect_identical(tmp[["runids"]], seq_len(tmp[["ntests"]]))
 
   tmp <- process_arguments(c(args_must_have, "-runids=10:20"))
   expect_true(check_extraction_arguments(tmp))
-  expect_equal(tmp[["runids"]], 10:20)
+  expect_identical(tmp[["runids"]], 10:20)
 
   expect_error(process_arguments(c(args_must_have, "-runids=10")))
   expect_error(process_arguments(c(args_must_have, "-runids=-1:20")))
@@ -84,7 +84,7 @@ test_that("Check command-line options", {
   #--- Check size of parallel cluster
   tmp <- process_arguments(c(args_must_have, "-ncores=23"))
   expect_true(check_extraction_arguments(tmp))
-  expect_equal(tmp[["ncores"]], 23)
+  expect_identical(tmp[["ncores"]], 23L)
 
 
   #--- Check log activity on cluster: `-cllog=[{TRUE,}|{FALSE,any}]`

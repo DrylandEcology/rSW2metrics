@@ -25,7 +25,7 @@ test_that("Soil layer widths", {
     )
   }
 
-  expect_equal(
+  expect_identical(
     calc_soillayer_weights(
       soil_depths_cm = c(10, 20, 30),
       used_depth_range_cm = c(5, 30)
@@ -33,7 +33,7 @@ test_that("Soil layer widths", {
     c(10, 10, 10)
   )
 
-  expect_equal(
+  expect_identical(
     calc_soillayer_weights(
       soil_depths_cm = c(10, 20, 30),
       used_depth_range_cm = c(5, 100)
@@ -41,7 +41,7 @@ test_that("Soil layer widths", {
     c(10, 10, 10)
   )
 
-  expect_equal(
+  expect_identical(
     calc_soillayer_weights(
       soil_depths_cm = c(5, 20, 30),
       used_depth_range_cm = c(5, 100)
@@ -49,7 +49,7 @@ test_that("Soil layer widths", {
     c(NA, 15, 10)
   )
 
-  expect_equal(
+  expect_identical(
     calc_soillayer_weights(
       soil_depths_cm = c(5, 20, 30, 40, 50),
       used_depth_range_cm = c(5, 30)
@@ -57,7 +57,7 @@ test_that("Soil layer widths", {
     c(NA, 15, 10, NA, NA)
   )
 
-  expect_equal(
+  expect_identical(
     calc_soillayer_weights(
       soil_depths_cm = c(5, 20, 30, NA, NA),
       used_depth_range_cm = c(5, 30)
@@ -65,7 +65,7 @@ test_that("Soil layer widths", {
     c(NA, 15, 10, NA, NA)
   )
 
-  expect_equal(
+  expect_identical(
     suppressWarnings(calc_soillayer_weights(
       soil_depths_cm = c(5, 20, 30, 40, 50),
       used_depth_range_cm = c(5, 30),
@@ -91,7 +91,7 @@ test_that("Soil layer positions", {
   #--- Use complete depth range
   # Including: no soils --> `numeric(0)`
   for (k in seq_along(soil_depths_cm)) {
-    expect_equal(
+    expect_identical(
       determine_used_soillayers(
         soil_depths_cm = soil_depths_cm[[k]],
         used_depth_range_cm = NULL
@@ -100,7 +100,7 @@ test_that("Soil layer positions", {
     )
   }
 
-  expect_equal(
+  expect_identical(
     determine_used_soillayers(
       soil_depths_cm = c(10, 20, 30),
       used_depth_range_cm = c(5, 30)
@@ -108,7 +108,7 @@ test_that("Soil layer positions", {
     1:3
   )
 
-  expect_equal(
+  expect_identical(
     determine_used_soillayers(
       soil_depths_cm = c(10, 20, 30),
       used_depth_range_cm = c(5, 100)
@@ -116,7 +116,7 @@ test_that("Soil layer positions", {
     1:3
   )
 
-  expect_equal(
+  expect_identical(
     determine_used_soillayers(
       soil_depths_cm = c(5, 20, 30),
       used_depth_range_cm = c(5, 100)
@@ -124,7 +124,7 @@ test_that("Soil layer positions", {
     2:3
   )
 
-  expect_equal(
+  expect_identical(
     determine_used_soillayers(
       soil_depths_cm = c(5, 20, 30, 40, 50),
       used_depth_range_cm = c(5, 30)
@@ -132,7 +132,7 @@ test_that("Soil layer positions", {
     2:3
   )
 
-  expect_equal(
+  expect_identical(
     determine_used_soillayers(
       soil_depths_cm = c(5, 20, 30, NA, NA),
       used_depth_range_cm = c(5, 30)
@@ -140,7 +140,7 @@ test_that("Soil layer positions", {
     2:3
   )
 
-  expect_equal(
+  expect_identical(
     determine_used_soillayers(
       soil_depths_cm = c(5, 20, 30, 40, 50),
       used_depth_range_cm = c(5, 30),

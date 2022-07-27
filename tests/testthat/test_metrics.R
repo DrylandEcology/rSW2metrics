@@ -334,8 +334,8 @@ test_that("Check metrics", {
 
     #--- Check that output contains columns for each requested year x scenario
     N_yrs_expected <- sum(lengths(fun_args[["list_years_scen_used"]]))
-    expect_equal(
-      sapply(res, ncol) - 2,
+    expect_identical(
+      sapply(res, ncol) - 2L,
       rep(N_yrs_expected, length(res))
     )
 
@@ -451,7 +451,7 @@ test_that("Check metrics", {
           } else {
             seq_len(nrow(output))
           }
-          expect_equal(output[ids, ], ref_output, label = fun_metrics[k1])
+          expect_identical(output[ids, ], ref_output, label = fun_metrics[k1])
 
         } else if (create_new_reference_output) {
           succeed(paste("New reference stored for", shQuote(fun_metrics[k1])))

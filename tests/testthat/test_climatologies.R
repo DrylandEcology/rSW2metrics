@@ -76,13 +76,13 @@ test_that("Across-year aggregations", {
         )
 
         # Expect that output rows represent unique `INDEX` values
-        expect_equal(
+        expect_identical(
           NROW(res),
           length(unique(list_INDEX[[k2]](list_X[[k1]])))
         )
 
         # Expect that columns represent input x function output
-        expect_equal(
+        expect_identical(
           NCOL(res),
           NCOL(list_X[[k1]]) * list_n_FUN[[k3]]
         )

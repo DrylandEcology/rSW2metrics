@@ -101,7 +101,7 @@ test_that("Value formatter", {
               !!unique(unname(identify_submetric_timesteps(rownames(res)))),
               !!timestep
             )
-            expect_equal(!!ncol(res), !!length(unique(xyears)))
+            expect_identical(!!ncol(res), !!length(unique(xyears)))
           }
         }
       }
