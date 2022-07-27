@@ -306,11 +306,13 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
   soils,
   ...
 ) {
-  stopifnot(requireNamespace("reshape2", quietly = TRUE))
-  stopifnot(check_metric_arguments(
-    out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
-  ))
+  stopifnot(
+    requireNamespace("reshape2", quietly = TRUE),
+    check_metric_arguments(
+      out = match.arg(out),
+      req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    )
+  )
 
   warning("`metric_SWP_SoilLayers_MeanMonthly()` uses matric-VWC!")
 

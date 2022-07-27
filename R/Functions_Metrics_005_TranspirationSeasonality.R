@@ -229,8 +229,10 @@ calc_transp_peaks_v1 <- function(
   # Secondary peak should be at least `peak2_min_factor` * main peak size
   peak2_min_factor = 1 / 3
 ) {
-  stopifnot(requireNamespace("zoo", quietly = TRUE))
-  stopifnot(days_window %% 2L == 1L) # check that window is odd
+  stopifnot(
+    requireNamespace("zoo", quietly = TRUE),
+    days_window %% 2L == 1L # check that window is odd
+  )
 
   tsmoothed <- if (days_smoothing > 1) {
     zoo::rollapply(
@@ -308,8 +310,10 @@ calc_transp_peaks_v2 <- function(
   # Peaks should be at least `peaksize_min_factor` * maximum peak size
   peaksize_min_factor = 1 / 4
 ) {
-  stopifnot(requireNamespace("zoo", quietly = TRUE))
-  stopifnot(days_window %% 2L == 1L) # check that window is odd
+  stopifnot(
+    requireNamespace("zoo", quietly = TRUE),
+    days_window %% 2L == 1L # check that window is odd
+  )
 
   tsmoothed <- if (days_smoothing > 1) {
     zoo::rollapply(

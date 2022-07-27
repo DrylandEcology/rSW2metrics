@@ -1770,8 +1770,10 @@ metric_SMTRs <- function(
   out = "across_years",
   ...
 ) {
-  stopifnot(requireNamespace("rSW2funs", quietly = TRUE))
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  stopifnot(
+    requireNamespace("rSW2funs", quietly = TRUE),
+    check_metric_arguments(out = match.arg(out))
+  )
 
   res <- list()
 

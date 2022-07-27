@@ -208,9 +208,11 @@ check_extraction_arguments <- function(x) {
   }
 
 
-  stopifnot(!is.na(x[["tag_filename"]]), nzchar(x[["tag_filename"]]))
-
-  stopifnot(is.function(get0(x[["fun_name"]])))
+  stopifnot(
+    !is.na(x[["tag_filename"]]),
+    nzchar(x[["tag_filename"]]),
+    is.function(get0(x[["fun_name"]]))
+  )
 
   if (!file.exists(x[["filename_params"]])) {
     stop(
@@ -229,19 +231,19 @@ check_extraction_arguments <- function(x) {
     )
   }
 
-  stopifnot(is.finite(x[["runids"]]))
-
   stopifnot(
+    is.finite(x[["runids"]]),
+
     is.integer(x[["ncores"]]),
     is.finite(x[["ncores"]]),
-    x[["ncores"]] > 0
-  )
+    x[["ncores"]] > 0,
 
-  stopifnot(is.logical(x[["cl_log"]]), !is.na(x[["cl_log"]]))
+    is.logical(x[["cl_log"]]),
+    !is.na(x[["cl_log"]]),
 
-  stopifnot(is.logical(x[["is_out_ts"]]), !is.na(x[["is_out_ts"]]))
+    is.logical(x[["is_out_ts"]]),
+    !is.na(x[["is_out_ts"]]),
 
-  stopifnot(
     is.logical(x[["add_aggs_across_yrs"]]),
     !is.na(x[["add_aggs_across_yrs"]])
   )
