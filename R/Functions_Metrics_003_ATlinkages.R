@@ -50,6 +50,7 @@ metric_Tmean_JJA <- function(
 }
 
 
+# soils must have "depth_cm", "sand_frac", "clay_frac", and "gravel_content"
 get_SWA_JJA <- function(
   path, name_sw2_run, id_scen_used,
   out_label,
@@ -69,20 +70,21 @@ get_SWA_JJA <- function(
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
       output_sets = list(
-        vwc_daily = list(
+        swc_daily = list(
           sw2_tp = "Day",
-          sw2_outs = "VWCMATRIC",
-          sw2_vars = c(vwc = "Lyr"),
+          sw2_outs = "SWCBULK",
+          sw2_vars = c(swc = "Lyr"),
           varnames_are_fixed = FALSE
         )
       )
     )
 
     swa_daily <- calc_SWA_mm(
-      sim_vwc_daily = sim_data[["vwc_daily"]],
+      sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
-      used_depth_range_cm = used_depth_range_cm
+      used_depth_range_cm = used_depth_range_cm,
+      method = "across_profile"
     )
 
     # Helper variables
@@ -98,14 +100,15 @@ get_SWA_JJA <- function(
       FUN = mean
     )
 
-    res[[k1]] <- format_yearly_to_matrix(
-      x = list(tapply(
+    res[[k1]] <- format_values_to_matrix(
+      x = list(unname(tapply(
         X = x_monthly[["x"]],
-        INDEX = x_monthly["Year"],
+        INDEX = x_monthly[["Year"]],
         FUN = function(x) mean(x[6:8])
-      )),
-      years = ts_years,
-      out_labels = out_label
+      ))),
+      ts_years = ts_years,
+      timestep = "yearly",
+      out_label = out_label
     )
 
     if (include_year) {
@@ -130,7 +133,7 @@ metric_SWAat0to020cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(0, 20)
@@ -162,7 +165,7 @@ metric_SWAat0to100cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA_JJA(
@@ -185,7 +188,7 @@ metric_SWAat20to100cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(20, 100)
@@ -217,7 +220,7 @@ metric_SWAat20to040cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(20, 40)
@@ -250,7 +253,7 @@ metric_SWAat40to060cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(40, 60)
@@ -283,7 +286,7 @@ metric_SWAat60to080cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(60, 80)
@@ -317,7 +320,7 @@ metric_SWAat80to100cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(80, 100)
@@ -388,10 +391,11 @@ metric_PPT_daily <- function(
       )
     )
 
-    res[[k1]] <- format_daily_to_matrix(
+    res[[k1]] <- format_values_to_matrix(
       x = 10 * sim_data[["day"]][["values"]][["ppt"]],
-      time = sim_data[["day"]][["time"]],
-      out_labels = "PPT_mm",
+      ts_years = sim_data[["day"]][["time"]][["Year"]],
+      timestep = "daily",
+      out_label = "PPT_mm",
       include_year = include_year
     )
   }
@@ -426,10 +430,11 @@ metric_Tmean_daily <- function(
       )
     )
 
-    res[[k1]] <- format_daily_to_matrix(
+    res[[k1]] <- format_values_to_matrix(
       x = sim_data[["day"]][["values"]][["tmean"]],
-      time = sim_data[["day"]][["time"]],
-      out_labels = "Tmean_C",
+      ts_years = sim_data[["day"]][["time"]][["Year"]],
+      timestep = "daily",
+      out_label = "Tmean_C",
       include_year = include_year
     )
   }
@@ -437,47 +442,82 @@ metric_Tmean_daily <- function(
   res
 }
 
+# soils must have "depth_cm", "sand_frac", "clay_frac", and "gravel_content"
 get_SWA_daily <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out_label,
   include_year = FALSE,
+  out = c("ts_years", "across_years"),
+  fun_aggs_across_yrs = mean,
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
   ...
 ) {
+  out <- match.arg(out)
+
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    sim_data <- collect_sw2_sim_data(
-      path = path,
-      name_sw2_run = name_sw2_run,
-      id_scen = id_scen_used[k1],
-      years = list_years_scen_used[[k1]],
-      output_sets = list(
-        vwc_daily = list(
-          sw2_tp = "Day",
-          sw2_outs = "VWCMATRIC",
-          sw2_vars = c(vwc = "Lyr"),
-          varnames_are_fixed = FALSE
+    tmp <- lapply(
+      if (out == "across_years") {
+        list_years_scen_used[[k1]]
+      } else {
+        list(list_years_scen_used[[k1]])
+      },
+      function(yrs) {
+        sim_data <- collect_sw2_sim_data(
+          path = path,
+          name_sw2_run = name_sw2_run,
+          id_scen = id_scen_used[k1],
+          years = yrs,
+          output_sets = list(
+            swc_daily = list(
+              sw2_tp = "Day",
+              sw2_outs = "SWCBULK",
+              sw2_vars = c(swc = "Lyr"),
+              varnames_are_fixed = FALSE
+            )
+          )
         )
-      )
+
+        swa_daily <- calc_SWA_mm(
+          sim_swc_daily = sim_data[["swc_daily"]],
+          soils = soils,
+          SWP_limit_MPa = SWP_limit_MPa,
+          used_depth_range_cm = used_depth_range_cm,
+          method = "across_profile"
+        )
+
+        if (out == "across_years") {
+          format_values_to_matrix(
+            x = calc_climatology(
+              X = swa_daily[["values"]][[1]],
+              INDEX = swa_daily[["time"]][, "Day"],
+              FUN = fun_aggs_across_yrs
+            ),
+            ts_years = NA,
+            timestep = "daily",
+            out_label = out_label
+          )
+        } else {
+          format_values_to_matrix(
+            x = swa_daily[["values"]][[1]],
+            ts_years = swa_daily[["time"]][["Year"]],
+            timestep = "daily",
+            out_label = out_label,
+            include_year = include_year
+          )
+        }
+      }
     )
 
-    swa_daily <- calc_SWA_mm(
-      sim_vwc_daily = sim_data[["vwc_daily"]],
-      soils = soils,
-      SWP_limit_MPa = SWP_limit_MPa,
-      used_depth_range_cm = used_depth_range_cm
-    )
-
-    res[[k1]] <- format_daily_to_matrix(
-      x = swa_daily[["values"]][[1]],
-      time = swa_daily[["time"]],
-      out_labels = out_label,
-      include_year = include_year
-    )
+    res[[k1]] <- if (out == "across_years") {
+      do.call(cbind, tmp)
+    } else {
+      tmp[[1]]
+    }
   }
 
   res
@@ -493,7 +533,7 @@ metric_SWAat0to020cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(0, 20)
@@ -508,6 +548,7 @@ metric_SWAat0to020cm39bar_daily <- function(
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     out_label = "SWAat0to020cm39bar_mm",
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
@@ -525,12 +566,13 @@ metric_SWAat0to100cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     out_label = "SWAat0to100cm39bar_mm",
     soils = soils,
     used_depth_range_cm = c(0, 100),
@@ -549,9 +591,8 @@ metric_SWAat20to100cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
-
 
   used_depth_range_cm <- c(20, 100)
 
@@ -566,6 +607,7 @@ metric_SWAat20to100cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to100cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -582,7 +624,7 @@ metric_SWAat20to040cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(20, 40)
@@ -598,6 +640,7 @@ metric_SWAat20to040cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to040cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -615,7 +658,7 @@ metric_SWAat40to060cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(40, 60)
@@ -631,6 +674,7 @@ metric_SWAat40to060cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat40to060cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -648,7 +692,7 @@ metric_SWAat60to080cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(60, 80)
@@ -664,6 +708,7 @@ metric_SWAat60to080cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat60to080cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -681,7 +726,7 @@ metric_SWAat80to100cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(80, 100)
@@ -697,6 +742,7 @@ metric_SWAat80to100cm39bar_daily <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat80to100cm39bar_mm",
+    out = out,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -731,10 +777,11 @@ metric_DR_daily <- function(
       )
     )
 
-    res[[k1]] <- format_daily_to_matrix(
+    res[[k1]] <- format_values_to_matrix(
       x = 10 * sim_data[["day"]][["values"]][["dr"]],
-      time = sim_data[["day"]][["time"]],
-      out_labels = "DR_mm",
+      ts_years = sim_data[["day"]][["time"]][["Year"]],
+      timestep = "daily",
+      out_label = "DR_mm",
       include_year = include_year
     )
   }
@@ -778,22 +825,25 @@ metric_TEPET_daily <- function(
     t_daily <- 10 * apply(sim_data[["day"]][["values"]][["t"]], 1, sum)
 
     res[[k1]] <- rbind(
-      format_daily_to_matrix(
+      format_values_to_matrix(
         x = t_daily,
-        time = sim_data[["day"]][["time"]],
-        out_labels = "T_mm",
+        ts_years = sim_data[["day"]][["time"]][["Year"]],
+        timestep = "daily",
+        out_label = "T_mm",
         include_year = include_year
       ),
-      format_daily_to_matrix(
-        x = 10 * sim_data[["day"]][["values"]][["et"]] - t_daily,
-        time = sim_data[["day"]][["time"]],
-        out_labels = "E_mm",
+      format_values_to_matrix(
+        x = 10 * unname(sim_data[["day"]][["values"]][["et"]]) - t_daily,
+        ts_years = sim_data[["day"]][["time"]][["Year"]],
+        timestep = "daily",
+        out_label = "E_mm",
         include_year = include_year
       ),
-      format_daily_to_matrix(
-        x = 10 * sim_data[["day"]][["values"]][["pet"]],
-        time = sim_data[["day"]][["time"]],
-        out_labels = "PET_mm",
+      format_values_to_matrix(
+        x = 10 * unname(sim_data[["day"]][["values"]][["pet"]]),
+        ts_years = sim_data[["day"]][["time"]][["Year"]],
+        timestep = "daily",
+        out_label = "PET_mm",
         include_year = include_year
       )
     )

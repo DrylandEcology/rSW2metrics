@@ -1,3 +1,7 @@
+#------ CLIMATOLOGIES ------
+
+#------ CLIMATOLOGIES FROM TIME-SERIES METRICS ------
+
 
 #' Calculate temporal aggregations across annual values
 #'
@@ -26,9 +30,22 @@
 #'     \code{list_years} is applied to each scenario available in \code{x}.
 #' }
 #'
-#' @section Notes:
+#' @section Details:
 #' Years requested by \code{list_years} but not available in \code{x} are
 #' silently ignored!
+#'
+#' @section Notes:
+#' The package \pkg{rSW2metrics} offers two pathways to across-year summaries:
+#' 1. `aggs_across_years()` calculates across-year summaries
+#'    from output of a time-series metric; this can be calculated after
+#'    extractions or requested with
+#'    command-line options `-add_aggs_across_yrs` and `-ts`.
+#' 1. Metrics that directly return across-year summaries,
+#'    i.e., climatologies;
+#'    those are internally calculated by `calc_climatology()`.
+#'
+#' Both pathways utilize the user-defined function `fun_aggs_across_yrs()`
+#' from \var{"Project_Parameters.R}.
 #'
 #' @examples
 #' x <- data.frame(
@@ -82,8 +99,8 @@ aggs_across_years <- function(
 
   stopifnot(
     inherits(list_years, "list"),
-    sapply(list_years, is.numeric),
-    !grepl("_", varnames_fun),
+    vapply(list_years, is.numeric, FUN.VALUE = NA),
+    !grepl("_", varnames_fun, fixed = TRUE),
     length(varnames_fun) > 0
   )
 
@@ -109,13 +126,14 @@ aggs_across_years <- function(
 
   # If no id_scens provided, then apply list_years to each available id_scen
   if (is.null(id_scens)) {
-    tmp <- sapply(
+    tmp <- vapply(
       strsplit(cn_vars, split = "_", fixed = TRUE),
       `[`,
-      j = 1
+      j = 1,
+      FUN.VALUE = NA_character_
     )
 
-    id_scens <- unique(as.integer(sub("sc", "", tmp)))
+    id_scens <- unique(as.integer(sub("sc", "", tmp, fixed = TRUE)))
 
     list_years <- lapply(seq_along(id_scens), function(x) list_years)
 
@@ -130,11 +148,12 @@ aggs_across_years <- function(
   tags_sc_aggs <- lapply(
     seq_along(id_scens),
     function(k1) {
-      unname(sapply(
+      unname(vapply(
         list_years[[k1]],
         function(yrs) {
-          paste0("sc", id_scens[k1], "_", yrs[1], "-", yrs[length(yrs)])
-        }
+          paste0("sc", id_scens[k1], "_", yrs[[1]], "-", yrs[length(yrs)])
+        },
+        FUN.VALUE = NA_character_
       ))
     }
   )
@@ -148,7 +167,7 @@ aggs_across_years <- function(
   if (any(rn_aggs %in% colnames(x))) {
     warning(
       "Argument 'x' contains (some) requested across-year aggregated columns: ",
-      paste0(shQuote(rn_aggs[rn_aggs %in% colnames(x)]), collapse = ", ")
+      toString(shQuote(rn_aggs[rn_aggs %in% colnames(x)]))
     )
   }
 
@@ -212,9 +231,9 @@ aggs_across_years <- function(
 #' Coefficient of variation
 #' @noRd
 cv <- function(x, ...) {
-  tmp <- mean(x)
-  if (isTRUE(abs(tmp) > sqrt(.Machine$double.eps))) {
-    sd(x) / tmp
+  mx <- mean(x)
+  if (isTRUE(abs(mx) > sqrt(.Machine[["double.eps"]]))) {
+    sd(x) / mx
   } else {
     NA
   }
@@ -225,24 +244,25 @@ cv <- function(x, ...) {
 sen_slope <- function(x, ...) {
   stopifnot(requireNamespace("modifiedmk", quietly = TRUE))
   if (sum(is.finite(x)) > 3) {
-    unname(modifiedmk::mkttest(x)["Sen's slope"])
+    unname(modifiedmk::mkttest(x)[["Sen's slope"]])
   } else {
     NA
   }
 }
 
 
-#' Calculate aggregate statistics of values across years
+#' Useful functions for aggregate statistics of values across years
 #'
 #' @param x A numeric vector.
 #' @param na.rm A logical value
+#' @param ... Additional parameters passed to the function(s).
 #'
 #' @name fun_across_years
 NULL
 
 #' @rdname fun_across_years
 #' @export
-mean_cv <- function(x, na.rm = TRUE) {
+mean_cv <- function(x, na.rm = TRUE, ...) {
   if (na.rm) x <- x[is.finite(x)]
 
   c(mean = mean(x), cv = cv(x))
@@ -250,7 +270,7 @@ mean_cv <- function(x, na.rm = TRUE) {
 
 #' @rdname fun_across_years
 #' @export
-mean_cv_trend <- function(x, na.rm = TRUE) {
+mean_cv_trend <- function(x, na.rm = TRUE, ...) {
   if (na.rm) x <- x[is.finite(x)]
 
   c(mean = mean(x), cv = cv(x), trend = sen_slope(x))
@@ -259,7 +279,7 @@ mean_cv_trend <- function(x, na.rm = TRUE) {
 
 #' @rdname fun_across_years
 #' @export
-mean_cv_mmk <- function(x, na.rm = TRUE) {
+mean_cv_mmk <- function(x, na.rm = TRUE, ...) {
   x <- unname(x)
 
   if (na.rm) {
@@ -281,7 +301,7 @@ mean_cv_mmk <- function(x, na.rm = TRUE) {
 
     if (!do_unmod) {
       mtmp <- unname(tmp[c("Sen's slope", "new P-value")])
-      do_unmod <- any(!is.finite(mtmp))
+      do_unmod <- !all(is.finite(mtmp))
     }
 
     if (do_unmod) {
@@ -296,12 +316,176 @@ mean_cv_mmk <- function(x, na.rm = TRUE) {
 
   c(
     mean = mx,
-    cv = if (isTRUE(abs(mx) > sqrt(.Machine$double.eps))) {
+    cv = if (isTRUE(abs(mx) > sqrt(.Machine[["double.eps"]]))) {
       sd(x) / mx
     } else {
       NA
     },
-    senslope = mmk[1],
-    mmkp = mmk[2]
+    senslope = mmk[[1]],
+    mmkp = mmk[[2]]
+  )
+}
+
+
+
+#' @rdname fun_across_years
+#' @export
+mean_sd_cv_mmk <- function(x, na.rm = TRUE, ...) {
+  x <- unname(x)
+
+  if (na.rm) {
+    x <- x[is.finite(x)]
+  }
+
+  mx <- mean(x)
+
+  sdx <- sd(x)
+
+  mmk <- if (sum(is.finite(x)) > 3) {
+    # Modified Mann-Kendall Test For Serially Correlated Data Using
+    # the Yue and Wang (2004) Variance Correction Approach
+    # The Hamed & Rao 1998 variance correction approach was used, e.g., by
+    # Zhai, J., S. K. Mondal, T.
+    # Fischer, Y. Wang, B. Su, J. Huang, H. Tao, G. Wang, W. Ullah, and Md. J.
+    # Uddin. 2020. Future drought characteristics through a multi-model ensemble
+    # from CMIP6 over South Asia. Atmospheric Research 246:105111.
+    # https://doi.org/10.1016/j.atmosres.2020.105111.
+    tmp <- try(modifiedmk::mmky(x), silent = TRUE)
+    do_unmod <- inherits(tmp, "try-error")
+
+    if (!do_unmod) {
+      mtmp <- unname(tmp[c("Sen's slope", "new P-value")])
+      do_unmod <- !all(is.finite(mtmp))
+    }
+
+    if (do_unmod) {
+      mtmp <- unname(modifiedmk::mkttest(x)[c("Sen's slope", "P-value")])
+    }
+
+    mtmp
+
+  } else {
+    NA
+  }
+
+  c(
+    mean = mx,
+    sd = sdx,
+    cv = if (isTRUE(abs(mx) > sqrt(.Machine[["double.eps"]]))) {
+      sdx / mx
+    } else {
+      NA
+    },
+    senslope = mmk[[1]],
+    mmkp = mmk[[2]]
+  )
+}
+
+
+
+
+#------ CLIMATOLOGIES FOR ACROSS-YEAR METRICS ------
+
+calc_climatology_1var <- function(
+    X,
+  INDEX,
+  FUN,
+  ...,
+  n_fun = NULL
+) {
+  stopifnot(NCOL(X) == 1)
+
+  if (is.null(n_fun)) {
+    n_fun <- length(FUN(1, ...))
+  }
+
+  matrix(
+    unname(unlist(
+      tapply(X, INDEX = INDEX, FUN = FUN, ..., simplify = FALSE)
+    )),
+    ncol = n_fun,
+    byrow = TRUE
+  )
+}
+
+
+#' Calculate across-year summaries
+#'
+#' @param X A numeric vector, matrix or data.frame. Rows represent time steps.
+#' @param INDEX A numeric vector. Time steps of `X`.
+#' @param FUN A function or a name of a function.
+#'   The function must accept `...` and returns a named or unnamed vector.
+#' @param ... Additional parameters passed to `FUN` such as `na.rm`.
+#'
+#' @return A numeric data.frame where
+#'   rows represent unique values of `INDEX` and
+#'   columns represent combinations of columns of `x` and `FUN` output.
+#'   Columns names contain combinations of names of `x` and `FUN` if
+#'   available.
+#'
+#' @inheritSection aggs_across_years Notes
+#'
+#' @examples
+#' calc_climatology(
+#'   1:100,
+#'   INDEX = rep(1:10, each = 10),
+#'   FUN = function(x, ...) {
+#'     tmp <- unname(quantile(x, probs = c(0.05, 0.5, 0.95), ...))
+#'     c(low = tmp[[1]], med = tmp[[2]], high = tmp[[3]])
+#'   },
+#'   type = 1
+#' )
+#'
+#' @export
+calc_climatology <- function(X, INDEX, FUN, ...) {
+  if (!is.list(X)) {
+    X <- if (NCOL(X) == 1) list(X) else as.data.frame(X)
+  }
+
+  FUN <- match.fun(FUN)
+
+  # Deal with column names
+  res_template <- FUN(1, ...)
+  n_fun <- length(res_template)
+  ns_fun <- names(res_template)
+
+  ns_x <- names(X)
+
+  ns_out1 <- if (length(X) > 1 || !is.null(ns_x)) {
+    rep(
+      if (!is.null(ns_x)) ns_x else paste0("L", seq_along(X)),
+      each = n_fun
+    )
+  }
+
+  ns_out <- if (is.null(ns_out1)) {
+    ns_fun
+  } else if (is.null(ns_fun)) {
+    ns_out1
+  } else {
+    paste0(ns_out1, "_", ns_fun)
+  }
+
+  stats::setNames(
+    as.data.frame(
+      lapply(
+        X,
+        function(x) {
+          do.call(
+            calc_climatology_1var,
+            c(
+              list(
+                X = x,
+                INDEX = INDEX,
+                FUN = FUN,
+                n_fun = n_fun
+              ),
+              list(...)
+            )
+          )
+        }
+      )
+    ),
+    ns_out
   )
 }

@@ -6,7 +6,12 @@ check_all_output_available_of_run <- function(
   files <- list.files(file.path(path_to_run), full.names = TRUE)
 
   fnum <- length(files)
-  fsizes <- sapply(files, function(f) file.size(f), USE.NAMES = FALSE)
+  fsizes <- vapply(
+    files,
+    function(f) file.size(f),
+    FUN.VALUE = NA_real_,
+    USE.NAMES = FALSE
+  )
 
   # Expect: One output file per scenario plus one file for inputs
   isTRUE(all(
@@ -42,11 +47,85 @@ check_all_output_available_of_run <- function(
 #' @export
 shorten_run_names <- function(run_names, element_sep = "_", N_discard = 2) {
   discard <- seq_len(N_discard)
-  sapply(
+  vapply(
     strsplit(run_names, split = element_sep, fixed = TRUE),
-    function(x) paste(x[- discard], collapse = element_sep)
+    function(x) paste(x[- discard], collapse = element_sep),
+    FUN.VALUE = NA_character_
   )
 }
+
+
+
+prepare_soils_for_site <- function(
+  path,
+  name_sw2_run,
+  name_sw2_run_soils = NULL,
+  soils = NULL,
+  soil_variables = NULL,
+  var_soilsite = "site"
+) {
+  used_soil <- NULL
+
+  if (!missing(soils) && !is.null(soils) && !is.null(name_sw2_run_soils)) {
+    #--- Soils are pre-extracted: subset `soils`
+
+    # Check that we got good soil variable names
+    names_soil_variables <- names(soil_variables)
+
+    stopifnot(
+      names_soil_variables %in% names(soils),
+      names_soil_variables %in% names(list_soil_variables())
+    )
+
+    # Locate site
+    idss <- lapply(
+      names_soil_variables,
+      function(k) match(name_sw2_run_soils, soils[[k]][, var_soilsite])
+    )
+    names(idss) <- names_soil_variables
+
+    stopifnot(
+      vapply(idss, is.finite, FUN.VALUE = NA),
+      vapply(idss, length, FUN.VALUE = NA_integer_) == 1L
+    )
+
+    # Prepare soil variable values
+    used_soil <- lapply(
+      names_soil_variables,
+      function(k) {
+        ics <- grepl("_L[[:digit:]]+$", colnames(soils[[k]]))
+        unlist(soils[[k]][idss[[k]], ics])
+      }
+    )
+    names(used_soil) <- names_soil_variables
+
+  } else {
+    #--- Soils are not pre-extracted: read values from files
+    if (is.null(soil_variables)) {
+      soil_variables <- list_soil_variables()
+    }
+    nsv <- names(soil_variables)
+
+    tmp_soils <- get_soillayers_variable(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = 1,
+      sw2_soil_var = nsv
+    )
+
+    used_soil <- list(
+      depth_cm = if ("depth_cm" %in% nsv) tmp_soils["depth_cm", ],
+      sand_frac = if ("sand_frac" %in% nsv) tmp_soils["sand_frac", ],
+      clay_frac = if ("clay_frac" %in% nsv) tmp_soils["clay_frac", ],
+      gravel_content = if ("gravel_content" %in% nsv) {
+        tmp_soils["gravel_content", ]
+      }
+    )
+  }
+
+  used_soil
+}
+
 
 
 #--- Obtain input values -------------------------------------------------------
@@ -84,8 +163,8 @@ calc_soillayer_weights <- function(
 ) {
   # if used_depth_range_cm is NULL, then ids is `logical(0)`
   ids <-
-    soil_depths_cm <= used_depth_range_cm[1] |
-    soil_depths_cm > used_depth_range_cm[2]
+    soil_depths_cm <= used_depth_range_cm[[1]] |
+    soil_depths_cm > used_depth_range_cm[[2]]
 
   x <- diff(c(0, soil_depths_cm))
   x[ids] <- NA
@@ -154,12 +233,12 @@ check_soillayer_availability <- function(
     used_depth_range_cm <- unique(sort(used_depth_range_cm))
     strict <- rep_len(strict, length(used_depth_range_cm))
     ids <- used_depth_range_cm[strict] %in% sim_soil_depths_cm
-    if (any(!ids)) {
+    if (!all(ids)) {
       msg <- paste(
         "Requested soil depth(s) at",
-        paste(used_depth_range_cm[strict][!ids], collapse = ", "),
+        toString(used_depth_range_cm[strict][!ids]),
         "are not available in the simulated set of soil layers of",
-        paste(sim_soil_depths_cm, collapse = ", ")
+        toString(sim_soil_depths_cm)
       )
 
       if (match.arg(type) == "error") stop(msg) else warning(msg)
@@ -200,8 +279,8 @@ determine_used_soillayers <- function(
 
   # if used_depth_range_cm is NULL, then ids is `logical(0)`
   ids <-
-    soil_depths_cm <= used_depth_range_cm[1] |
-    soil_depths_cm > used_depth_range_cm[2]
+    soil_depths_cm <= used_depth_range_cm[[1]] |
+    soil_depths_cm > used_depth_range_cm[[2]]
 
   if (any(ids)) {
     x <- x[which(!ids)]
@@ -237,7 +316,7 @@ groupid_by_days <- function(
     to = ISOdate(end_year, 12, 31, tz = "UTC"),
     by = "1 day"
   )
-  months <- as.POSIXlt(days)$mon + 1
+  months <- as.POSIXlt(days)$mon + 1 # nolint: extraction_operator_linter.
   rlels <- rle(months)[["lengths"]]
 
   list(
@@ -271,9 +350,11 @@ weighted_mean_across_soillayers <- function(x, w) {
 #' @param group_by_month An integer vector of length 12. The group IDs of each
 #'   month. If no grouping is requested, then provide,
 #'   e.g., \code{rep(0, 12)}.
-#' @param first_month_of_year An integer value. The number of the month [1-12]
-#'   when the "year" should start, e.g., \code{10} for "water-year".
-#'   Note: incomplete years, i.e., the first and last year will be discarded.
+#' @param first_month_of_year An integer value. The number of the
+#'   month `[1-12]` when the "year" should start,
+#'   e.g., `10` for a "water-year" that starts in October.
+#'   Note: the first and last year are incomplete and will be discarded
+#'   if `first_month_of_year` is not `1`.
 #' @param sw2_tp A character string. One of the \pkg{rSOILWAT2} output time
 #'   slots. Note: currently, only \dQuote{Month} and \dQuote{Day} are
 #'   implemented.
@@ -299,6 +380,8 @@ weighted_mean_across_soillayers <- function(x, w) {
 #'   \item \var{groups_by_time} A vector of group ID, based on
 #'         \code{group_by_month}, for each time step.
 #' }
+#'
+#' @md
 get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
   group_by_month, first_month_of_year,
   sw2_tp, sw2_out, sw2_var, varnames_are_fixed = TRUE
@@ -328,7 +411,7 @@ get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
 
   } else if (sw2_tp == "Day") {
     ids <- groupid_by_days(
-      start_year = x_years[1],
+      start_year = x_years[[1]],
       end_year = x_years[length(x_years)],
       group_by_month,
       first_month_of_year
@@ -348,397 +431,9 @@ get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
   )
 }
 
-#' \var{SEUG}-era extractor of \pkg{rSOILWAT2} output data
-#'
-#' @return A list of matrices.
-#'   Each matrix contains the output for one \code{id_scen_used};
-#'   rows represent the aggregation groups \code{group_by_month}, and
-#'   columns represent time, e.g., calendar years.
-#' @noRd
-calc_univariate_from_sw2 <- function(
-  path, name_sw2_run, id_scen_used,
-  list_years_scen_used, group_by_month, first_month_of_year,
-  req_ts = TRUE,
-  sw2_tp, sw2_out, sw2_var,
-  varnames_are_fixed = TRUE,
-  fun_across_vars,
-  fun_across_time, ...
-) {
-
-  use_all_yrs <- missing(list_years_scen_used) || is.null(list_years_scen_used)
-  do_buffer_yrs <- req_ts && first_month_of_year > 1
-
-  # Output container
-  res <- list()
-
-  # Loop over scenarios
-  for (k in seq_along(id_scen_used)) {
-
-    x <- get_values_from_sw2(
-      id_scen = id_scen_used[k],
-      path, name_sw2_run,
-      group_by_month, first_month_of_year,
-      sw2_tp, sw2_out, sw2_var, varnames_are_fixed
-    )
-
-    # Convert list into data.frame before applying `fun_across_vars`
-    if (is.list(x[["vals"]])) {
-      nelems <- length(x[["vals"]])
-      if (nelems > 1) {
-        x[["vals"]] <- data.frame(x[["vals"]])
-        colnames(x[["vals"]]) <- NULL
-
-      } else {
-        x[["vals"]] <- x[["vals"]][[1]]
-      }
-    }
-
-    # Aggregate across columns = variables (e.g., soil layers)
-    if (!missing(fun_across_vars) && !is.null(fun_across_vars)) {
-      ncs <- ncol(x[["vals"]])
-
-      if (!is.null(ncs) && ncs >= 1) {
-        x[["vals"]] <- apply(x[["vals"]], 1, FUN = fun_across_vars, ...)
-      }
-    }
-
-    # `x[["vals"]]` must be 1-dimensional by now;
-    # if not, use appropriate `fun_across_vars`
-
-    # Loop over set(s) of years
-    has_periods <-
-      !use_all_yrs &&
-      isTRUE(inherits(list_years_scen_used[[k]], "list"))
-
-    id_periods <- if (use_all_yrs) {
-      1
-    } else {
-      if (has_periods) which(lengths(list_years_scen_used[[k]]) > 0) else 1
-    }
-
-    res_periods <- list()
-
-    for (k2 in seq_along(id_periods)) {
-      # Subset years
-      ids <- if (use_all_yrs) {
-        rep(TRUE, length(x[["years"]]))
-
-      } else {
-        yrs <- if (has_periods) {
-          list_years_scen_used[[k]][[id_periods[k2]]]
-        } else {
-          list_years_scen_used[[k]]
-        }
-
-        if (do_buffer_yrs) {
-          yrs <- c(min(yrs) - 1, yrs, max(yrs) + 1)
-        }
-
-        x[["years"]] %in% yrs
-      }
-
-      # Aggregate across time
-      tmp <- tapply(
-        x[["vals"]][ids],
-        INDEX = if (req_ts) {
-          list(
-            groups_by_time = x[["groups_by_time"]][ids],
-            years = x[["years"]][ids]
-          )
-        } else {
-          list(groups_by_time = x[["groups_by_time"]][ids])
-        },
-        FUN = fun_across_time,
-        ...
-      )
-
-      res_periods[[k2]] <- if (do_buffer_yrs) {
-        # Remove buffer years: first year (spinup) and
-        # last seasonally-adjusted year (incomplete)
-        tmp[, 2:(ncol(tmp) - 1), drop = FALSE]
-      } else {
-        tmp
-      }
-
-    }
-
-    res[[k]] <- if (req_ts) {
-      do.call(cbind, res_periods)
-
-    } else {
-      array(
-        data = unlist(res_periods),
-        dim = c(length(group_by_month), length(id_periods)),
-        dimnames = list(
-          group_by_month,
-          if (use_all_yrs) {
-            NULL
-          } else {
-            if (has_periods) {
-              names(list_years_scen_used[[k]])[id_periods]
-            } else {
-              NULL
-            }
-          }
-        )
-      )
-    }
-  }
-
-  res
-}
-
-
-#' @noRd
-calc_multivariate_from_sw2 <- function(
-  path, name_sw2_run, id_scen_used,
-  list_years_scen_used, group_by_month, first_month_of_year,
-  req_ts = TRUE,
-  sw2_tp, sw2_outs, sw2_vars,
-  varnames_are_fixed = TRUE,
-  funs_across_each_var,
-  fun_across_time, ...
-) {
-
-  use_all_yrs <- missing(list_years_scen_used) || is.null(list_years_scen_used)
-  do_buffer_yrs <- req_ts && first_month_of_year > 1
-
-  # Output container
-  res <- list()
-
-  # Loop over scenarios
-  for (k in seq_along(id_scen_used)) {
-
-    x <- get_values_from_sw2(
-      id_scen = id_scen_used[k],
-      path, name_sw2_run,
-      group_by_month, first_month_of_year,
-      sw2_tp, sw2_outs, sw2_vars, varnames_are_fixed
-    )
-
-    # Aggregate across columns of each `sw2_vars` (e.g., soil layers)
-    if (!missing(funs_across_each_var) && !is.null(funs_across_each_var)) {
-      nvars <- length(sw2_vars)
-      funs_across_each_var <- rep_len(funs_across_each_var, nvars)
-
-      for (nc in seq_len(nvars)) {
-        if (!is.null(funs_across_each_var[[nc]])) {
-          ncs <- ncol(x[["vals"]][[nc]])
-
-          if (!is.null(ncs) && ncs > 1) {
-            x[["vals"]][[nc]] <- apply(
-              X = x[["vals"]][[nc]],
-              MARGIN = 1,
-              FUN = funs_across_each_var[[nc]],
-              ...
-            )
-          }
-        }
-      }
-    }
-
-    # Loop over set(s) of years
-    has_periods <-
-      !use_all_yrs &&
-      isTRUE(inherits(list_years_scen_used[[k]], "list"))
-
-    id_periods <- if (use_all_yrs) {
-      1
-    } else {
-      if (has_periods) which(lengths(list_years_scen_used[[k]]) > 0) else 1
-    }
-
-    res_periods <- list()
-
-    for (k2 in seq_along(id_periods)) {
-      # Subset years
-      ids <- if (use_all_yrs) {
-        rep(TRUE, length(x[["years"]]))
-
-      } else {
-        yrs <- if (has_periods) {
-          list_years_scen_used[[k]][[id_periods[k2]]]
-        } else {
-          list_years_scen_used[[k]]
-        }
-
-        if (do_buffer_yrs) {
-          yrs <- c(min(yrs) - 1, yrs, max(yrs) + 1)
-        }
-
-        x[["years"]] %in% yrs
-      }
-
-
-      # Aggregate across time
-      tmp <- by(
-        data = lapply(
-          X = x[["vals"]],
-          FUN = function(x) {
-            ncs <- ncol(x)
-            if (!is.null(ncs) && ncs > 1) {
-              x[ids, , drop = FALSE]
-            } else {
-              x[ids]
-            }
-          }
-        ),
-        INDICES = if (req_ts) {
-          list(
-            groups_by_time = x[["groups_by_time"]][ids],
-            years = x[["years"]][ids]
-          )
-        } else {
-          list(groups_by_time = x[["groups_by_time"]][ids])
-        },
-        FUN = match.fun(fun_across_time),
-        ...
-      )
-
-      tmp <- if (req_ts) {
-        matrix(
-          as.vector(tmp),
-          nrow = length(unique(group_by_month)),
-          ncol = length(unique(x[["years"]][ids]))
-        )
-      } else {
-        matrix(
-          unlist(tmp),
-          nrow = length(unique(group_by_month)),
-          byrow = TRUE
-        )
-      }
-
-      res_periods[[k2]] <- if (do_buffer_yrs) {
-        # Remove buffer years: first year (spinup) and
-        # last seasonally-adjusted year (incomplete)
-        tmp[, 2:(ncol(tmp) - 1), drop = FALSE]
-      } else {
-        tmp
-      }
-    }
-
-    res[[k]] <- if (req_ts) {
-      do.call(cbind, res_periods)
-
-    } else {
-      array(
-        data = unlist(res_periods),
-        dim = c(dim(res_periods[[1]]), length(id_periods)),
-        dimnames = list(
-          NULL,
-          NULL,
-          if (use_all_yrs) {
-            NULL
-          } else {
-            if (has_periods) {
-              names(list_years_scen_used[[k]])[id_periods]
-            } else {
-              NULL
-            }
-          }
-        )
-      )
-    }
-  }
-
-  res
-}
-
 
 
 #------ NEWRR DEVELOPMENT ERA ------
-extract_from_sw2 <- function(
-  path, name_sw2_run,
-  id_scen,
-  years,
-  sw2_tp = c("Day", "Month", "Year"),
-  sw2_outs,
-  sw2_vars,
-  varnames_are_fixed = TRUE
-) {
-  sw2_tp <- sw2_tp[1]
-  sw2_tp <- match.arg(sw2_tp)
-
-  #--- Load rSOILWAT2 output object: `runDataSC`
-  sim_data <- new.env(parent = emptyenv())
-  load(
-    file = file.path(
-      path,
-      name_sw2_run,
-      paste0("sw_output_sc", id_scen, ".RData")
-    ),
-    envir = sim_data
-  )
-
-  #--- Extract variables
-  nvars <- length(sw2_vars)
-  sw2_outs <- rep_len(sw2_outs, nvars)
-  varnames_are_fixed <- rep_len(varnames_are_fixed, nvars)
-
-  # Extract slots
-  x <- lapply(
-    sw2_outs,
-    function(k) slot(slot(sim_data[["runDataSC"]], k), sw2_tp)
-  )
-  x_vals <- list()
-
-  # Subset columns
-  for (k in seq_len(nvars)) {
-    if (varnames_are_fixed[k]) {
-      x_vals[[k]] <- x[[k]][, sw2_vars[k], drop = varnames_are_fixed[k]]
-    } else {
-      tmp <- grep(sw2_vars[k], colnames(x[[k]]), value = TRUE)
-      x_vals[[k]] <- x[[k]][, tmp, drop = varnames_are_fixed[k]]
-      colnames(x_vals[[k]]) <- tmp
-    }
-  }
-
-  names(x_vals) <- sw2_vars
-
-
-  #--- Extract time
-  x_time <- matrix(
-    NA,
-    nrow = nrow(x[[1]]),
-    ncol = 3L,
-    dimnames = list(NULL, c("Year", "Month", "Day"))
-  )
-
-  x_time[, "Year"] <- x[[1]][, "Year"]
-
-  if (sw2_tp == "Day") {
-    x_time[, "Day"] <- x[[1]][, "Day"]
-
-    tmp <- apply(
-      X = x_time[, c("Year", "Day"), drop = FALSE],
-      MARGIN = 1,
-      FUN = paste0,
-      collapse = "-"
-    )
-    x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1
-
-  } else if (sw2_tp == "Month") {
-    x_time[, "Month"] <- x[[1]][, "Month"]
-  }
-
-
-  #--- Subset to requested years
-  if (!missing(years) && length(years) > 0) {
-    ids <- x_time[, "Year"] %in% years
-    x_time <- x_time[ids, , drop = FALSE]
-    x_vals <- lapply(
-      x_vals,
-      function(x) if (is.null(dim(x))) x[ids] else x[ids, , drop = FALSE]
-    )
-  }
-
-
-  list(
-    time = x_time,
-    values = x_vals
-  )
-}
 
 
 get_swp_weighted <- function(
@@ -748,6 +443,8 @@ get_swp_weighted <- function(
   used_depth_range_cm = NULL,
   ...
 ) {
+  warning("`get_swp_weighted()` uses matric-VWC!")
+
   vwc <- extract_from_sw2(
     path = path,
     name_sw2_run = name_sw2_run,
@@ -827,12 +524,12 @@ get_swp_weighted <- function(
 }
 
 
-get_new_yearly_aggregations <- function(
+calc_new_yearly_aggregations <- function(
   x_daily,
   temp_monthly,
   fun_time, # sum
   fun_extreme, # max
-  periods, # list(op = `>`, limit = 0),
+  periods, # for instance: list(op = `>`, limit = 0),
   output = c(
     "values", "5roll", "seasonal_variability", "seasonality",
     "mean_day", "extreme_mean005day", "extreme_mean010day",
@@ -846,7 +543,6 @@ get_new_yearly_aggregations <- function(
   #   - mean/sum per year
   #   - mean/sum per month: CV across months, cor(., temperature)
   #   - moving mean across 5- and 10-day windows: extreme across smoothed days
-
   output <- match.arg(output, several.ok = TRUE)
 
   stopifnot(length(x_daily[["values"]]) == 1)
@@ -854,7 +550,6 @@ get_new_yearly_aggregations <- function(
   years <- unique(x_daily[["time"]][, "Year"])
 
   res <- matrix(
-    data = NA,
     nrow = length(years),
     ncol = length(output) + as.integer(include_year),
     dimnames = list(NULL, if (include_year) c("Year", output) else output)
@@ -1002,13 +697,16 @@ get_new_yearly_aggregations <- function(
         !missing(fun_extreme), !is.null(fun_extreme)
       )
 
-      res[, "extreme_value_consecutive_periods"] <- sapply(
+      res[, "extreme_value_consecutive_periods"] <- vapply(
         X = by(
           data = cbind(x_periods, x_daily[["values"]][[1]]),
           INDICES = x_daily[["time"]][, "Year"],
           FUN = function(x) {
             tmp <- rle(x[, 1])
-            if (any(tmp[["values"]] == 1)) {
+            if (anyNA(tmp[["values"]])) {
+              # Propagate NAs
+              NA
+            } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
               # Create index of days for each spell when
               # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
               ips <- seq_along(tmp[["lengths"]])
@@ -1018,11 +716,13 @@ get_new_yearly_aggregations <- function(
               tapply(X = x[, 2], INDEX = ids, FUN = fun_time)
 
             } else {
+              # No days when `x_periods` is TRUE
               0
             }
           }
         ),
-        FUN = fun_extreme
+        FUN = fun_extreme,
+        FUN.VALUE = NA_real_
       )
     }
 
@@ -1033,29 +733,35 @@ get_new_yearly_aggregations <- function(
         INDEX = x_daily[["time"]][, "Year"],
         FUN = function(x) {
           tmp <- rle(x)
-          if (any(tmp[["values"]] == 1)) {
+          if (anyNA(tmp[["values"]])) {
+            # Propagate NAs
+            NA
+          } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
             # Select duration of spells when
             # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
             tmp[["lengths"]][tmp[["values"]]]
           } else {
+            # No days when `x_periods` is TRUE
             0
           }
         }
       )
 
       if ("mean_duration_consecutive_periods_days" %in% output) {
-        res[, "mean_duration_consecutive_periods_days"] <- sapply(
+        res[, "mean_duration_consecutive_periods_days"] <- vapply(
           X = x_consecutive_periods_days,
-          FUN = mean
+          FUN = mean,
+          FUN.VALUE = NA_real_
         )
       }
 
       if ("extreme_duration_consecutive_periods_days" %in% output) {
         stopifnot(!missing(fun_extreme), !is.null(fun_extreme))
 
-        res[, "extreme_duration_consecutive_periods_days"] <- sapply(
+        res[, "extreme_duration_consecutive_periods_days"] <- vapply(
           X = x_consecutive_periods_days,
-          FUN = fun_extreme
+          FUN = fun_extreme,
+          FUN.VALUE = NA_real_
         )
       }
     }
@@ -1077,10 +783,15 @@ calc_transp_seasonality <- function(x, time, probs) {
       ttot <- tdc[length(tdc)]
       c(
         ttot,
-        sapply(
-          ttot * probs,
-          function(v) which.min(v >= tdc)
-        )
+        if (is.na(ttot)) {
+          rep(NA_integer_, length(probs))
+        } else {
+          vapply(
+            ttot * probs,
+            function(v) which.min(v >= tdc),
+            FUN.VALUE = NA_integer_
+          )
+        }
       )
     }
   )
@@ -1215,21 +926,24 @@ identify_peaks <- function(x, window, type = c("maxima", "minima")) {
 
 # Identify valley bottoms between peaks
 identify_valleys_between_peaks <- function(x, peaks) {
-  # Peaks located at start/end of value period
-  ids_peak_on_limits <- which(peaks %in% c(1, length(x)))
+  ids_edges <- range(which(!is.na(x)))
+
+  # Peaks located at start/end of non-NA value period
+  ids_peak_on_limits <- which(peaks %in% ids_edges)
 
   # Number of valleys
-  # (one on either side of a peak unless peak is on start/end)
+  # (one on either side of a peak unless peak is on start/end of data)
   n_valleys <- length(peaks) + 1 - length(ids_peak_on_limits)
 
   valleys <- rep(NA, n_valleys)
   iv <- 1
 
   for (k in seq_along(peaks)) {
-    if (k %in% ids_peak_on_limits) next
+    # Skip to next if current peak on an edge and more than one peak
+    if (k %in% ids_peak_on_limits && n_valleys > 1) next
 
     #--- Identify valley before peak
-    if (is.na(valleys[max(1, iv - 1)])) {
+    if (!(peaks[k] %in% ids_edges[[1]]) && is.na(valleys[max(1, iv - 1)])) {
       ids_inbetween <- seq.int(
         from = if (k > 1) peaks[k - 1] else 1,
         to = peaks[k]
@@ -1238,24 +952,26 @@ identify_valleys_between_peaks <- function(x, peaks) {
       tmpx <- min(x[ids_inbetween], na.rm = TRUE)
       if (is.finite(tmpx) && isTRUE(tmpx < max(x, na.rm = TRUE))) {
         valleys[iv] <-
-          ids_inbetween[1] - 1 +
+          ids_inbetween[[1]] - 1 +
           central_candidate(which(x[ids_inbetween] <= tmpx))
         iv <- iv + 1
       }
     }
 
     #--- Identify valley after peak
-    ids_inbetween <- seq.int(
-      from = peaks[k],
-      to = if (k == length(peaks)) length(x) else peaks[k + 1]
-    )
+    if (!(peaks[k] %in% ids_edges[[2]])) {
+      ids_inbetween <- seq.int(
+        from = peaks[k],
+        to = if (k == length(peaks)) length(x) else peaks[k + 1]
+      )
 
-    tmpx <- min(x[ids_inbetween], na.rm = TRUE)
-    if (is.finite(tmpx) && isTRUE(tmpx < max(x, na.rm = TRUE))) {
-      valleys[iv] <-
-        ids_inbetween[1] - 1 +
-        central_candidate(which(x[ids_inbetween] <= tmpx))
-      iv <- iv + 1
+      tmpx <- min(x[ids_inbetween], na.rm = TRUE)
+      if (is.finite(tmpx) && isTRUE(tmpx < max(x, na.rm = TRUE))) {
+        valleys[iv] <-
+          ids_inbetween[[1]] - 1 +
+          central_candidate(which(x[ids_inbetween] <= tmpx))
+        iv <- iv + 1
+      }
     }
   }
 
@@ -1280,12 +996,13 @@ peak_size_v1 <- function(pids, peak_type = c("value", "volume"), values) {
     vids <- unique(c(1, valleys, length(values)))
 
     # Sum smoothed transpiration from left to right valley bottoms per peak
-    pvals <- sapply(
+    pvals <- vapply(
       pids,
       function(p) {
         tmp <- findInterval(p, vids)
         sum(values[vids[tmp]:vids[tmp + 1]], na.rm = TRUE)
-      }
+      },
+      FUN.VALUE = NA_real_
     )
   }
 
@@ -1313,73 +1030,17 @@ peak_size_v2 <- function(
     vids <- sort(unique(c(1, valleys1, valleys2, length(values))))
 
     # Sum smoothed transpiration from left to right valley bottoms per peak
-    pvals <- sapply(
+    pvals <- vapply(
       pids,
       function(p) {
         tmp <- findInterval(p, vids)
         sum(values[vids[tmp]:vids[tmp + 1]], na.rm = TRUE)
-      }
+      },
+      FUN.VALUE = NA_real_
     )
   }
 
   pvals
-}
-
-
-format_monthly_to_matrix <- function(x, years, out_labels) {
-  if (!is.list(x) && length(out_labels) == 1) {
-    x <- list(x)
-  }
-
-  nmon <- paste0("mon", formatC(seq_len(12), width = 2, flag = "0"))
-  if (
-    !missing(out_labels) &&
-    length(out_labels) > 0 &&
-    all(nchar(out_labels) > 0)
-  ) {
-    nmon <- paste(rep(out_labels, each = 12), nmon, sep = "_")
-  }
-
-
-  tmp <- lapply(
-    seq_along(x),
-    function(k) {
-      array(
-        data = x[[k]],
-        dim = c(12, length(years))
-      )
-    }
-  )
-
-  res <- do.call(rbind, tmp)
-  rownames(res) <- nmon
-
-  res
-}
-
-format_yearly_to_matrix <- function(x, years, out_labels) {
-  nyr <- "annual"
-  if (
-    !missing(out_labels) &&
-    length(out_labels) > 0 &&
-    all(nchar(out_labels) > 0)
-  ) {
-    nyr <- paste(out_labels, nyr, sep = "_")
-  }
-
-  nx <- if (is.list(x) && all(lengths(x) == length(years))) {
-    length(x)
-  } else {
-    1
-  }
-
-  matrix(
-    data = unlist(x),
-    nrow = nx,
-    ncol = length(years),
-    dimnames = list(nyr, NULL),
-    byrow = TRUE
-  )
 }
 
 
@@ -1397,29 +1058,34 @@ get_variable_in_months <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    tmp_mon <- extract_from_sw2(
+    tmp_mon <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
-      sw2_tp = "Month",
-      sw2_outs = sw2_out,
-      sw2_vars = sw2_var,
-      varnames_are_fixed = TRUE
+      output_sets = list(
+        list(
+          sw2_tp = "Month",
+          sw2_outs = sw2_out,
+          sw2_vars = sw2_var,
+          varnames_are_fixed = TRUE
+        )
+      )
     )
 
-    # Helper variables
-    ts_years <- unique(tmp_mon[["time"]][, "Year"])
 
     # Calculate and format
-    res[[k1]] <- format_yearly_to_matrix(
-      x = var_scaler * tapply(
-        X = tmp_mon[["values"]][[sw2_var]],
-        INDEX = tmp_mon[["time"]][, "Year"],
+    ts_years <- unique(tmp_mon[[1]][["time"]][, "Year"])
+
+    res[[k1]] <- format_values_to_matrix(
+      x = var_scaler * unname(tapply(
+        X = tmp_mon[[1]][["values"]][[sw2_var]],
+        INDEX = tmp_mon[[1]][["time"]][, "Year"],
         FUN = function(x) fun_time(x[months])
-      ),
-      years = ts_years,
-      out_labels = var_label
+      )),
+      ts_years = ts_years,
+      timestep = "yearly",
+      out_label = var_label
     )
 
     if (include_year) {
@@ -1433,43 +1099,143 @@ get_variable_in_months <- function(
   res
 }
 
-format_daily_to_matrix <- function(x, time, out_labels, include_year) {
+
+#------ FORMAT VALUES ------
+#' Convert daily, monthly, or yearly values to a matrix
+#'
+#' @param x A numeric vector (or a list with a vector), data.frame, or a matrix.
+#'   Rows represent time and columns separate variables.
+#' @param ts_years A numeric vector.
+#'   The time series of years that the rows of `x` represent.
+#'   If a climatology, then set `ts_years` to `NA`.
+#' @param out_label A character vector. The labels representing columns of `x`.
+#' @param timestep A character string.
+#' @param include_year A logical value. If `TRUE` then adds a first row of
+#'   years.
+#'
+#' @return A matrix where columns represent years and
+#'   rows represent within-year values
+#'   (repeated blocks if multiple elements/columns in `x`), i.e.,
+#'   none for yearly,
+#'   month of year 1 through 12 for monthly,
+#'   or day of year 1 through 366 for daily time step.
+#'   Row names are constructed from the combinations of time step,
+#'   the names of `x` (if any), and `out_label` (if not `NULL`).
+#'
+#' @examples
+#' format_values_to_matrix(
+#'   data.frame(a = 1:10, b = 20:29),
+#'   ts_years = 1:10,
+#'   timestep = "yearly",
+#'   out_label = NULL
+#' )
+#' format_values_to_matrix(
+#'   data.frame(a = 1:10, b = 20:29),
+#'   ts_years = NA,
+#'   timestep = "yearly",
+#'   out_label = LETTERS[1:10]
+#' )
+#'
+#' @noRd
+format_values_to_matrix <- function(
+  x,
+  ts_years,
+  timestep = c("daily", "monthly", "yearly"),
+  out_label = NULL,
+  include_year = FALSE
+) {
+  timestep <- match.arg(timestep)
+  years <- unique(ts_years)
+  is_clim <- isTRUE(is.na(years))
+
   if (!is.list(x)) {
-    x <- list(x)
-  }
-
-  ndoy <- paste0("doy", formatC(seq_len(366), width = 3, flag = "0"))
-
-  if (
-    !missing(out_labels) &&
-    length(out_labels) > 0 &&
-    all(nchar(out_labels) > 0)
-  ) {
-    ndoy <- paste(rep(out_labels, each = 366), ndoy, sep = "_")
-  }
-
-  years <- unique(if (is.list(time)) time[["Year"]] else time[, "Year"])
-  doys366 <- seq_len(366)
-  doys365 <- seq_len(365)
-
-  x_template <- array(dim = c(366, length(years)))
-
-
-  tmp <- lapply(
-    seq_along(x),
-    function(k1) {
-      xtmp <- x_template
-      ttmp <- if (is.list(time)) time[["Year"]] else time[, "Year"]
-      for (k2 in seq_along(years)) {
-        doys <- if (rSW2utils::isLeapYear(years[k2])) doys366 else doys365
-        xtmp[doys, k2] <- x[[k1]][ttmp == years[k2]]
-      }
-      xtmp
+    if (is.matrix(x)) {
+      ns_x <- colnames(x)
+      x <- as.data.frame(x)
+      colnames(x) <- ns_x
+    } else {
+      x <- list(x)
     }
+  }
+
+  if (timestep == "daily") {
+    doys366 <- seq_len(366)
+    doys365 <- seq_len(365)
+    x_template <- array(dim = c(366, length(years)))
+  }
+
+
+  #--- Determine row names
+  tmp <- list(
+    switch(
+      EXPR = timestep,
+      yearly = "annual",
+      monthly = paste0("mon", formatC(seq_len(12), width = 2, flag = "0")),
+      daily = paste0("doy", formatC(doys366, width = 3, flag = "0"))
+    ),
+    names(x),
+    out_label
   )
 
-  res <- do.call(rbind, tmp)
-  rownames(res) <- ndoy
+  ns_row <- apply(
+    expand.grid(tmp[lengths(tmp) > 0]),
+    MARGIN = 1,
+    FUN = function(x) paste0(rev(x), collapse = "_")
+  )
+
+
+  #--- Format as matrix (columns represent years)
+
+  if (timestep == "yearly") {
+    tmp <- unlist(x)
+
+    res <- matrix(
+      data = tmp,
+      nrow = if (is_clim) {
+        length(tmp)
+      } else if (all(lengths(x) == length(ts_years))) {
+        length(x)
+      } else {
+        1
+      },
+      ncol = length(ts_years),
+      dimnames = list(ns_row, NULL),
+      byrow = TRUE
+    )
+
+  } else {
+    tmp <- if (timestep == "monthly") {
+      lapply(
+        seq_along(x),
+        function(k) {
+          array(
+            data = x[[k]],
+            dim = c(12, length(years))
+          )
+        }
+      )
+
+    } else if (timestep == "daily") {
+      lapply(
+        seq_along(x),
+        function(k1) {
+          xtmp <- x_template
+          for (k2 in seq_along(years)) {
+            if (is_clim) {
+              xtmp[seq_along(x[[k1]]), k2] <- x[[k1]]
+            } else {
+              doys <- if (rSW2utils::isLeapYear(years[k2])) doys366 else doys365
+              xtmp[doys, k2] <- x[[k1]][ts_years == years[k2]]
+            }
+          }
+          xtmp
+        }
+      )
+    }
+
+    res <- do.call(rbind, tmp)
+    rownames(res) <- ns_row
+  }
 
   if (include_year) {
     res <- rbind(Year = years, res)
@@ -1482,47 +1248,171 @@ format_daily_to_matrix <- function(x, time, out_labels, include_year) {
 
 
 
-
 #------ SEPARATE DATA FROM CALCULATIONS DEVELOPMENT ERA ------
+create_sw2simtime <- function(n) {
+  data.frame(
+    Year = rep(NA, n),
+    Month = NA,
+    Day = NA,
+    mode = NA
+  )
+}
+
+#' Prepare specified vs. requested time step `data.frame`
+#'
+#' @param xt A two-dimensional object with columns
+#'   `Year`,
+#'   `Month` (if `sw2_tp` equals "Month"), and
+#'   `Day` (if `sw2_tp` equals "Day"). Each row represents one time step
+#'   according to `sw2_tp`.
+#' @param req_years An integer vector of Calendar years. If missing or `NULL`,
+#'   then time steps contained in `xt` are used.
+#'   If not missing and not `NULL` and different than years contained in `xt`,
+#'   then time steps combined from requested and simulated are used.
+#' @param sw2_tp A character string. The daily, monthly, or yearly time step
+#'   describing content of `xt` and determining the same output time step.
+#'
+#' @return A `data.frame` with four columns `Year`, `Month`, `Day`, `mode`.
+#'   Rows represent daily, monthly, or yearly time steps that combine
+#'   requested (if `req_years` was provided) and simulated (`xt`) time steps.
+#'   `mode` is `"nosim"` if a time step was not simulated (but requested),
+#'   `"sim_keep"` if a time step was simulated
+#'   (and requested or `req_years` is missing), or
+#'   `"sim_discard"` if a time step was simulated (but not requested).
+#'
+#' @section Notes:
+#'   The column `Day` contains day of year (and not day of month)!
+#'
+#' @examples
+#'  xty <- data.frame(Year = 1991:2020)
+#'  determine_sw2_sim_time(xty, sw2_tp = "Year")
+#'  determine_sw2_sim_time(xty, req_years = 1981:2010, sw2_tp = "Year")
+#'  determine_sw2_sim_time(xty, req_years = 2011:2030, sw2_tp = "Year")
+#'
+#' @export
 determine_sw2_sim_time <- function(
-  x,
-  years,
+  xt,
+  req_years = NULL,
   sw2_tp = c("Day", "Month", "Year")
 ) {
+  # nolint start: commented_code_linter, line_length_linter.
+  # debugging un-memoized version:
+  # assignInNamespace("determine_sw2_sim_time", environment(rSW2metrics::determine_sw2_sim_time)$`_f`, "rSW2metrics")
+  # nolint end
+
   sw2_tp <- match.arg(sw2_tp)
 
-  x_time <- matrix(
-    NA,
-    nrow = nrow(x[[1]]),
-    ncol = 3L,
-    dimnames = list(NULL, c("Year", "Month", "Day"))
-  )
+  years_sim <- unique(xt[, "Year"])
+  has_req_yrs <-
+    !missing(req_years) && length(req_years) > 0 &&
+    !setequal(req_years, years_sim)
 
-  x_time[, "Year"] <- x[[1]][, "Year"]
+  years_used <- if (has_req_yrs) {
+    sort(unique(c(req_years, years_sim)))
+  } else {
+    years_sim
+  }
 
-  if (sw2_tp == "Day") {
-    x_time[, "Day"] <- x[[1]][, "Day"]
 
-    tmp <- apply(
-      X = x_time[, c("Year", "Day"), drop = FALSE],
-      MARGIN = 1,
-      FUN = paste0,
-      collapse = "-"
-    )
-    x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1
+  if (sw2_tp == "Year") {
+    x_time <- create_sw2simtime(n = length(years_used))
 
-    if (anyNA(x_time[, "Month"])) {
-      # Apparently runs can be set up to have incorrect leap/nonleap-years;
-      # in those cases the last simulated day of some nonleap years is the
-      # 366-th day (which in reality doesn't exist) and
-      # for which `as.POSIXlt()` correctly produces an NA (with a warning)
-      # --> patch up and fill in month with 12 as if it were a leap year
-      x_time[is.na(x_time[, "Month"]), "Month"] <- 12
+    x_time[, "Year"] <- years_used
+
+    if (has_req_yrs) {
+      ids_sim <- x_time[, "Year"] %in% years_sim
     }
 
   } else if (sw2_tp == "Month") {
-    x_time[, "Month"] <- x[[1]][, "Month"]
+    x_time <- create_sw2simtime(n = 12 * length(years_used))
+
+    x_time[, "Year"] <- rep(years_used, each = 12)
+    x_time[, "Month"] <- seq_len(12)
+
+    if (has_req_yrs) {
+      ids_sim <-
+        paste0(x_time[, "Year"], "-", x_time[, "Month"]) %in%
+        paste0(xt[, "Year"], "-", xt[, "Month"])
+    }
+
+  } else if (sw2_tp == "Day") {
+    # Create `x_time` for all used years
+    req_ts_days <- as.POSIXlt(seq(
+      from = ISOdate(min(years_used), 1, 1, tz = "UTC"),
+      to = ISOdate(max(years_used), 12, 31, tz = "UTC"),
+      by = "1 day"
+    ))
+
+    x_time <- create_sw2simtime(n = length(req_ts_days))
+
+    # nolint start: extraction_operator_linter.
+    x_time[, "Year"] <- 1900 + req_ts_days$year
+    x_time[, "Month"] <- 1 + req_ts_days$mon
+    x_time[, "Day"] <- 1 + req_ts_days$yday
+    # nolint end
+
+
+    # Apparently, SW2 output can be generated with incorrect leap/nonleap-years;
+    # if so, then the last simulated day of a nonleap year would
+    # incorrectly be the 366-th day (which in reality doesn't exist) and
+    # for which `as.POSIXlt()` correctly produces an NA (with a warning);
+    # similarly, the last simulated day of a leap year would
+    # incorrectly be the 365-th day (and the 366th-day would be missing)
+    # --> add simulated non-existing leap-days &
+    #     remove not simulated existing leap years
+    tmp_sim_seq <- paste0(xt[, "Year"], "-", xt[, "Day"])
+    sim_ts_days <- as.POSIXlt(tmp_sim_seq, format = "%Y-%j", tz = "UTC")
+    has_leap_issues <- anyNA(sim_ts_days)
+
+    if (has_leap_issues) {
+      # Create `x_time` for simulated time period
+      x_time2 <- create_sw2simtime(n = nrow(xt))
+      x_time2[, "Year"] <- xt[, "Year"]
+      x_time2[, "Day"] <- xt[, "Day"]
+      # nolint start: extraction_operator_linter.
+      x_time2[, "Month"] <- sim_ts_days$mon + 1
+      # nolint end
+      x_time2[is.na(sim_ts_days), "Month"] <- 12
+
+      # Add requested but not simulated years from `x_time`
+      if (has_req_yrs) {
+        ids_notsim <- x_time[, "Year"] %in% setdiff(req_years, years_sim)
+        tmp <- merge(
+          x_time[ids_notsim, , drop = FALSE],
+          x_time2,
+          all = TRUE,
+          sort = FALSE
+        )
+        x_time <- tmp[order(tmp[["Year"]], tmp[["Day"]]), , drop = FALSE]
+        rownames(x_time) <- NULL
+
+      } else {
+        # All used years are simulated years
+        x_time <- x_time2
+      }
+    }
+
+    if (has_req_yrs) {
+      ids_sim <-
+        paste0(x_time[, "Year"], "-", x_time[, "Day"]) %in% tmp_sim_seq
+    }
   }
+
+
+  if (has_req_yrs) {
+    ids_req <- x_time[, "Year"] %in% req_years
+    x_time[ids_sim & ids_req, "mode"] <- "sim_keep"
+    x_time[ids_sim & !ids_req, "mode"] <- "sim_discard"
+    x_time[!ids_sim & ids_req, "mode"] <- "nosim"
+
+  } else {
+    x_time[, "mode"] <- "sim_keep"
+  }
+
+  stopifnot(
+    !anyNA(x_time[, "mode"]),
+    nrow(x_time) >= nrow(xt)
+  )
 
   x_time
 }
@@ -1629,24 +1519,44 @@ collect_sw2_sim_data <- function(
 
 
     #--- Extract time
+    # `determine_sw2_sim_time()` is memoized and a missing `years` passed to
+    # argument `req_years` doesn't work correctly
+    # (see https://github.com/r-lib/memoise/issues/19)
     x_time <- determine_sw2_sim_time(
-      x,
-      years = unique(x[[1]][, "Year"]),
+      xt = x[[1]],
+      req_years = if (missing(years)) NULL else years,
       sw2_tp = out[["sw2_tp"]]
     )
 
+    n_nosim <- sum(x_time[, "mode"] == "nosim")
 
-    #--- Subset to requested years
-    if (!missing(years) && length(years) > 0) {
-      ids <- x_time[, "Year"] %in% years
 
-      if (any(!ids)) {
-        x_time <- x_time[ids, , drop = FALSE]
-        x_vals <- lapply(
-          x_vals,
-          function(x) if (is.null(dim(x))) x[ids] else x[ids, , drop = FALSE]
-        )
+    #--- Add entries for requested but not simulated time steps "nosim"
+    if (n_nosim > 0) {
+      n_sim <- nrow(x_time) - n_nosim
+      ids <- if (isTRUE(x_time[1, "mode"] == "nosim")) {
+        # "nosim" occurs before "sim_keep"
+        c(rep(NA, n_nosim), seq_len(n_sim))
+      } else {
+        # "nosim" occurs after "sim_keep"
+        c(seq_len(n_sim), rep(NA, n_nosim))
       }
+
+      x_vals <- lapply(
+        x_vals,
+        function(x) if (is.null(dim(x))) x[ids] else x[ids, , drop = FALSE]
+      )
+    }
+
+
+    #--- Removes entries for un-requested but simulated time steps "sim_discard"
+    ids <- which(x_time[, "mode"] == "sim_discard")
+    if (length(ids) > 0) {
+      x_time <- x_time[-ids, , drop = FALSE]
+      x_vals <- lapply(
+        x_vals,
+        function(x) if (is.null(dim(x))) x[-ids] else x[-ids, , drop = FALSE]
+      )
     }
 
 

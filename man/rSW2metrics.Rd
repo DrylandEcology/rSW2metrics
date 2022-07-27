@@ -6,10 +6,9 @@
 \alias{rSW2metrics-package}
 \title{Package \pkg{rSW2metrics}: Collection of functions to calculate
 ecohydrological metrics from output created by
-\pkg{rSOILWAT2} or \pkg{rSFSW2}simulation experiments.}
+\pkg{rSOILWAT2} or \pkg{rSFSW2} simulation experiments.}
 \description{
-Collection of functions to calculate ecohydrological metrics
-    from output created by rSOILWAT2 or rSFSW2 simulation experiments.
+Collection of functions to calculate ecohydrological metrics from output created by rSOILWAT2 or rSFSW2 simulation experiments.
 }
 \section{Details}{
 
@@ -20,7 +19,7 @@ Specify values for your specific project.
 \item Copy file \var{\dQuote{Script_to_Extract_Metric.R}}.
 In most cases, this script can be used without changes.
 \item Copy file \var{\dQuote{Script_Shell_Extracting_rSW2metrics.sh}}.
-Specify arguments/options and remove calls to metrics not needed.
+Specify arguments/options and select calls to requested metrics.
 \item Run the extraction by executing
 \var{\dQuote{Script_Shell_Extracting_rSW2metrics.sh}}
 on the command line.
@@ -34,6 +33,12 @@ Example code for copying the three files to your project folder:\preformatted{fi
   to = PATH_TO_YOUR_PROJECT
 )
 }
+}
+
+\section{Notes}{
+
+The documentation entry \code{\link{metrics}} describes inputs and outputs
+and provides a list of available metric functions.
 }
 
 \seealso{

@@ -1,7 +1,5 @@
 #------ Quarterly ------
-# nolint start
-# Q1 = Jan-Mar; Q2 = Apr-Jun; Q3 = Jul-Sep; Q4 = Oct-Dec
-# nolint end
+# Defined as Q1 = Jan-Mar; Q2 = Apr-Jun; Q3 = Jul-Sep; Q4 = Oct-Dec
 
 
 
@@ -27,7 +25,7 @@ metric_Climate_quarterly <- function(
           sw2_tp = "Day",
           sw2_outs = c("TEMP", "PRECIP"),
           sw2_vars = c(`tmean-C` = "avg_C", `ppt-mm` = "ppt"),
-          varnames_are_fixed = FALSE
+          varnames_are_fixed = TRUE
         )
       )
     )
@@ -73,6 +71,7 @@ metric_Climate_quarterly <- function(
 
 
 # Quarterly mean SWA of daily sums across soil layers:
+# soils must have "depth_cm", "sand_frac", "clay_frac", and "gravel_content"
 get_SWA_multilayer_quarterly <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
@@ -85,7 +84,7 @@ get_SWA_multilayer_quarterly <- function(
   tag_depth_ranges <- rep(
     unlist(lapply(
       list_used_depth_range_cm,
-      function(x) paste0(x[1], "to", x[2], "cm")
+      function(x) paste0(x[[1]], "to", x[[2]], "cm")
     )),
     each = 4
   )
@@ -99,10 +98,10 @@ get_SWA_multilayer_quarterly <- function(
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
       output_sets = list(
-        vwc_daily = list(
+        swc_daily = list(
           sw2_tp = "Day",
-          sw2_outs = "VWCBULK",
-          sw2_vars = c(vwc = "Lyr"),
+          sw2_outs = "SWCBULK",
+          sw2_vars = c(swc = "Lyr"),
           varnames_are_fixed = FALSE
         )
       )
@@ -112,10 +111,11 @@ get_SWA_multilayer_quarterly <- function(
       list_used_depth_range_cm,
       function(range) {
         calc_SWA_mm(
-          sim_vwc_daily = sim_data[["vwc_daily"]],
+          sim_swc_daily = sim_data[["swc_daily"]],
           soils = soils,
           SWP_limit_MPa = SWP_limit_MPa,
-          used_depth_range_cm = range
+          used_depth_range_cm = range,
+          method = "across_profile"
         )
       }
     )
@@ -165,7 +165,7 @@ metric_SWAat0to020to100cm39bar_quarterly <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   list_used_depth_range_cm <- list(c(0, 20), c(20, 100))

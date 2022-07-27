@@ -33,18 +33,33 @@ Calculate temporal aggregations across annual values
 
 Arguments \code{list_years} and \code{id_scens} specify two modes of
 aggregations: \itemize{
-  \item Both arguments, i.e., \code{list_years} and \code{id_scens},
-    are specified. There must be one element in \code{list_years} for each
-    value of \code{id_scens}.
-  \item Only \code{list_years} is provided as argument. Each element of
-    \code{list_years} is applied to each scenario available in \code{x}.
+\item Both arguments, i.e., \code{list_years} and \code{id_scens},
+are specified. There must be one element in \code{list_years} for each
+value of \code{id_scens}.
+\item Only \code{list_years} is provided as argument. Each element of
+\code{list_years} is applied to each scenario available in \code{x}.
 }
+
+
+Years requested by \code{list_years} but not available in \code{x} are
+silently ignored!
 }
 
 \section{Notes}{
 
-Years requested by \code{list_years} but not available in \code{x} are
-silently ignored!
+The package \pkg{rSW2metrics} offers two pathways to across-year summaries:
+\enumerate{
+\item \code{aggs_across_years()} calculates across-year summaries
+from output of a time-series metric; this can be calculated after
+extractions or requested with
+command-line options \code{-add_aggs_across_yrs} and \code{-ts}.
+\item Metrics that directly return across-year summaries,
+i.e., climatologies;
+those are internally calculated by \code{calc_climatology()}.
+}
+
+Both pathways utilize the user-defined function \code{fun_aggs_across_yrs()}
+from \var{"Project_Parameters.R}.
 }
 
 \examples{

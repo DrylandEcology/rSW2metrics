@@ -20,7 +20,7 @@
 
 #' Package \pkg{rSW2metrics}: Collection of functions to calculate
 #' ecohydrological metrics from output created by
-#' \pkg{rSOILWAT2} or \pkg{rSFSW2}simulation experiments.
+#' \pkg{rSOILWAT2} or \pkg{rSFSW2} simulation experiments.
 #'
 #' @section Details:
 #' Recommended setup:
@@ -29,7 +29,7 @@
 #'   2. Copy file \var{\dQuote{Script_to_Extract_Metric.R}}.
 #'      In most cases, this script can be used without changes.
 #'   3. Copy file \var{\dQuote{Script_Shell_Extracting_rSW2metrics.sh}}.
-#'      Specify arguments/options and remove calls to metrics not needed.
+#'      Specify arguments/options and select calls to requested metrics.
 #'   4. Run the extraction by executing
 #'      \var{\dQuote{Script_Shell_Extracting_rSW2metrics.sh}}
 #'      on the command line.
@@ -45,10 +45,12 @@
 #' )
 #' ```
 #'
+#' @section Notes:
+#' The documentation entry \code{\link{metrics}} describes inputs and outputs
+#' and provides a list of available metric functions.
 #'
 #' @docType package
 #' @name rSW2metrics
-#' @md
 "_PACKAGE"
 
 
@@ -61,7 +63,17 @@ rSW2_glovars <- new.env()
 
 
 rd_alias_metrics <- function() {
-  paste("@aliases", paste(list_all_metrics(), collapse = " "))
+  tmp <- list_all_metrics()
+
+  # Remove `metric_SW2toTable_daily()` because it has it's own documentation
+  exclude_metrics <- "metric_SW2toTable_daily"
+  ids_remove <- unique(unlist(lapply(
+    exclude_metrics,
+    function(x) grep(x, basename(tmp))
+  )))
+  tmp <- tmp[-ids_remove]
+
+  paste("@aliases", paste(tmp, collapse = " "))
 }
 
 rd_section_listing_metrics <- function() {
@@ -69,7 +81,7 @@ rd_section_listing_metrics <- function() {
     "\\section{List of currently available metrics:}{\n",
     "\\itemize{\n",
     paste(
-      "  \\item",
+      "  \\item", # nolint: nonportable_path_linter.
       paste0("\\var{", list_all_metrics(), "}"),
       collapse = "\n"
     ),
@@ -77,12 +89,12 @@ rd_section_listing_metrics <- function() {
   )
 }
 
-#' End-user functions that return a specific \code{metric}
+#' End-user functions that calculate a specific `metric`
 #'
-#' These functions have a name that starts with \code{metric_}.
+#' These functions have a name that starts with `metric_`.
 #' They have at least the following arguments:
-#' \code{path}, \code{name_sw2_run}, \code{id_scen_used},
-#' \code{list_years_scen_used}, \code{out}, and \code{...}.
+#' `path`, `name_sw2_run`, `id_scen_used`,
+#' `list_years_scen_used`, `out`, and `...`.
 #'
 #'
 #' @param path A character string. The path to the simulation project folder
@@ -113,6 +125,47 @@ rd_section_listing_metrics <- function() {
 #'   contain the respective values for each soil layer at the site.
 #' @param ... Additional arguments
 #'
+#' @return
+#'   - A `data.frame` with a least two columns
+#'     "site" (identifying sites) and
+#'     "group"
+#'     (identifying different variables, soil layers, or sub-annual time steps)
+#'
+#'   - If `do_collect_inputs`, then
+#'     a `data.frame` where rows represent sites (identified by column "site")
+#'     and columns represent soil layers
+#'     (columns `varname_LX` where X is the soil layer number).
+#'
+#'   - Otherwise (i.e., for regular metrics), a `data.frame`:
+#'       * rows represent combinations of sites
+#'         (identified by column "site") and "groups"
+#'         (identified by column "group" for different variables, soil layers,
+#'         or sub-annual time steps:
+#'         seasonal \var{\dQuote{season}}, quarterly \var{\dQuote{Q}},
+#'         monthly \var{\dQuote{mon}}, daily \var{\dQuote{doy}});
+#'       * values of annual time series for different scenarios are present,
+#'         if `is_out_ts`, in columns with names:
+#'         `scX_YYYY` (where X is the scenario number and `YYYY` is the
+#'         calendar year);
+#'       * values of across-year aggregations
+#'         are present if the metric itself calculates them or if they were
+#'         added by the option `add_aggs_across_yrs`, in columns with names
+#'         `fun_scX_YYYY-ZZZZ` (where "fun" is the aggregation function,
+#'         X is the scenario, `YYYY` the start year and
+#'         `ZZZZ` the end year of the period
+#'         across which the aggregation was calculated)
+#'
+#' @section Details:
+#' Each metric function produces a set of variables (one to many) at a
+#' time step that is specified in the name of the metric function. The default
+#' time step is annual (which may be omitted from the name of the function);
+#' sub-annual time steps include (case-insensitive):
+#' `Seasonal` (1 to 12 seasons per year); `quarterly`; `monthly`; and `daily`.
+#'
+#' @section Notes:
+#' The metric [metric_SW2toTable_daily()] is an exception and produces
+#' a different type of output, i.e., spreadsheets of the most important
+#' daily `SOILWAT2` variables, see [`SW2toTable`].
 #'
 #' @evalRd rd_section_listing_metrics()
 #'
@@ -134,7 +187,7 @@ rd_section_listing_inputcollectors <- function() {
     "\\section{List of currently available input collectors:}{\n",
     "\\itemize{\n",
     paste(
-      "  \\item",
+      "  \\item", # nolint: nonportable_path_linter.
       paste0("\\var{", list_all_input_collectors(), "}"),
       collapse = "\n"
     ),

@@ -17,9 +17,9 @@ shorten_run_names(run_names, element_sep = "_", N_discard = 2)
 \description{
 Full names of \pkg{rSFSW2} simulation runs are composed of three parts
 \itemize{
-  \item a run number
-  \item experimental treatment
-  \item site label
+\item a run number
+\item experimental treatment
+\item site label
 }
 and concatenated by \var{"_"} as separator, for instance,
 \var{"001_Default_SiteA"}, \var{"002_Default_SiteB"}, etc.

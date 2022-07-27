@@ -23,27 +23,6 @@ metric_TemperatureMean_Seasonal <- function(
   )
 }
 
-# Temperature--Monthly--Mean	Degrees C	Mean daily Temperature
-metric_TemperatureMean_MeanMonthly <- function(
-  path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "across_years",
-  ...
-) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
-
-  calc_univariate_from_sw2(
-    path, name_sw2_run,
-    id_scen_used = id_scen_used,
-    list_years_scen_used = list_years_scen_used,
-    group_by_month = seq_len(12),
-    first_month_of_year = 1L,
-    req_ts = FALSE,
-    sw2_tp = "Month",
-    sw2_out = "TEMP",
-    sw2_var = "avg_C",
-    fun_across_time = "mean"
-  )
-}
 
 # Minimum temperature--Seasonal--Degrees C	Lowest daily maximum temperature
 metric_TemperatureMin_Seasonal <- function(
@@ -107,8 +86,7 @@ metric_FrostDays_Seasonal <- function(
     sw2_tp = "Day",
     sw2_out = "TEMP",
     sw2_var = "min_C",
-    fun_across_time = function(x, limit,
-  ...) sum(x < limit),
+    fun_across_time = function(x, limit, ...) sum(x < limit),
     limit = -1
   )
 }
@@ -137,27 +115,6 @@ metric_PPT_Seasonal <- function(
   )
 }
 
-# Precipitation--Monthly--Sum	cm	Sum of daily Precipitation
-metric_PPT_MeanMonthly <- function(
-  path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "across_years",
-  ...
-) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
-
-  calc_univariate_from_sw2(
-    path, name_sw2_run,
-    id_scen_used = id_scen_used,
-    list_years_scen_used = list_years_scen_used,
-    group_by_month = seq_len(12),
-    first_month_of_year = 1L,
-    req_ts = FALSE,
-    sw2_tp = "Month",
-    sw2_out = "PRECIP",
-    sw2_var = "ppt",
-    fun_across_time = "mean"
-  )
-}
 
 # Potential evapotranspiration (PET)--Seasonal--Sum	cm	Sum of daily PET
 metric_PET_Seasonal <- function(
@@ -273,6 +230,8 @@ get_VWC_Seasonal <- function(
 
   widths_cm <- calc_soillayer_weights(soils[["depth_cm"]], used_depth_range_cm)
 
+  warning("`get_VWC_Seasonal()` returns matric-VWC!")
+
   calc_univariate_from_sw2(
     path, name_sw2_run,
     id_scen_used = id_scen_used,
@@ -346,17 +305,22 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
   soils,
   ...
 ) {
-  stopifnot(requireNamespace("reshape2", quietly = TRUE))
-  stopifnot(check_metric_arguments(
-    out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
-  ))
+  stopifnot(
+    requireNamespace("reshape2", quietly = TRUE),
+    check_metric_arguments(
+      out = match.arg(out),
+      req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    )
+  )
+
+  warning("`metric_SWP_SoilLayers_MeanMonthly()` uses matric-VWC!")
 
   vwc <- calc_multivariate_from_sw2(
     path, name_sw2_run,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = seq_len(12),
+    group_label = "mon",
     first_month_of_year = 1L,
     req_ts = FALSE,
     sw2_tp = "Month",
@@ -379,7 +343,7 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
     X = vwc,
     FUN = function(x) {
       tmp <- array(NA, dim = dim(x), dimnames = dimnames(x))
-      for (k in seq_len(dim(x)[3])) {
+      for (k in seq_len(dim(x)[[3]])) {
         tmp[, , k] <- rSOILWAT2::VWCtoSWP(
           vwc = x[, , k],
           sand = soils[["sand_frac"]][id_slyrs],
@@ -394,7 +358,7 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
   # TODO: fix so that req_ts = TRUE works
   nlyrs <- ncol(tmp[[1]])
   group_labels <- paste0(
-    seq_len(12),
+    list_subannual_timesteps()[["monthly"]],
     "_Layer", rep(seq_len(nlyrs), each = 12)
   )
 
@@ -417,6 +381,9 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
 #--- SWA ------
 # Soil water availability (SWA)- whole/part profile--Seasonal--Mean	total cm
 # Mean daily SWA (moisture above -3.9MPa)
+#
+# see `calc_SWA_mm()` for explanation of calculation
+#
 get_SWA_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   group_by_month, first_month_of_year,
@@ -428,11 +395,13 @@ get_SWA_Seasonal <- function(
   widths_cm <- calc_soillayer_weights(soils[["depth_cm"]], used_depth_range_cm)
 
   id_slyrs <- which(!is.na(widths_cm))
-  base_SWC_cm <- widths_cm[id_slyrs] * rSOILWAT2::SWPtoVWC(
+  # Calculate SWC threshold (corrected for coarse fragments)
+  # SWC <-> VWC exists only for the matric component
+  base_SWC_cm <- rSOILWAT2::SWPtoVWC(
     swp = crit_SWP_MPa,
     sand = soils[["sand_frac"]][id_slyrs],
     clay = soils[["clay_frac"]][id_slyrs]
-  )
+  ) * widths_cm[id_slyrs] * (1 - soils[["gravel_content"]][id_slyrs])
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
@@ -462,7 +431,7 @@ metric_SWA_Seasonal_wholeprofile <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA_Seasonal(
@@ -486,7 +455,7 @@ metric_SWA_Seasonal_top50cm <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA_Seasonal(
@@ -680,11 +649,13 @@ get_NonDrySWA_Seasonal <- function(
   widths_cm <- calc_soillayer_weights(soils[["depth_cm"]], used_depth_range_cm)
 
   id_slyrs <- which(!is.na(widths_cm))
-  base_SWC_cm <- widths_cm[id_slyrs] * rSOILWAT2::SWPtoVWC(
+  # Calculate SWC threshold (corrected for coarse fragments)
+  # SWC <-> VWC exists only for the matric component
+  base_SWC_cm <- rSOILWAT2::SWPtoVWC(
     swp = crit_SWP_MPa,
     sand = soils[["sand_frac"]][id_slyrs],
     clay = soils[["clay_frac"]][id_slyrs]
-  )
+  ) * widths_cm[id_slyrs] * (1 - soils[["gravel_content"]][id_slyrs])
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
@@ -880,6 +851,7 @@ get_SemiDryDuration_Annual <- function(
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = rep(0, 12),
+    group_label = "annual",
     first_month_of_year = first_month_of_year,
     sw2_tp = "Day",
     sw2_out = "SWPMATRIC",
@@ -968,6 +940,7 @@ metric_CorTP_Annual <- function(
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = rep(0, 12),
+    group_label = "annual",
     first_month_of_year = first_month_of_year,
     sw2_tp = "Month",
     sw2_outs = c("TEMP", "PRECIP"),

@@ -26,8 +26,8 @@ calc_peaks_v1 <- function(
     # Primary peak: largest size
     tmp <- which.max(psize)
     p1 <- c(pids[tmp], pvals[tmp])
-    # Secondary peaks are at least `peak2_min_factor * p1[2]` tall
-    is2 <- pids != p1[1] & pvals >= peak2_min_factor * p1[2]
+    # Secondary peaks are at least `peak2_min_factor * p1[[2]]` tall
+    is2 <- pids != p1[[1]] & pvals >= peak2_min_factor * p1[[2]]
 
     # peak 2
     p2 <- rep(NA, 2)
@@ -42,17 +42,17 @@ calc_peaks_v1 <- function(
         tmp_p2 <- c(pids2[ppos[k]], pvals[is2][ppos[k]])
 
         # Days in-between peak 1 and candidate peak 2
-        ids_inbetween <- sort(tmp_p2[1]:p1[1])
+        ids_inbetween <- sort(tmp_p2[[1]]:p1[[1]])
 
         if (length(ids_inbetween) > 0) {
           # Sufficient drop?
-          ids_dropped <- x[ids_inbetween] < peak2_drop_factor * p1[2]
+          ids_dropped <- x[ids_inbetween] < peak2_drop_factor * p1[[2]]
           has_dropped <- any(ids_dropped)
 
           if (has_dropped) {
             # Sufficient increase?
-            increase <- tmp_p2[2] - min(x[ids_inbetween[ids_dropped]])
-            has_increased <- increase >= peak2_increase_factor * p1[2]
+            increase <- tmp_p2[[2]] - min(x[ids_inbetween[ids_dropped]])
+            has_increased <- increase >= peak2_increase_factor * p1[[2]]
 
             # Is candidate our peak 2?
             if (has_increased) {
@@ -96,9 +96,9 @@ calc_peaks_v2 <- function(
   #--- Identify DOY of candidate peaks
   # (peaks are at least a half-window apart)
   pids <- identify_peaks(x, days_window)
-  res["Peak_N"] <- length(pids)
+  res[["Peak_N"]] <- length(pids)
 
-  if (res["Peak_N"] > 0) {
+  if (res[["Peak_N"]] > 0) {
     #--- Peak value, relative volume, and size (as determined by `peak_type`)
     tmp <- cbind(
       ID = seq_along(pids),
@@ -130,9 +130,9 @@ calc_peaks_v2 <- function(
     tmp <- peaks[, "meas"] >= peaksize_min_factor * maxpeak_size
     peaks <- peaks[tmp, , drop = FALSE]
 
-    res["Peak_N"] <- nrow(peaks)
+    res[["Peak_N"]] <- nrow(peaks)
 
-    if (res["Peak_N"] > 0) {
+    if (res[["Peak_N"]] > 0) {
       # Growing list of identified/confirmed peak IDs
       ids_good <- idmax
 
@@ -198,9 +198,9 @@ calc_peaks_v2 <- function(
       ) / sum(x, na.rm = TRUE)
 
       #--- Copy peak information to results
-      res["Peak_N"] <- nrow(peaks)
+      res[["Peak_N"]] <- nrow(peaks)
 
-      tmp <- seq_len(min(N_peaks_max_reported, res["Peak_N"]))
+      tmp <- seq_len(min(N_peaks_max_reported, res[["Peak_N"]]))
       res[paste0("Peak", tmp, "_DOY")] <- peaks[tmp, "DOY"]
       res[paste0("Peak", tmp, "_rvol")] <- peaks[tmp, "volume"]
     }
@@ -229,8 +229,10 @@ calc_transp_peaks_v1 <- function(
   # Secondary peak should be at least `peak2_min_factor` * main peak size
   peak2_min_factor = 1 / 3
 ) {
-  stopifnot(requireNamespace("zoo", quietly = TRUE))
-  stopifnot(days_window %% 2L == 1L) # check that window is odd
+  stopifnot(
+    requireNamespace("zoo", quietly = TRUE),
+    days_window %% 2L == 1L # check that window is odd
+  )
 
   tsmoothed <- if (days_smoothing > 1) {
     zoo::rollapply(
@@ -259,7 +261,7 @@ calc_transp_peaks_v1 <- function(
     ids_vals <- which(time == ts_years[k1])
     lims_bufft <- bufferx_size + c(1, length(ids_vals))
     tmpx <- rep(NA, length(ids_vals) + 2 * bufferx_size)
-    tmpx[lims_bufft[1]:lims_bufft[2]] <- tsmoothed[ids_vals]
+    tmpx[lims_bufft[[1]]:lims_bufft[[2]]] <- tsmoothed[ids_vals]
 
     tmp <- calc_peaks_v1(
       x = tmpx,
@@ -308,8 +310,10 @@ calc_transp_peaks_v2 <- function(
   # Peaks should be at least `peaksize_min_factor` * maximum peak size
   peaksize_min_factor = 1 / 4
 ) {
-  stopifnot(requireNamespace("zoo", quietly = TRUE))
-  stopifnot(days_window %% 2L == 1L) # check that window is odd
+  stopifnot(
+    requireNamespace("zoo", quietly = TRUE),
+    days_window %% 2L == 1L # check that window is odd
+  )
 
   tsmoothed <- if (days_smoothing > 1) {
     zoo::rollapply(
@@ -338,7 +342,7 @@ calc_transp_peaks_v2 <- function(
     ids_vals <- which(time == ts_years[k1])
     lims_bufft <- bufferx_size + c(1, length(ids_vals))
     tmpx <- rep(NA, length(ids_vals) + 2 * bufferx_size)
-    tmpx[lims_bufft[1]:lims_bufft[2]] <- tsmoothed[ids_vals]
+    tmpx[lims_bufft[[1]]:lims_bufft[[2]]] <- tsmoothed[ids_vals]
 
     tmp <- calc_peaks_v2(
       x = tmpx,
@@ -352,7 +356,7 @@ calc_transp_peaks_v2 <- function(
     )
 
     # Subtract buffer from DOYs
-    ids <- grep("_DOY", names(tmp))
+    ids <- grep("_DOY", names(tmp), fixed = TRUE)
     tmp[ids] <- tmp[ids] - bufferx_size
 
     peaks[k1, ] <- tmp

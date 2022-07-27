@@ -28,7 +28,7 @@ a warning is issued or an error.}
 }
 \value{
 (Invisibly) a logical value indicating whether at least one
- required value is missing (\code{FALSE}) or all are present (\code{TRUE}).
+required value is missing (\code{FALSE}) or all are present (\code{TRUE}).
 }
 \description{
 Check whether soil layers are available in a specified zone

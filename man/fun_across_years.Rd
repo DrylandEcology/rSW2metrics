@@ -5,19 +5,24 @@
 \alias{mean_cv}
 \alias{mean_cv_trend}
 \alias{mean_cv_mmk}
-\title{Calculate aggregate statistics of values across years}
+\alias{mean_sd_cv_mmk}
+\title{Useful functions for aggregate statistics of values across years}
 \usage{
-mean_cv(x, na.rm = TRUE)
+mean_cv(x, na.rm = TRUE, ...)
 
-mean_cv_trend(x, na.rm = TRUE)
+mean_cv_trend(x, na.rm = TRUE, ...)
 
-mean_cv_mmk(x, na.rm = TRUE)
+mean_cv_mmk(x, na.rm = TRUE, ...)
+
+mean_sd_cv_mmk(x, na.rm = TRUE, ...)
 }
 \arguments{
 \item{x}{A numeric vector.}
 
 \item{na.rm}{A logical value}
+
+\item{...}{Additional parameters passed to the function(s).}
 }
 \description{
-Calculate aggregate statistics of values across years
+Useful functions for aggregate statistics of values across years
 }

@@ -1,6 +1,6 @@
 Package: rSW2metrics
 Title: Calculate Ecohydrological Metrics from SOILWAT2 Simulations
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: c(
   person(
     "Daniel", "Schlaepfer",
@@ -27,7 +27,7 @@ Suggests:
     zoo,
     testthat (>= 3.0.0),
     spelling,
-    lintr,
+    lintr (>= 3.0.0),
     covr
 Remotes:
     github::DrylandEcology/rSW2utils,
@@ -38,7 +38,7 @@ License: GPL-3
 URL: https://github.com/DrylandEcology/rSW2metrics
 BugReports: https://github.com/DrylandEcology/rSW2metrics/issues
 Encoding: UTF-8
-LazyData: true
 Config/testthat/edition: 3
 Language: en-US
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
+Roxygen: list(markdown = TRUE)

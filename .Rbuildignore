@@ -1,22 +1,16 @@
-# Package stuff
 ^LICENSE\.md$
 ^CODE_OF_CONDUCT\.md$
 ^Meta$
 ^doc$
 ^data-raw$
-
-# git and continuous integration stuff
 \.git*
 ^\.travis\.yml$
 ^\.appveyor\.yml$
 ^\.appveyor_clear_cache\.txt$
 ^codecov\.yml$
 ^\.lintr$
-
-# RStudio stuff
+^\.github$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-
-# CRAN stuff
 ^cran-comments\.md$
 ^NEWS\.md$

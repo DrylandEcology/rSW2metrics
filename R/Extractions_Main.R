@@ -5,14 +5,14 @@ ref_extraction_arguments <- function() {
     # command line options
     options = c(
       "-o", "-fun", "-fparam",
-      "-mode", "-ntests",
+      "-mode", "-ntests", "-runids",
       "-ncores", "-cllog",
       "-add_aggs_across_yrs"
     ),
     # argument names created from command line options
     args = c(
       "tag_filename", "fun_name", "filename_params",
-      "do_full", "ntests",
+      "do_full", "ntests", "runids",
       "ncores", "cl_log",
       "add_aggs_across_yrs"
     ),
@@ -27,12 +27,58 @@ ref_extraction_arguments <- function() {
 #'
 #' @return A named list with the processed arguments.
 #'
+#' @section Details:
+#' The available command-line options are
+#'   * `-o=output_filename`: output file name (without extension)
+#'   * `-fun=fun_metric`: name of a metric function
+#'   * `-fparam=param_filename`: file name of the R script with parameters; see
+#'     `system.file("exec", "Project_Parameters.R", package = "rSW2metrics")`
+#'     for a template
+#'   * `-mode=[{TRUE,test}|{FALSE,full,any,}]`: option for running a test;
+#'     if `TRUE` or `test`, then the metric function is extracting only from
+#'     the first `ntests` runs;
+#'     all available runs are extracted (default)
+#'     if option is missing or contains any other value
+#'   * `-ntests=x`: number of runs used if in test mode (`-mode`) with a default
+#'     of `x=100`
+#'   * `-runids=r1:r2`: sequence of runs defined by first `r1` and last `r2` run
+#'     (from available runs) from which metrics are extracted;
+#'       * if missing and in full mode (`-mode`),
+#'         then all available runs are used (default);
+#'       * if missing and in test mode, then option `-ntests` is used;
+#'       * if in test mode and both `-ntests` and `-runids` are present, then
+#'         `-runids` takes precedence
+#'   * `-ncores=x`: size of parallel (socket) cluster used to extract
+#'     `fun_metric` from runs (default `x=1`)
+#'   * `-cllog=[{TRUE,}|{FALSE,any}]`: logging activity on cluster to disk
+#'     (default `FALSE`)
+#'   * `-add_aggs_across_yrs=[{TRUE,}|{FALSE,any}]`: across-year summaries
+#'     (defined by `fun_aggs_across_yrs()` from `fparam`) added to output
+#'     if option is present and `fun_metric` produces time-series output
+#'
+#' @examples
+#' process_arguments(
+#'   c(
+#'    "-o=AI_annual",
+#'    "-fun=metric_AI",
+#'    "-fparam=Project_Parameters.R",
+#'    "-add_aggs_across_yrs",
+#'    "-ncores=2"
+#'   )
+#' )
+#'
 #' @export
 process_arguments <- function(x) {
   res <- list()
 
   tmp <- strsplit(x, split = "=", fixed = TRUE)
-  tmp <- unlist(sapply(tmp, function(x) if (length(x) == 2) x else c(x[1], NA)))
+  tmp <- unlist(
+    vapply(
+      tmp,
+      function(x) if (length(x) == 2L) x else c(x[[1]], NA),
+      FUN.VALUE = rep(NA_character_, 2L)
+    )
+  )
   args <- matrix(
     data = unlist(tmp),
     ncol = 2,
@@ -43,7 +89,7 @@ process_arguments <- function(x) {
   if (length(tmp) > 0) {
     warning(
       "Arguments ",
-      paste0(shQuote(tmp), collapse = ", "),
+      toString(shQuote(tmp)),
       " are not implemented."
     )
   }
@@ -52,7 +98,7 @@ process_arguments <- function(x) {
   # file name for the output (without extension)
   id <- args[, 1] %in% "-o"
   if (any(id)) {
-    res[["tag_filename"]] <- args[id, 2]
+    res[["tag_filename"]] <- as.character(args[id, 2])
   } else {
     stop("Output filename (option `-o`) is missing.")
   }
@@ -60,7 +106,7 @@ process_arguments <- function(x) {
   # function name to calculate the values (e.g. "get_CorTP_annual")
   id <- args[, 1] %in% "-fun"
   if (any(id)) {
-    res[["fun_name"]] <- args[id, 2]
+    res[["fun_name"]] <- as.character(args[id, 2])
   } else {
     stop("Function name (option `-fun`) is missing.")
   }
@@ -69,7 +115,7 @@ process_arguments <- function(x) {
   # file name for the project parameters
   id <- args[, 1] %in% "-fparam"
   if (any(id)) {
-    res[["filename_params"]] <- args[id, 2]
+    res[["filename_params"]] <- as.character(args[id, 2])
   } else {
     stop("Name of file with project parameters (option `-fparam`) is missing.")
   }
@@ -81,9 +127,8 @@ process_arguments <- function(x) {
   id <- args[, 1] %in% "-mode"
   if (any(id)) {
     res[["do_full"]] <-
-      !("test" %in% args[id, 2]) ||
-      is.na(args[id, 2]) ||
-      isFALSE(as.logical(args[id, 2]))
+      !("test" %in% args[id, 2]) && !isTRUE(as.logical(args[id, 2])) ||
+      is.na(args[id, 2])
   } else {
     res[["do_full"]] <- TRUE
   }
@@ -94,6 +139,23 @@ process_arguments <- function(x) {
     res[["ntests"]] <- as.integer(args[id, 2])
   } else {
     res[["ntests"]] <- 100L
+  }
+
+  # Sequence of runs
+  id <- args[, 1] %in% "-runids"
+  if (any(id)) {
+    tmp <- strsplit(args[id, 2], split = ":", fixed = TRUE)
+    tmp <- as.integer(tmp[[1]])
+    if (length(tmp) != 2 || anyNA(tmp) || any(tmp < 1)) {
+      stop("Sequence of runs to process is misspecified (option -`runids`).")
+    }
+    res[["runids"]] <- tmp[[1]]:tmp[[2]]
+  } else {
+    res[["runids"]] <- if (res[["do_full"]]) {
+      -1L # all available runs
+    } else {
+      seq_len(res[["ntests"]])
+    }
   }
 
   # Size of parallel cluster
@@ -133,23 +195,26 @@ process_arguments <- function(x) {
 }
 
 check_extraction_arguments <- function(x) {
-  hasnot_args <- !sapply(
+  hasnot_args <- !vapply(
     ref_extraction_arguments()[["args"]],
     exists,
-    where = x
+    where = x,
+    FUN.VALUE = NA
   )
 
   if (any(hasnot_args)) {
     stop(
       "The following required extraction arguments are missing: ",
-      paste0(shQuote(names(hasnot_args)[hasnot_args]), collapse = ", ")
+      toString(shQuote(names(hasnot_args)[hasnot_args]))
     )
   }
 
 
-  stopifnot(!is.na(x[["tag_filename"]]), nzchar(x[["tag_filename"]]))
-
-  stopifnot(is.function(match.fun(x[["fun_name"]])))
+  stopifnot(
+    !is.na(x[["tag_filename"]]),
+    nzchar(x[["tag_filename"]]),
+    is.function(get0(x[["fun_name"]]))
+  )
 
   if (!file.exists(x[["filename_params"]])) {
     stop(
@@ -169,16 +234,18 @@ check_extraction_arguments <- function(x) {
   }
 
   stopifnot(
+    is.finite(x[["runids"]]),
+
     is.integer(x[["ncores"]]),
     is.finite(x[["ncores"]]),
-    x[["ncores"]] > 0
-  )
+    x[["ncores"]] > 0,
 
-  stopifnot(is.logical(x[["cl_log"]]), !is.na(x[["cl_log"]]))
+    is.logical(x[["cl_log"]]),
+    !is.na(x[["cl_log"]]),
 
-  stopifnot(is.logical(x[["is_out_ts"]]), !is.na(x[["is_out_ts"]]))
+    is.logical(x[["is_out_ts"]]),
+    !is.na(x[["is_out_ts"]]),
 
-  stopifnot(
     is.logical(x[["add_aggs_across_yrs"]]),
     !is.na(x[["add_aggs_across_yrs"]])
   )
@@ -222,16 +289,17 @@ check_project_parameters <- function(x, args) {
 
 
   #---
-  hasnot_params <- !sapply(
+  hasnot_params <- !vapply(
     required_project_parameters(),
     exists,
-    where = x
+    where = x,
+    FUN.VALUE = NA
   )
 
   if (any(hasnot_params)) {
     stop(
       "The following required project parameters are missing: ",
-      paste0(shQuote(names(hasnot_params)[hasnot_params]), collapse = ", ")
+      toString(shQuote(names(hasnot_params)[hasnot_params]))
     )
   }
 
@@ -245,7 +313,8 @@ check_project_parameters <- function(x, args) {
   if (args[["add_aggs_across_yrs"]] && args[["is_out_ts"]]) {
     stopifnot(
       exists("fun_aggs_across_yrs", where = x),
-      is.function(match.fun(x[["fun_aggs_across_yrs"]]))
+      is.function(x[["fun_aggs_across_yrs"]]) ||
+        is.function(get0(x[["fun_aggs_across_yrs"]]))
     )
   }
 
@@ -351,11 +420,13 @@ extract_metrics <- function(args) {
 
 
   # Index across runs
-  indexes <- if (args[["do_full"]]) {
-    seq_along(run_rSFSW2_names)
-  } else {
-    seq_len(min(args[["ntests"]], length(run_rSFSW2_names)))
+  indexes <- seq_along(run_rSFSW2_names)
+
+  if (!(length(args[["runids"]]) == 1 && args[["runids"]] < 1)) {
+    # subset to available runs that were requested
+    indexes <- intersect(indexes, args[["runids"]])
   }
+
 
   # Check cores
   tmp <- parallel::detectCores() - 1
@@ -454,7 +525,7 @@ extract_metrics <- function(args) {
   ##### Get data!                  ------------------------------  #####
   ######################################################################
 
-  # Prepare function arguments
+  #--- Prepare function arguments
   if (do_collect_inputs) {
     fun_args <- list(
       path = prjpars[["dir_sw2_output"]],
@@ -470,9 +541,35 @@ extract_metrics <- function(args) {
       } else {
         prjpars[["years_aggs_by_scen"]]
       },
+      fun_aggs_across_yrs = prjpars[["fun_aggs_across_yrs"]],
       group_by_month = prjpars[["season_by_month"]],
       first_month_of_year = prjpars[["first_month_of_year"]]
     )
+
+
+    #--- Arguments for alternative output type via `metric_SW2toTable_daily()`
+    tmp_args <- c(
+      "dir_out_SW2toTable", "format_share_SW2toTable",
+      "share_soillayer_ids",
+      "outputs_SW2toTable"
+    )
+
+    # note: because `prjpars` is an environment,
+    # we cannot use `[` and need to loop each with `[[`
+    for (k in seq_along(tmp_args)) {
+      if (tmp_args[k] %in% names(prjpars)) {
+        fun_args[[tmp_args[k]]] <- prjpars[[tmp_args[k]]]
+      }
+    }
+
+    # use `dir_out` if `dir_out_SW2toTable` is not defined
+    if (!("dir_out_SW2toTable" %in% names(prjpars))) {
+      warning(
+        "Output will be written to `dir_out` ",
+        "instead of expected but absent `dir_out_SW2toTable`."
+      )
+      fun_args[["dir_out_SW2toTable"]] <- prjpars[["dir_out"]]
+    }
   }
 
 
@@ -610,72 +707,19 @@ process_values_one_site <- function(
   soil_variables = NULL
 ) {
   # Add run-specific arguments
+  used_args <- c(
+    fun_args,
+    name_sw2_run = name_sw2_run
+  )
+
+
   if (is_soils_input) {
-    if (!missing(soils) && !is.null(soils) && !is.null(name_sw2_run_soils)) {
-      icrm <- 1:2
-
-      # Check that we got good soil variable names
-      names_soil_variables <- names(soil_variables)
-
-      stopifnot(
-        names_soil_variables %in% names(soils),
-        names_soil_variables %in% names(list_soil_variables())
-      )
-
-      # Locate site
-      idss <- lapply(
-        names_soil_variables,
-        function(k) match(name_sw2_run_soils, soils[[k]][, "site"])
-      )
-      names(idss) <- names_soil_variables
-
-      stopifnot(sapply(idss, is.finite), sapply(idss, length) == 1)
-
-      # Prepare soil variable values
-      used_soil <- lapply(
-        names_soil_variables,
-        function(k) unlist(soils[[k]][idss[[k]], -icrm])
-      )
-      names(used_soil) <- names_soil_variables
-
-      # Put together arguments for extraction
-      used_args <- c(
-        fun_args,
-        name_sw2_run = name_sw2_run,
-        soils = list(used_soil)
-      )
-
-    } else {
-      if (is.null(soil_variables)) {
-        soil_variables <- list_soil_variables()
-      }
-      nsv <- names(soil_variables)
-
-      tmp_soils <- get_soillayers_variable(
-        path = fun_args[["path"]],
-        name_sw2_run = name_sw2_run,
-        id_scen = 1,
-        sw2_soil_var = nsv
-      )
-
-      used_args <- c(
-        fun_args,
-        name_sw2_run = name_sw2_run,
-        soils = list(list(
-          depth_cm = if ("depth_cm" %in% nsv) tmp_soils["depth_cm", ],
-          sand_frac = if ("sand_frac" %in% nsv) tmp_soils["sand_frac", ],
-          clay_frac = if ("clay_frac" %in% nsv) tmp_soils["clay_frac", ],
-          gravel_content = if ("gravel_content" %in% nsv) {
-            tmp_soils["gravel_content", ]
-          }
-        ))
-      )
-    }
-
-  } else {
-    used_args <- c(
-      fun_args,
-      name_sw2_run = name_sw2_run
+    used_args[["soils"]] <- prepare_soils_for_site(
+      path = fun_args[["path"]],
+      name_sw2_run = name_sw2_run,
+      name_sw2_run_soils = name_sw2_run_soils,
+      soils = soils,
+      soil_variables = soil_variables
     )
   }
 
@@ -685,6 +729,7 @@ process_values_one_site <- function(
 
 
 #' Transform result into wide format suitable for spreadsheet concatenation
+#' @return A matrix or data.frame with at least one row.
 #' @noRd
 format_metric_1sim <- function(x, id) {
   if (is.list(x)) {
@@ -694,7 +739,7 @@ format_metric_1sim <- function(x, id) {
     ngs <- nrow(x[[1]])
 
     if (is.null(ngs)) {
-      c(id, 0, do.call(c, x))
+      matrix(c(id, 0, do.call(c, x)), nrow = 1)
 
     } else {
       ngls <- rownames(x[[1]])
@@ -715,18 +760,20 @@ format_metric_1sim <- function(x, id) {
     # Transform result into [1 x output columns] object
     ngs <- nrow(x)
 
-    if (is.null(ngs) || ngs == 1) {
+    tmp <- if (is.null(ngs) || ngs == 1) {
       c(id, 0, x)
 
     } else {
       c(id, 0, as.vector(t(x)))
     }
 
+    matrix(tmp, nrow = 1)
   }
 }
 
 
 #' Format concatenated spreadsheet with identifiers and column names
+#'
 #' @noRd
 format_metric_Nsim <- function(
   x, names, prjpars,
@@ -747,7 +794,7 @@ format_metric_Nsim <- function(
 
   #--- Add column names
   if (do_collect_inputs) {
-    tmp <- sub("collect_input_soillayers_", "", fun_name)
+    tmp <- sub("collect_input_soillayers_", "", fun_name, fixed = TRUE)
     col_var_names <- paste0(tmp, "_L", seq_len(ncol(x) - 2))
 
   } else {
@@ -806,4 +853,64 @@ format_metric_Nsim <- function(
   rownames(x) <- NULL
 
   x
+}
+
+
+
+#' Interface to formatted output of a metric for one simulation
+#' @noRd
+formatted_metric_1sim <- function(
+  metric_foo_name,
+  foo_args = list(
+    path = NULL,
+    name_sw2_run = NULL,
+    id_scen_used = NULL,
+    list_years_scen_used = NULL,
+    soils = NULL,
+    out = NULL
+  ),
+  do_collect_inputs = FALSE
+) {
+
+  req_arg_names <- c(
+    "path", "name_sw2_run",
+    "id_scen_used", "list_years_scen_used",
+    "soils",
+    "out"
+  )
+  has_arg_names <- req_arg_names %in% names(foo_args)
+
+  if (!all(has_arg_names)) {
+    stop(
+      "`foo_args` is missing the named element(s): ",
+      toString(shQuote(req_arg_names[!has_arg_names]))
+    )
+  }
+
+  res <- do.call(what = metric_foo_name, args = foo_args)
+
+  is_out_ts <- identical(foo_args[["out"]], "ts_years")
+
+  if (is_out_ts) {
+    prjpars <- list(id_scen_used = foo_args[["id_scen_used"]])
+    if (is_out_ts) {
+      prjpars[["years_timeseries_by_scen"]] <-
+        foo_args[["list_years_scen_used"]]
+
+    } else {
+      prjpars[["years_aggs_by_scen"]] <- foo_args[["list_years_scen_used"]]
+    }
+
+    format_metric_Nsim(
+      x = list(format_metric_1sim(res, id = 1)),
+      names = foo_args[["name_sw2_run"]],
+      prjpars = prjpars,
+      do_collect_inputs = do_collect_inputs,
+      fun_name = metric_foo_name,
+      is_out_ts = is_out_ts
+    )
+
+  } else if (foo_args[["out"]] == "raw") {
+    res
+  }
 }
