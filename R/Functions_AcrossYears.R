@@ -100,7 +100,7 @@ aggs_across_years <- function(
   stopifnot(
     inherits(list_years, "list"),
     sapply(list_years, is.numeric),
-    !grepl("_", varnames_fun),
+    !grepl("_", varnames_fun, fixed = TRUE),
     length(varnames_fun) > 0
   )
 
@@ -132,7 +132,7 @@ aggs_across_years <- function(
       j = 1
     )
 
-    id_scens <- unique(as.integer(sub("sc", "", tmp)))
+    id_scens <- unique(as.integer(sub("sc", "", tmp, fixed = TRUE)))
 
     list_years <- lapply(seq_along(id_scens), function(x) list_years)
 

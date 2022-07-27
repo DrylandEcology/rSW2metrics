@@ -209,7 +209,8 @@ metric_SW2toTable_daily <- function(
           et[, "esoil_cm"]
         } else {
           tmp <- 10 * slot(slot(sim_data, "EVAPSOIL"), "Day")
-          rowSums(tmp[, grep("Lyr", colnames(tmp)), drop = FALSE])
+          ids <- grep("Lyr", colnames(tmp), fixed = TRUE)
+          rowSums(tmp[, ids, drop = FALSE])
         },
         Sim_E_InterceptedCanopy_mm = if ("ecnw_cm" %in% colnames(et)) {
           et[, "ecnw_cm"]

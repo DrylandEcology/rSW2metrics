@@ -356,7 +356,7 @@ calc_transp_peaks_v2 <- function(
     )
 
     # Subtract buffer from DOYs
-    ids <- grep("_DOY", names(tmp))
+    ids <- grep("_DOY", names(tmp), fixed = TRUE)
     tmp[ids] <- tmp[ids] - bufferx_size
 
     peaks[k1, ] <- tmp

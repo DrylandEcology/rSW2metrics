@@ -791,7 +791,7 @@ format_metric_Nsim <- function(
 
   #--- Add column names
   if (do_collect_inputs) {
-    tmp <- sub("collect_input_soillayers_", "", fun_name)
+    tmp <- sub("collect_input_soillayers_", "", fun_name, fixed = TRUE)
     col_var_names <- paste0(tmp, "_L", seq_len(ncol(x) - 2))
 
   } else {

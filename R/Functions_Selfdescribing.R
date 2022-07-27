@@ -245,7 +245,8 @@ identify_metric_timestep <- function(submetrics) {
 
   } else {
     tmp <- paste0(tag_timesteps[[timestep]], collapse = "|")
-    tmp <- gsub("_\\>", "", gsub(tmp, "", submetrics))
+    # remove trailing "_"
+    tmp <- gsub("_$", "", gsub(tmp, "", submetrics))
 
     list(
       timestep = timestep,
