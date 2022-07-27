@@ -98,7 +98,10 @@ test_that("Value formatter", {
               out_label = xlabels
             )
 
+            # nolint start: expect_s3_class_linter.
             expect_true(inherits(res, c("data.frame", "matrix")))
+            # nolint end
+
             expect_identical(
               !!unique(unname(identify_submetric_timesteps(rownames(res)))),
               !!timestep
