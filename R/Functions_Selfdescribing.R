@@ -124,7 +124,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
           function(x) !is.null(fun_args[["soils"]][[x]])
         )
 
-      if (any(!has_vars)) {
+      if (!all(has_vars)) {
         stop(
           "Requested soil variable(s) ",
           paste(shQuote(req_soil_vars[!has_vars]), collapse = ", "),

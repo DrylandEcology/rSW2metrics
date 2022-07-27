@@ -224,7 +224,7 @@ check_soillayer_availability <- function(
     used_depth_range_cm <- unique(sort(used_depth_range_cm))
     strict <- rep_len(strict, length(used_depth_range_cm))
     ids <- used_depth_range_cm[strict] %in% sim_soil_depths_cm
-    if (any(!ids)) {
+    if (!all(ids)) {
       msg <- paste(
         "Requested soil depth(s) at",
         paste(used_depth_range_cm[strict][!ids], collapse = ", "),

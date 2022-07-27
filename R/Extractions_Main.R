@@ -877,7 +877,7 @@ formatted_metric_1sim <- function(
   )
   has_arg_names <- req_arg_names %in% names(foo_args)
 
-  if (any(!has_arg_names)) {
+  if (!all(has_arg_names)) {
     stop(
       "`foo_args` is missing the named element(s): ",
       paste0(shQuote(req_arg_names[!has_arg_names]), collapse = ", ")

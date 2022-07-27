@@ -299,7 +299,7 @@ mean_cv_mmk <- function(x, na.rm = TRUE, ...) {
 
     if (!do_unmod) {
       mtmp <- unname(tmp[c("Sen's slope", "new P-value")])
-      do_unmod <- any(!is.finite(mtmp))
+      do_unmod <- !all(is.finite(mtmp))
     }
 
     if (do_unmod) {
@@ -353,7 +353,7 @@ mean_sd_cv_mmk <- function(x, na.rm = TRUE, ...) {
 
     if (!do_unmod) {
       mtmp <- unname(tmp[c("Sen's slope", "new P-value")])
-      do_unmod <- any(!is.finite(mtmp))
+      do_unmod <- !all(is.finite(mtmp))
     }
 
     if (do_unmod) {

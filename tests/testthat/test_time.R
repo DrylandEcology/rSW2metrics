@@ -94,7 +94,7 @@ test_that("Simulated vs requested time", {
 
       # Expect: simulated years do not show up in "nosim" output
       expect_true(
-        all(!xtt[, "Year"] %in% tmp[tmp[["mode"]] == "nosim", "Year"])
+        !any(xtt[, "Year"] %in% tmp[tmp[["mode"]] == "nosim", "Year"])
       )
 
       # Expectation about nosim, sim_keep, and sim_discard
