@@ -63,7 +63,17 @@ rSW2_glovars <- new.env()
 
 
 rd_alias_metrics <- function() {
-  paste("@aliases", paste(list_all_metrics(), collapse = " "))
+  tmp <- list_all_metrics()
+
+  # Remove `metric_SW2toTable_daily()` because it has it's own documentation
+  exclude_metrics <- "metric_SW2toTable_daily"
+  ids_remove <- unique(unlist(lapply(
+    exclude_metrics,
+    function(x) grep(x, basename(tmp))
+  )))
+  tmp <- tmp[-ids_remove]
+
+  paste("@aliases", paste(tmp, collapse = " "))
 }
 
 rd_section_listing_metrics <- function() {

@@ -46,7 +46,6 @@
 \alias{metric_SemiDryDuration_Annual_top50cm}
 \alias{metric_SemiDryDuration_Annual_wholeprofile}
 \alias{metric_SMTRs}
-\alias{metric_SW2toTable_daily}
 \alias{metric_SWA_Seasonal_top50cm}
 \alias{metric_SWA_Seasonal_wholeprofile}
 \alias{metric_SWAat0to020cm39bar_daily}
