@@ -3,7 +3,7 @@
 test_that("Peaks", {
   ## No or less than two plateaus -> central candidate from among all values
   expect_identical(central_candidate(1), 1)
-  expect_identical(central_candidate(NULL), NULL)
+  expect_null(central_candidate(NULL))
   expect_identical(central_candidate(1:2), 1L)
   expect_identical(central_candidate(1:3), 2L)
   expect_identical(central_candidate(1:4), 2L)
