@@ -71,7 +71,7 @@ rd_section_listing_metrics <- function() {
     "\\section{List of currently available metrics:}{\n",
     "\\itemize{\n",
     paste(
-      "  \\item",
+      "  \\item", # nolint: nonportable_path_linter.
       paste0("\\var{", list_all_metrics(), "}"),
       collapse = "\n"
     ),
@@ -177,7 +177,7 @@ rd_section_listing_inputcollectors <- function() {
     "\\section{List of currently available input collectors:}{\n",
     "\\itemize{\n",
     paste(
-      "  \\item",
+      "  \\item", # nolint: nonportable_path_linter.
       paste0("\\var{", list_all_input_collectors(), "}"),
       collapse = "\n"
     ),
