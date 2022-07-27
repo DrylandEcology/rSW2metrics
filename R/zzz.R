@@ -36,12 +36,14 @@
   # We don't modify the global environment.
   # See <https://github.com/r-lib/memoise/issues/76> for further details.
 
+  # nolint start: undesirable_operator_linter.
   determine_sw2_sim_time <<- memoise::memoize(
     f = determine_sw2_sim_time,
     omit_args = "x"
   )
 
   groupid_by_days <<- memoise::memoize(groupid_by_days)
+  # nolint end
 
   invisible()
 }
