@@ -85,7 +85,7 @@ Rscript Script_to_Extract_Metric.R -o=TDDat5C_quarterly -fun=metric_TDDat5C_quar
 Rscript Script_to_Extract_Metric.R -o=TemperatureMax_Seasonal -fun=metric_TemperatureMax_Seasonal ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=TemperatureMean_Seasonal -fun=metric_TemperatureMean_Seasonal ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=TemperatureMin_Seasonal -fun=metric_TemperatureMin_Seasonal ${mode} ${parallel} ${prjoptions}
-Rscript Script_to_Extract_Metric.R -o=TEPET_daily -fun=ref_metric_TEPET_daily ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=TEPET_daily -fun=metric_TEPET_daily ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Tmean_daily -fun=metric_Tmean_daily ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Tmean_dailyClim -fun=metric_Tmean_dailyClim ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Tmean_JJA -fun=metric_Tmean_JJA ${mode} ${parallel} ${prjoptions}
