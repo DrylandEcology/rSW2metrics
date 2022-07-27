@@ -1,7 +1,5 @@
 #------ Quarterly ------
-# nolint start
-# Q1 = Jan-Mar; Q2 = Apr-Jun; Q3 = Jul-Sep; Q4 = Oct-Dec
-# nolint end
+# Defined as Q1 = Jan-Mar; Q2 = Apr-Jun; Q3 = Jul-Sep; Q4 = Oct-Dec
 
 
 

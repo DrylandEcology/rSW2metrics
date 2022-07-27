@@ -31,7 +31,7 @@ get_rh <- function(path, name_sw2_run, id_scen, years) {
     envir = sim_input
   )
 
-  # nolint start
+  # nolint start: object_usage_linter.
   mm <- rSOILWAT2::swCloud_Humidity(
     sim_input[["swRunScenariosData"]][[id_scen]]
   )
@@ -594,7 +594,7 @@ metric_DDDat5C0to100cm30bar <- function(
 #'
 #' `SWA` in the presence of coarse fragments is calculated as
 #'
-# nolint start
+# nolint start: line_length_linter.
 #' \deqn{SWA[t,i] = max{0, SWC[t,i] - w[i] * (1 - cfrag[i]) * VWC_crit[i,matric]}}
 #' or equivalently
 #' \deqn{SWA[t,i] = max{0, w[i] * (1 - cfrag[i]) * (VWC[t,i,matric] - VWC_crit[i,matric])}}
@@ -1797,12 +1797,10 @@ metric_SMTRs <- function(
     tmp <- lapply(
       list_years_scen_used[[k1]],
       function(yrs) {
-        # nolint start
+        # nolint start: line_length_linter.
         rSOILWAT2::swYears_EndYear(sim_input[["swRunScenariosData"]][[k1]]) <- 9999
-        rSOILWAT2::swYears_StartYear(sim_input[["swRunScenariosData"]][[k1]]) <-
-          yrs[[1]]
-        rSOILWAT2::swYears_EndYear(sim_input[["swRunScenariosData"]][[k1]]) <-
-          yrs[length(yrs)]
+        rSOILWAT2::swYears_StartYear(sim_input[["swRunScenariosData"]][[k1]]) <- yrs[[1]]
+        rSOILWAT2::swYears_EndYear(sim_input[["swRunScenariosData"]][[k1]]) <- yrs[length(yrs)]
         # nolint end
 
         tmp <- rSW2funs::calc_SMTRs(

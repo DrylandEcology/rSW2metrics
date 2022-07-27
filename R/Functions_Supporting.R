@@ -1295,8 +1295,10 @@ determine_sw2_sim_time <- function(
   req_years = NULL,
   sw2_tp = c("Day", "Month", "Year")
 ) {
+  # nolint start: commented_code_linter, line_length_linter.
   # debugging un-memoized version:
-  # assignInNamespace("determine_sw2_sim_time", environment(rSW2metrics::determine_sw2_sim_time)$`_f`, "rSW2metrics") # nolint
+  # assignInNamespace("determine_sw2_sim_time", environment(rSW2metrics::determine_sw2_sim_time)$`_f`, "rSW2metrics")
+  # nolint end
 
   sw2_tp <- match.arg(sw2_tp)
 
