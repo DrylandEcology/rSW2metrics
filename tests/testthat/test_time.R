@@ -23,11 +23,13 @@ test_that("Simulated vs requested time", {
     to = ISOdate(max(yrs1), 12, 31, tz = "UTC"),
     by = "1 day"
   ))
+  # nolint start: extraction_operator_linter.
   xtd <- data.frame(
     Year = 1900 + ts_days$year,
     Month = 1 + ts_days$mon,
     Day = 1 + ts_days$yday
   )
+  # nolint end
   rownames(xtd) <- NULL
 
   yrs_w_badleap <- c(1957, 2021)
@@ -86,15 +88,17 @@ test_that("Simulated vs requested time", {
       expect_true(all(ryrs %in% tmp[, "Year"]))
 
       # Expect: simulated time steps and "sim_*" portion of output are equal
-      ttt <- tmp[tmp$mode %in% c("sim_keep", "sim_discard"), vids]
+      ttt <- tmp[tmp[["mode"]] %in% c("sim_keep", "sim_discard"), vids]
       rownames(ttt) <- NULL
       expect_identical(ttt, xtt[, vids])
 
       # Expect: simulated years do not show up in "nosim" output
-      expect_true(all(!xtt[, "Year"] %in% tmp[tmp$mode == "nosim", "Year"]))
+      expect_true(
+        all(!xtt[, "Year"] %in% tmp[tmp[["mode"]] == "nosim", "Year"])
+      )
 
       # Expectation about nosim, sim_keep, and sim_discard
-      tmprle <- rle(tmp$mode)
+      tmprle <- rle(tmp[["mode"]])
 
       if (k2 == 1) {
         # Requested years are equal to simulated years

@@ -143,12 +143,14 @@ metric_SW2toTable_daily <- function(
 
 
     #--- Put together data
+    # nolint start: extraction_operator_linter.
     data_sim <- list(cbind(
       Year = sim_sim[, "Year"],
       DOY = sim_sim[, "Day"],
       Month = 1 + dates$mon,
       Day = dates$mday
     ))
+    # nolint end
 
     if (any(c("all", "meteo") %in% outputs_SW2toTable)) {
       data_sim[["meteo"]] <- cbind(

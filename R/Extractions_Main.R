@@ -72,7 +72,12 @@ process_arguments <- function(x) {
   res <- list()
 
   tmp <- strsplit(x, split = "=", fixed = TRUE)
-  tmp <- unlist(sapply(tmp, function(x) if (length(x) == 2) x else c(x[1], NA)))
+  tmp <- unlist(
+    sapply(
+      tmp,
+      function(x) if (length(x) == 2) x else c(x[[1]], NA)
+    )
+  )
   args <- matrix(
     data = unlist(tmp),
     ncol = 2,
@@ -143,7 +148,7 @@ process_arguments <- function(x) {
     if (length(tmp) != 2 || anyNA(tmp) || any(tmp < 1)) {
       stop("Sequence of runs to process is misspecified (option -`runids`).")
     }
-    res[["runids"]] <- tmp[1]:tmp[2]
+    res[["runids"]] <- tmp[[1]]:tmp[[2]]
   } else {
     res[["runids"]] <- if (res[["do_full"]]) {
       -1L # all available runs

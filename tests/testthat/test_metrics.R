@@ -203,7 +203,7 @@ test_that("Check metrics", {
       rSOILWAT2::swWeather_FirstYearHistorical(sw2_in) <- -1
       rSOILWAT2::swYears_StartYear(sw2_in) <- 0
       rSOILWAT2::swYears_EndYear(sw2_in) <- years[length(years)]
-      rSOILWAT2::swYears_StartYear(sw2_in) <- years[1]
+      rSOILWAT2::swYears_StartYear(sw2_in) <- years[[1]]
 
       # Weather generator
       set.seed(127 + sc)
@@ -328,7 +328,7 @@ test_that("Check metrics", {
           is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
           N_sites = N_sites_used
         )
-      )["elapsed"]
+      )[["elapsed"]]
     }
 
 
@@ -447,7 +447,7 @@ test_that("Check metrics", {
           ref_output <- readRDS(ftest_output)
 
           ids <- if (vtag == "v5.0" && nrow(output) > nrow(ref_output)) {
-            output$site %in% run_rSFSW2_names[1:2]
+            output[["site"]] %in% run_rSFSW2_names[1:2]
           } else {
             seq_len(nrow(output))
           }
@@ -479,7 +479,7 @@ test_that("Check metrics", {
   #------ Report on timing (only if interactively used) ------
   if (do_timing) {
     ttime <- data.frame(metric = fun_metrics, time = time_metrics)
-    print(ttime[order(ttime$time, decreasing = TRUE), ])
+    print(ttime[order(ttime[["time"]], decreasing = TRUE), ])
   }
 
 

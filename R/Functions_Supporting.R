@@ -154,8 +154,8 @@ calc_soillayer_weights <- function(
 ) {
   # if used_depth_range_cm is NULL, then ids is `logical(0)`
   ids <-
-    soil_depths_cm <= used_depth_range_cm[1] |
-    soil_depths_cm > used_depth_range_cm[2]
+    soil_depths_cm <= used_depth_range_cm[[1]] |
+    soil_depths_cm > used_depth_range_cm[[2]]
 
   x <- diff(c(0, soil_depths_cm))
   x[ids] <- NA
@@ -270,8 +270,8 @@ determine_used_soillayers <- function(
 
   # if used_depth_range_cm is NULL, then ids is `logical(0)`
   ids <-
-    soil_depths_cm <= used_depth_range_cm[1] |
-    soil_depths_cm > used_depth_range_cm[2]
+    soil_depths_cm <= used_depth_range_cm[[1]] |
+    soil_depths_cm > used_depth_range_cm[[2]]
 
   if (any(ids)) {
     x <- x[which(!ids)]
@@ -307,7 +307,7 @@ groupid_by_days <- function(
     to = ISOdate(end_year, 12, 31, tz = "UTC"),
     by = "1 day"
   )
-  months <- as.POSIXlt(days)$mon + 1
+  months <- as.POSIXlt(days)$mon + 1 # nolint: extraction_operator_linter.
   rlels <- rle(months)[["lengths"]]
 
   list(
@@ -402,7 +402,7 @@ get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
 
   } else if (sw2_tp == "Day") {
     ids <- groupid_by_days(
-      start_year = x_years[1],
+      start_year = x_years[[1]],
       end_year = x_years[length(x_years)],
       group_by_month,
       first_month_of_year
@@ -932,7 +932,7 @@ identify_valleys_between_peaks <- function(x, peaks) {
     if (k %in% ids_peak_on_limits && n_valleys > 1) next
 
     #--- Identify valley before peak
-    if (!(peaks[k] %in% ids_edges[1]) && is.na(valleys[max(1, iv - 1)])) {
+    if (!(peaks[k] %in% ids_edges[[1]]) && is.na(valleys[max(1, iv - 1)])) {
       ids_inbetween <- seq.int(
         from = if (k > 1) peaks[k - 1] else 1,
         to = peaks[k]
@@ -941,14 +941,14 @@ identify_valleys_between_peaks <- function(x, peaks) {
       tmpx <- min(x[ids_inbetween], na.rm = TRUE)
       if (is.finite(tmpx) && isTRUE(tmpx < max(x, na.rm = TRUE))) {
         valleys[iv] <-
-          ids_inbetween[1] - 1 +
+          ids_inbetween[[1]] - 1 +
           central_candidate(which(x[ids_inbetween] <= tmpx))
         iv <- iv + 1
       }
     }
 
     #--- Identify valley after peak
-    if (!(peaks[k] %in% ids_edges[2])) {
+    if (!(peaks[k] %in% ids_edges[[2]])) {
       ids_inbetween <- seq.int(
         from = peaks[k],
         to = if (k == length(peaks)) length(x) else peaks[k + 1]
@@ -957,7 +957,7 @@ identify_valleys_between_peaks <- function(x, peaks) {
       tmpx <- min(x[ids_inbetween], na.rm = TRUE)
       if (is.finite(tmpx) && isTRUE(tmpx < max(x, na.rm = TRUE))) {
         valleys[iv] <-
-          ids_inbetween[1] - 1 +
+          ids_inbetween[[1]] - 1 +
           central_candidate(which(x[ids_inbetween] <= tmpx))
         iv <- iv + 1
       }
@@ -1330,9 +1330,11 @@ determine_sw2_sim_time <- function(
 
     x_time <- create_sw2simtime(n = length(req_ts_days))
 
+    # nolint start: extraction_operator_linter.
     x_time[, "Year"] <- 1900 + req_ts_days$year
     x_time[, "Month"] <- 1 + req_ts_days$mon
     x_time[, "Day"] <- 1 + req_ts_days$yday
+    # nolint end
 
 
     # Apparently, SW2 output can be generated with incorrect leap/nonleap-years;
@@ -1352,7 +1354,9 @@ determine_sw2_sim_time <- function(
       x_time2 <- create_sw2simtime(n = nrow(xt))
       x_time2[, "Year"] <- xt[, "Year"]
       x_time2[, "Day"] <- xt[, "Day"]
+      # nolint start: extraction_operator_linter.
       x_time2[, "Month"] <- sim_ts_days$mon + 1
+      # nolint end
       x_time2[is.na(sim_ts_days), "Month"] <- 12
 
       # Add requested but not simulated years from `x_time`
@@ -1364,7 +1368,7 @@ determine_sw2_sim_time <- function(
           all = TRUE,
           sort = FALSE
         )
-        x_time <- tmp[order(tmp$Year, tmp$Day), , drop = FALSE]
+        x_time <- tmp[order(tmp[["Year"]], tmp[["Day"]]), , drop = FALSE]
         rownames(x_time) <- NULL
 
       } else {

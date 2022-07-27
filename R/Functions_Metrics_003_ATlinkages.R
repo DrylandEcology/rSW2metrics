@@ -103,7 +103,7 @@ get_SWA_JJA <- function(
     res[[k1]] <- format_values_to_matrix(
       x = list(unname(tapply(
         X = x_monthly[["x"]],
-        INDEX = x_monthly["Year"],
+        INDEX = x_monthly[["Year"]],
         FUN = function(x) mean(x[6:8])
       ))),
       ts_years = ts_years,

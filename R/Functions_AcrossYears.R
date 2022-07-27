@@ -150,7 +150,7 @@ aggs_across_years <- function(
       unname(sapply(
         list_years[[k1]],
         function(yrs) {
-          paste0("sc", id_scens[k1], "_", yrs[1], "-", yrs[length(yrs)])
+          paste0("sc", id_scens[k1], "_", yrs[[1]], "-", yrs[length(yrs)])
         }
       ))
     }
@@ -230,7 +230,7 @@ aggs_across_years <- function(
 #' @noRd
 cv <- function(x, ...) {
   mx <- mean(x)
-  if (isTRUE(abs(mx) > sqrt(.Machine$double.eps))) {
+  if (isTRUE(abs(mx) > sqrt(.Machine[["double.eps"]]))) {
     sd(x) / mx
   } else {
     NA
@@ -242,7 +242,7 @@ cv <- function(x, ...) {
 sen_slope <- function(x, ...) {
   stopifnot(requireNamespace("modifiedmk", quietly = TRUE))
   if (sum(is.finite(x)) > 3) {
-    unname(modifiedmk::mkttest(x)["Sen's slope"])
+    unname(modifiedmk::mkttest(x)[["Sen's slope"]])
   } else {
     NA
   }
@@ -314,13 +314,13 @@ mean_cv_mmk <- function(x, na.rm = TRUE, ...) {
 
   c(
     mean = mx,
-    cv = if (isTRUE(abs(mx) > sqrt(.Machine$double.eps))) {
+    cv = if (isTRUE(abs(mx) > sqrt(.Machine[["double.eps"]]))) {
       sd(x) / mx
     } else {
       NA
     },
-    senslope = mmk[1],
-    mmkp = mmk[2]
+    senslope = mmk[[1]],
+    mmkp = mmk[[2]]
   )
 }
 
@@ -369,13 +369,13 @@ mean_sd_cv_mmk <- function(x, na.rm = TRUE, ...) {
   c(
     mean = mx,
     sd = sdx,
-    cv = if (isTRUE(abs(mx) > sqrt(.Machine$double.eps))) {
+    cv = if (isTRUE(abs(mx) > sqrt(.Machine[["double.eps"]]))) {
       sdx / mx
     } else {
       NA
     },
-    senslope = mmk[1],
-    mmkp = mmk[2]
+    senslope = mmk[[1]],
+    mmkp = mmk[[2]]
   )
 }
 
@@ -429,7 +429,7 @@ calc_climatology_1var <- function(
 #'   INDEX = rep(1:10, each = 10),
 #'   FUN = function(x, ...) {
 #'     tmp <- unname(quantile(x, probs = c(0.05, 0.5, 0.95), ...))
-#'     c(low = tmp[1], med = tmp[2], high = tmp[3])
+#'     c(low = tmp[[1]], med = tmp[[2]], high = tmp[3])
 #'   },
 #'   type = 1
 #' )

@@ -342,7 +342,7 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
     X = vwc,
     FUN = function(x) {
       tmp <- array(NA, dim = dim(x), dimnames = dimnames(x))
-      for (k in seq_len(dim(x)[3])) {
+      for (k in seq_len(dim(x)[[3]])) {
         tmp[, , k] <- rSOILWAT2::VWCtoSWP(
           vwc = x[, , k],
           sand = soils[["sand_frac"]][id_slyrs],

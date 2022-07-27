@@ -359,7 +359,7 @@ extract_from_sw2 <- function(
 
   .Deprecated(new = "collect_sw2_sim_data")
 
-  sw2_tp <- sw2_tp[1]
+  sw2_tp <- sw2_tp[[1]]
   sw2_tp <- match.arg(sw2_tp)
 
   #--- Load rSOILWAT2 output object: `runDataSC`
@@ -418,7 +418,9 @@ extract_from_sw2 <- function(
       FUN = paste0,
       collapse = "-"
     )
+    # nolint start: extraction_operator_linter.
     x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1
+    # nolint end
 
   } else if (sw2_tp == "Month") {
     x_time[, "Month"] <- x[[1]][, "Month"]

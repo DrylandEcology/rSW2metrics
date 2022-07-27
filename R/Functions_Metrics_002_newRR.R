@@ -21,7 +21,7 @@ get_rh <- function(path, name_sw2_run, id_scen, years) {
   )
 
   # Provide correct name and initialize
-  res[["values"]][[1]][] <- NA
+  res[["values"]][[1]][] <- NA # nolint: extraction_operator_linter.
   names(res[["values"]]) <- "rh"
 
   # Extract RH (from inputs)
@@ -1798,7 +1798,7 @@ metric_SMTRs <- function(
         # nolint start
         rSOILWAT2::swYears_EndYear(sim_input[["swRunScenariosData"]][[k1]]) <- 9999
         rSOILWAT2::swYears_StartYear(sim_input[["swRunScenariosData"]][[k1]]) <-
-          yrs[1]
+          yrs[[1]]
         rSOILWAT2::swYears_EndYear(sim_input[["swRunScenariosData"]][[k1]]) <-
           yrs[length(yrs)]
         # nolint end

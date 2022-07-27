@@ -22,7 +22,7 @@ calc_RecruitmentIndex_v3 <- function(
   stop_TDD = 0,
   stop_days_TDD = 0,
   include_year = FALSE,
-  tol = sqrt(.Machine$double.eps),
+  tol = sqrt(.Machine[["double.eps"]]),
   ...
 ) {
   stopifnot(requireNamespace("zoo", quietly = TRUE))
@@ -189,7 +189,7 @@ calc_RecruitmentIndex_v3 <- function(
 
   # Recruitment potential: sum of WDD within suitable soil depths
   ts_years <- unique(wdd_recruit[["time"]][, "Year"])
-  jan0 <- as.Date(paste0(ts_years[1] - 1, "-12-31"))
+  jan0 <- as.Date(paste0(ts_years[[1]] - 1, "-12-31"))
 
   res <- array(
     data = 0,
@@ -223,39 +223,43 @@ calc_RecruitmentIndex_v3 <- function(
     # Loop over periods in current year
     for (k2 in seq_along(ids_periods)) {
       # Identify start/end of current period
-      id_mid_yr <- ids_yr[1] + doy_mid_lyr - 1
+      id_mid_yr <- ids_yr[[1]] + doy_mid_lyr - 1
       lims <- c(
-        max(ids_yr[1], periods[ids_periods[k2], "start"]),
+        max(ids_yr[[1]], periods[ids_periods[k2], "start"]),
         min(ids_yr[length(ids_yr)], periods[ids_periods[k2], "end"])
       )
 
       # Identify maximum (cumulative) WDD (and starting DOY) of
       # periods in current year
-      if (lims[1] < id_mid_yr && lims[2] >= id_mid_yr) {
+      if (lims[[1]] < id_mid_yr && lims[[2]] >= id_mid_yr) {
         # Current period crosses mid-year date
-        ids1 <- seq(from = lims[1], to = id_mid_yr - 1)
-        ids2 <- seq(from = id_mid_yr, to = lims[2])
+        ids1 <- seq(from = lims[[1]], to = id_mid_yr - 1)
+        ids2 <- seq(from = id_mid_yr, to = lims[[2]])
         tmp <- c(
           sum(wdd_recruit[["values"]][[1]][ids1]),
           sum(wdd_recruit[["values"]][[1]][ids2])
         )
 
-        if (tmp[1] > res[k1, "SpringRecruitment_maxWDD"]) {
-          res[k1, "SpringRecruitment_maxWDD"] <- tmp[1]
+        if (tmp[[1]] > res[k1, "SpringRecruitment_maxWDD"]) {
+          res[k1, "SpringRecruitment_maxWDD"] <- tmp[[1]]
+          # nolint start: extraction_operator_linter.
           res[k1, "SpringRecruitment_DOY"] <-
-            as.POSIXlt(jan0 + lims[1])$yday + 1
+            as.POSIXlt(jan0 + lims[[1]])$yday + 1
+          # nolint end
           res[k1, "SpringRecruitment_DurationDays"] <- length(ids1)
         }
 
-        if (tmp[2] > res[k1, "FallRecruitment_maxWDD"]) {
-          res[k1, "FallRecruitment_maxWDD"] <- tmp[2]
+        if (tmp[[2]] > res[k1, "FallRecruitment_maxWDD"]) {
+          res[k1, "FallRecruitment_maxWDD"] <- tmp[[2]]
+          # nolint start: extraction_operator_linter.
           res[k1, "FallRecruitment_DOY"] <-
             as.POSIXlt(jan0 + id_mid_yr)$yday + 1
+          # nolint end
           res[k1, "FallRecruitment_DurationDays"] <- length(ids2)
         }
 
       } else {
-        ids <- seq(from = lims[1], to = lims[2])
+        ids <- seq(from = lims[[1]], to = lims[[2]])
         tmp <- sum(wdd_recruit[["values"]][[1]][ids])
 
         if (all(lims < id_mid_yr)) {
@@ -263,8 +267,10 @@ calc_RecruitmentIndex_v3 <- function(
           if (tmp > res[k1, "SpringRecruitment_maxWDD"]) {
             # Current spring period is larger than previous ones -> replace
             res[k1, "SpringRecruitment_maxWDD"] <- tmp
+            # nolint start: extraction_operator_linter.
             res[k1, "SpringRecruitment_DOY"] <-
-              as.POSIXlt(jan0 + lims[1])$yday + 1
+              as.POSIXlt(jan0 + lims[[1]])$yday + 1
+            # nolint end
             res[k1, "SpringRecruitment_DurationDays"] <- length(ids)
           }
 
@@ -273,8 +279,10 @@ calc_RecruitmentIndex_v3 <- function(
           if (tmp > res[k1, "FallRecruitment_maxWDD"]) {
             # Current fall period is larger than previous ones -> replace
             res[k1, "FallRecruitment_maxWDD"] <- tmp
+            # nolint start: extraction_operator_linter.
             res[k1, "FallRecruitment_DOY"] <-
-              as.POSIXlt(jan0 + lims[1])$yday + 1
+              as.POSIXlt(jan0 + lims[[1]])$yday + 1
+            # nolint end
             res[k1, "FallRecruitment_DurationDays"] <- length(ids)
           }
         }

@@ -86,7 +86,7 @@ get_SWA_multilayer_quarterly <- function(
   tag_depth_ranges <- rep(
     unlist(lapply(
       list_used_depth_range_cm,
-      function(x) paste0(x[1], "to", x[2], "cm")
+      function(x) paste0(x[[1]], "to", x[[2]], "cm")
     )),
     each = 4
   )

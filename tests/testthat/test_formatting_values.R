@@ -29,7 +29,9 @@ test_that("Value formatter", {
         xyears <- switch(
           EXPR = xtime,
           ts = if (timestep == "daily") {
+            # nolint start: extraction_operator_linter.
             as.integer(1900 + ts_daily$year)
+            # nolint end
           } else {
             rep(
               ts_years,
@@ -79,7 +81,7 @@ test_that("Value formatter", {
 
             } else if (labeltype == "labels") {
               xlabels <- if (xtype %in% "vector") {
-                ns_vars[1]
+                ns_vars[[1]]
               } else if (xtype %in% c("list_of_vector1", "list_of_vectorV")) {
                 names(x) <- NULL
                 ns_vars[seq_along(x)]
