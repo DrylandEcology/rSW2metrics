@@ -86,8 +86,7 @@ metric_FrostDays_Seasonal <- function(
     sw2_tp = "Day",
     sw2_out = "TEMP",
     sw2_var = "min_C",
-    fun_across_time = function(x, limit,
-  ...) sum(x < limit),
+    fun_across_time = function(x, limit, ...) sum(x < limit),
     limit = -1
   )
 }
