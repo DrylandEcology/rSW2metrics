@@ -1,0 +1,8 @@
+linters: lintr::linters_with_tags(
+  tags = NULL,
+  #--- Change arguments of linters:
+  line_length_linter = lintr::line_length_linter(length = 80L),
+  #--- Turn off linters:
+  yoda_test_linter = NULL)
+error_on_lint: TRUE
+encoding: "UTF-8"
