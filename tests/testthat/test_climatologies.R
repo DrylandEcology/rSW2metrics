@@ -92,9 +92,9 @@ test_that("Across-year aggregations", {
           all(
             vapply(
               list_names_FUN[[k3]],
-              function(x) any(grepl(x, x = colnames(res)))
-            ),
-            FUN.VALUE = NA
+              function(x) any(grepl(x, x = colnames(res))),
+              FUN.VALUE = NA
+            )
           )
         )
 
@@ -103,9 +103,9 @@ test_that("Across-year aggregations", {
           all(
             vapply(
               list_names_X[[k1]],
-              function(x) is.null(x) || any(grepl(x, x = colnames(res)))
-            ),
-            FUN.VALUE = NA
+              function(x) is.null(x) || any(grepl(x, x = colnames(res))),
+              FUN.VALUE = NA
+            )
           )
         )
 

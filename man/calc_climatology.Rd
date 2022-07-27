@@ -49,7 +49,7 @@ calc_climatology(
   INDEX = rep(1:10, each = 10),
   FUN = function(x, ...) {
     tmp <- unname(quantile(x, probs = c(0.05, 0.5, 0.95), ...))
-    c(low = tmp[1], med = tmp[2], high = tmp[3])
+    c(low = tmp[[1]], med = tmp[[2]], high = tmp[[3]])
   },
   type = 1
 )

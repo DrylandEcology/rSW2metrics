@@ -148,7 +148,7 @@ aggs_across_years <- function(
   tags_sc_aggs <- lapply(
     seq_along(id_scens),
     function(k1) {
-      unname(lapply(
+      unname(vapply(
         list_years[[k1]],
         function(yrs) {
           paste0("sc", id_scens[k1], "_", yrs[[1]], "-", yrs[length(yrs)])
@@ -431,7 +431,7 @@ calc_climatology_1var <- function(
 #'   INDEX = rep(1:10, each = 10),
 #'   FUN = function(x, ...) {
 #'     tmp <- unname(quantile(x, probs = c(0.05, 0.5, 0.95), ...))
-#'     c(low = tmp[[1]], med = tmp[[2]], high = tmp[3])
+#'     c(low = tmp[[1]], med = tmp[[2]], high = tmp[[3]])
 #'   },
 #'   type = 1
 #' )
