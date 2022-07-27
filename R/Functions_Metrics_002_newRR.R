@@ -1128,7 +1128,7 @@ get_SW2flux <- function(
 
     if (include_year) {
       res[[k1]] <- rbind(
-        Year = ts_years,
+        Year = unique(sim_data[["val"]][["time"]][, "Year"]),
         res[[k1]]
       )
     }
@@ -1600,7 +1600,7 @@ metric_Climate_monthly <- function(
 
     if (include_year) {
       res[[k1]] <- rbind(
-        Year = ts_years,
+        Year = unique(ts_years),
         res[[k1]]
       )
     }
