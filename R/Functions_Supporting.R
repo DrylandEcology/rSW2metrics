@@ -520,7 +520,7 @@ calc_new_yearly_aggregations <- function(
   temp_monthly,
   fun_time, # sum
   fun_extreme, # max
-  periods, # list(op = `>`, limit = 0),
+  periods, # for instance: list(op = `>`, limit = 0),
   output = c(
     "values", "5roll", "seasonal_variability", "seasonality",
     "mean_day", "extreme_mean005day", "extreme_mean010day",

@@ -67,7 +67,7 @@ get_vpd <- function(
   temp_min <- get_values_from_sw2(
     id_scen = id_scen,
     path, name_sw2_run,
-    group_by_month = seq_len(12), #rep(0, 12),
+    group_by_month = seq_len(12),
     first_month_of_year = first_month_of_year,
     sw2_tp = "Day",
     sw2_out = "TEMP",
@@ -78,7 +78,7 @@ get_vpd <- function(
   temp_max <- get_values_from_sw2(
     id_scen = id_scen,
     path, name_sw2_run,
-    group_by_month = seq_len(12), #rep(0, 12),
+    group_by_month = seq_len(12),
     first_month_of_year = first_month_of_year,
     sw2_tp = "Day",
     sw2_out = "TEMP",
