@@ -92,7 +92,7 @@ process_arguments <- function(x) {
   # file name for the output (without extension)
   id <- args[, 1] %in% "-o"
   if (any(id)) {
-    res[["tag_filename"]] <- args[id, 2]
+    res[["tag_filename"]] <- as.character(args[id, 2])
   } else {
     stop("Output filename (option `-o`) is missing.")
   }
@@ -100,7 +100,7 @@ process_arguments <- function(x) {
   # function name to calculate the values (e.g. "get_CorTP_annual")
   id <- args[, 1] %in% "-fun"
   if (any(id)) {
-    res[["fun_name"]] <- args[id, 2]
+    res[["fun_name"]] <- as.character(args[id, 2])
   } else {
     stop("Function name (option `-fun`) is missing.")
   }
@@ -109,7 +109,7 @@ process_arguments <- function(x) {
   # file name for the project parameters
   id <- args[, 1] %in% "-fparam"
   if (any(id)) {
-    res[["filename_params"]] <- args[id, 2]
+    res[["filename_params"]] <- as.character(args[id, 2])
   } else {
     stop("Name of file with project parameters (option `-fparam`) is missing.")
   }
@@ -146,7 +146,7 @@ process_arguments <- function(x) {
     res[["runids"]] <- tmp[1]:tmp[2]
   } else {
     res[["runids"]] <- if (res[["do_full"]]) {
-      -1 # all available runs
+      -1L # all available runs
     } else {
       seq_len(res[["ntests"]])
     }
