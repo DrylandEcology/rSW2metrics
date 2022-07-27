@@ -1,10 +1,10 @@
 # rSW2metrics: Calculation of Ecohydrological Metrics from rSOILWAT2 simulations
 
 <!-- badges: start -->
-[ ![R build status][1]][2] [ ![github release][5]][6] [![license][7]][8] [![codecov status][9]][10]
+[ ![R build status][1]][2] [ ![github release][5]][6] [![DOI][12]][13] [![license][7]][8] [![codecov status][9]][10]
 <!-- badges: end -->
 
-[1]: https://github.com/DrylandEcology/rSW2metrics/actions/workflows/check-standard.yml/badge.svg?branch=main
+[1]: https://github.com/DrylandEcology/rSW2metrics/actions/workflows/check-standard.yaml/badge.svg?branch=main
 [2]: https://github.com/DrylandEcology/rSW2metrics/actions
 [5]: https://img.shields.io/github/release/DrylandEcology/rSW2metrics.svg?label=current+release
 [6]: https://github.com/DrylandEcology/rSW2metrics/releases
@@ -13,6 +13,8 @@
 [9]: https://codecov.io/gh/DrylandEcology/rSW2metrics/branch/main/graph/badge.svg
 [10]: https://codecov.io/gh/DrylandEcology/rSW2metrics
 [11]: https://img.shields.io/github/downloads/DrylandEcology/rSW2metrics/total.svg
+[12]: https://zenodo.org/badge/336325981.svg
+[13]: https://zenodo.org/badge/latestdoi/336325981
 [SOILWAT2]: https://github.com/DrylandEcology/SOILWAT2
 [STEPWAT2]: https://github.com/DrylandEcology/STEPWAT2
 [rSFSTEP2]: https://github.com/DrylandEcology/rSFSTEP2
