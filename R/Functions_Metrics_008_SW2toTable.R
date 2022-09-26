@@ -101,18 +101,16 @@ metric_SW2toTable_daily <- function(
     soils <- rSOILWAT2::swSoils_Layers(
       sim_input[["swRunScenariosData"]][[id_scen_used[k1]]]
     )
-    depths0 <- formatC(
-      c(0, soils[, "depth_cm"]),
-      width = width_soiltag,
-      flag = 0
-    )
+    depths0 <- c(0, soils[, "depth_cm"])
+    widths_cm <- diff(depths0)
+    depths0_str <- formatC(depths0, width = width_soiltag, flag = 0)
     soil_widths_str <- paste0(
-      depths0[-length(depths0)],
+      depths0_str[-length(depths0_str)],
       "to",
-      depths0[-1],
+      depths0_str[-1],
       "_cm"
     )
-    soil_lowerdepths_str <- paste0(depths0[-1], "_cm")
+    soil_lowerdepths_str <- paste0(depths0_str[-1], "_cm")
 
     nlyrs_sim <- nrow(soils)
     ids_cols <- if (!is.null(share_soillayer_ids)) {
@@ -291,11 +289,11 @@ metric_SW2toTable_daily <- function(
       tmp <- if (nrow(sim_vwc) > 0) {
         sim_vwc[, 2 + ids_cols, drop = FALSE]
       } else if (nrow(sim_swc) > 0) {
-        # calculate VWC as SWC / depth
+        # calc VWC (bulk) as SWC / width, see `rSOILWAT2::get_soilmoisture()`
         sweep(
           sim_swc[, 2 + ids_cols, drop = FALSE],
           MARGIN = 2,
-          STATS = soils[ids_cols, "depth_cm"],
+          STATS = widths_cm[ids_cols],
           FUN = "/"
         )
       }
