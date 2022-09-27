@@ -561,6 +561,7 @@ calc_TranspirationPeaks_v3 <- function(
 metric_TranspirationSeasonality_v1 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -580,7 +581,8 @@ metric_TranspirationSeasonality_v1 <- function(
           sw2_vars = "transp_total_Lyr",
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- calc_TranspirationSeasonality_v1(
@@ -601,6 +603,7 @@ metric_TranspirationSeasonality_v1 <- function(
 metric_TranspirationSeasonality_v2 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -619,7 +622,8 @@ metric_TranspirationSeasonality_v2 <- function(
           sw2_vars = "transp_total_Lyr",
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- calc_TranspirationSeasonality_v1(
@@ -641,6 +645,7 @@ metric_TranspirationSeasonality_v2 <- function(
 metric_TranspirationSeasonality_v3 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -660,7 +665,8 @@ metric_TranspirationSeasonality_v3 <- function(
           sw2_vars = "transp_total_Lyr",
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- calc_TranspirationSeasonality_v1(
@@ -683,6 +689,7 @@ metric_TranspirationSeasonality_v3 <- function(
 metric_TranspirationSeasonality_v4 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -702,7 +709,8 @@ metric_TranspirationSeasonality_v4 <- function(
           sw2_vars = "transp_total_Lyr",
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- calc_TranspirationSeasonality_v2(
@@ -724,6 +732,7 @@ metric_TranspirationSeasonality_v4 <- function(
 metric_TranspirationSeasonality_v5 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -743,7 +752,8 @@ metric_TranspirationSeasonality_v5 <- function(
           sw2_vars = "transp_total_Lyr",
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- calc_TranspirationSeasonality_v2(
@@ -769,6 +779,7 @@ metric_TranspirationSeasonality_v5 <- function(
 metric_TranspirationSeasonality_v6 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -788,7 +799,8 @@ metric_TranspirationSeasonality_v6 <- function(
           sw2_vars = "transp_total_Lyr",
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- calc_TranspirationSeasonality_v3(
@@ -804,6 +816,7 @@ metric_TranspirationSeasonality_v6 <- function(
 metric_TranspirationPeaks_v6 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -823,7 +836,8 @@ metric_TranspirationPeaks_v6 <- function(
           sw2_vars = "transp_total_Lyr",
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- calc_TranspirationPeaks_v3(

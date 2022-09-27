@@ -7,11 +7,12 @@
 #  * `calc_*()` functions calculate a response
 
 
-get_rh <- function(path, name_sw2_run, id_scen, years) {
+get_rh <- function(path, name_sw2_run, id_scen, years, zipped_runs = FALSE) {
   # Extract a variable from outputs as template
   res <- extract_from_sw2(
     path = path,
     name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen = id_scen,
     years = years,
     sw2_tp = "Day",
@@ -25,10 +26,10 @@ get_rh <- function(path, name_sw2_run, id_scen, years) {
   names(res[["values"]]) <- "rh"
 
   # Extract RH (from inputs)
-  sim_input <- new.env(parent = emptyenv())
-  load(
-    file = file.path(path, name_sw2_run, "sw_input.RData"),
-    envir = sim_input
+  sim_input <- load_sw2_rda(
+    path = file.path(path, name_sw2_run),
+    fname = "sw_input.RData",
+    zipped_runs = zipped_runs
   )
 
   # nolint start: object_usage_linter.
@@ -56,7 +57,9 @@ get_rh <- function(path, name_sw2_run, id_scen, years) {
 
 get_vpd <- function(
   path, name_sw2_run,
-  id_scen, years, group_by_month, first_month_of_year, ...
+  id_scen, years, group_by_month, first_month_of_year,
+  zipped_runs = FALSE,
+  ...
 ) {
   stopifnot(requireNamespace("rSW2data"))
 
@@ -67,6 +70,7 @@ get_vpd <- function(
   temp_min <- get_values_from_sw2(
     id_scen = id_scen,
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     group_by_month = seq_len(12),
     first_month_of_year = first_month_of_year,
     sw2_tp = "Day",
@@ -78,6 +82,7 @@ get_vpd <- function(
   temp_max <- get_values_from_sw2(
     id_scen = id_scen,
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     group_by_month = seq_len(12),
     first_month_of_year = first_month_of_year,
     sw2_tp = "Day",
@@ -86,7 +91,7 @@ get_vpd <- function(
     varnames_are_fixed = TRUE
   )
 
-  rh <- get_rh(path, name_sw2_run, id_scen = id_scen)
+  rh <- get_rh(path, name_sw2_run, id_scen = id_scen, zipped_runs = zipped_runs)
 
 
   cbind(
@@ -110,6 +115,7 @@ metric_CWD <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -137,7 +143,8 @@ metric_CWD <- function(
           sw2_vars = c(tmean = "avg_C"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     cwd_daily <- list(
@@ -290,7 +297,9 @@ calc_MDD_daily <- function(
 metric_TDDat5C <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -324,7 +333,8 @@ metric_TDDat5C <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     # TDD doesn't need SWP, but time is still required
@@ -373,7 +383,9 @@ metric_TDDat5C <- function(
 metric_WDDat5C0to100cm15bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -419,7 +431,8 @@ metric_WDDat5C0to100cm15bar <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     wdd_daily <- calc_MDD_daily(
@@ -454,6 +467,7 @@ get_DDD_yearly <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils,
   used_depth_range_cm = NULL,
   Temp_limit_C = 5,
@@ -489,7 +503,8 @@ get_DDD_yearly <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     ddd_daily <- calc_MDD_daily(
@@ -520,7 +535,9 @@ get_DDD_yearly <- function(
 metric_DDDat5C0to030cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -533,6 +550,7 @@ metric_DDDat5C0to030cm30bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -547,7 +565,9 @@ metric_DDDat5C0to030cm30bar <- function(
 metric_DDDat5C0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -560,6 +580,7 @@ metric_DDDat5C0to100cm30bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -692,6 +713,7 @@ get_SWA <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
@@ -720,7 +742,8 @@ get_SWA <- function(
           sw2_vars = c(tmean = "avg_C"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     swa_daily <- calc_SWA_mm(
@@ -751,6 +774,7 @@ get_SWA <- function(
 metric_SWAat0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils, ...
 ) {
   out <- match.arg(out)
@@ -764,6 +788,7 @@ metric_SWAat0to100cm30bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -776,6 +801,7 @@ metric_SWAat0to100cm30bar <- function(
 metric_SWAat0to100cm39bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils, ...
 ) {
   out <- match.arg(out)
@@ -789,6 +815,7 @@ metric_SWAat0to100cm39bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -841,6 +868,7 @@ get_DSI <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
@@ -864,7 +892,8 @@ get_DSI <- function(
           sw2_vars = c(swp = "Lyr"),
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     tmp_dsi <- calc_DSI(
@@ -906,7 +935,9 @@ get_DSI <- function(
 metric_DSIat0to100cm15bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -919,6 +950,7 @@ metric_DSIat0to100cm15bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -931,7 +963,9 @@ metric_DSIat0to100cm15bar <- function(
 metric_DSIat0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -944,6 +978,7 @@ metric_DSIat0to100cm30bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -995,6 +1030,7 @@ calc_frost_doy <- function(
 metric_FrostDaysAtNeg5C <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1017,7 +1053,8 @@ metric_FrostDaysAtNeg5C <- function(
           sw2_vars = c(tmin = "min_C"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- t(calc_frost_doy(
@@ -1045,6 +1082,7 @@ metric_CorTempPPT <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1065,7 +1103,8 @@ metric_CorTempPPT <- function(
           sw2_vars = c(tmin = "min_C", "ppt"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     tmp <- calc_CorTempPPT(
@@ -1096,6 +1135,7 @@ get_SW2flux <- function(
   transform = function(x) x,
   out_labels,
   include_year = FALSE,
+  zipped_runs = FALSE,
   timestep = c("yearly", "monthly"),
   ...
 ) {
@@ -1116,7 +1156,8 @@ get_SW2flux <- function(
           sw2_vars = sw2_var,
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- format_values_to_matrix(
@@ -1143,6 +1184,7 @@ get_SW2flux <- function(
 metric_ET_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1152,6 +1194,7 @@ metric_ET_annual <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "AET",
     sw2_var = "evapotr_cm",
@@ -1164,6 +1207,7 @@ metric_ET_annual <- function(
 metric_ET_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1173,6 +1217,7 @@ metric_ET_monthly <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "AET",
     sw2_var = "evapotr_cm",
@@ -1188,6 +1233,7 @@ metric_ET_monthly <- function(
 metric_DR_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1197,6 +1243,7 @@ metric_DR_annual <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "DEEPSWC",
     sw2_var = "lowLayerDrain_cm",
@@ -1210,6 +1257,7 @@ metric_DR_annual <- function(
 metric_DR_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1219,6 +1267,7 @@ metric_DR_monthly <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "DEEPSWC",
     sw2_var = "lowLayerDrain_cm",
@@ -1233,6 +1282,7 @@ metric_DR_monthly <- function(
 metric_Radiation_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1242,6 +1292,7 @@ metric_Radiation_annual <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "PET",
     sw2_var = c("H_oh_MJm-2", "H_gt_MJm-2"),
@@ -1255,6 +1306,7 @@ metric_Radiation_annual <- function(
 metric_Radiation_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1264,6 +1316,7 @@ metric_Radiation_monthly <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "PET",
     sw2_var = c("H_oh_MJm-2", "H_gt_MJm-2"),
@@ -1279,6 +1332,7 @@ metric_Climate_annual <- function(
   id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1321,7 +1375,8 @@ metric_Climate_annual <- function(
           ),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
 
@@ -1439,6 +1494,7 @@ metric_Climate_monthly <- function(
   id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1475,7 +1531,8 @@ metric_Climate_monthly <- function(
           ),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
 
@@ -1614,6 +1671,7 @@ get_Tmean_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "across_years"),
   fun_aggs_across_yrs = mean,
+  zipped_runs = FALSE,
   ...
 ) {
   res <- list()
@@ -1640,7 +1698,8 @@ get_Tmean_monthly <- function(
               sw2_vars = c(tmean = "avg_C"),
               varnames_are_fixed = TRUE
             )
-          )
+          ),
+          zipped_runs = zipped_runs
         )
 
         if (out == "ts_years") {
@@ -1675,6 +1734,7 @@ get_Tmean_monthly <- function(
 metric_Tmean_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -1682,6 +1742,7 @@ metric_Tmean_monthly <- function(
   get_Tmean_monthly(
     path = path,
     name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
@@ -1695,6 +1756,7 @@ metric_Tmean_monthly <- function(
 metric_Tmean_monthlyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  zipped_runs = FALSE,
   fun_aggs_across_yrs = mean,
   ...
 ) {
@@ -1703,6 +1765,7 @@ metric_Tmean_monthlyClim <- function(
   get_Tmean_monthly(
     path = path,
     name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
@@ -1718,6 +1781,7 @@ metric_PPT_monthlyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
   fun_aggs_across_yrs = mean,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -1740,7 +1804,8 @@ metric_PPT_monthlyClim <- function(
               sw2_vars = "ppt",
               varnames_are_fixed = TRUE
             )
-          )
+          ),
+          zipped_runs = zipped_runs
         )
 
         format_values_to_matrix(
@@ -1768,6 +1833,7 @@ metric_PPT_monthlyClim <- function(
 metric_SMTRs <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(
@@ -1777,21 +1843,17 @@ metric_SMTRs <- function(
 
   res <- list()
 
-  sim_input <- new.env(parent = emptyenv())
-  load(
-    file = file.path(path, name_sw2_run, "sw_input.RData"),
-    envir = sim_input
+  sim_input <- load_sw2_rda(
+    path = file.path(path, name_sw2_run),
+    fname = "sw_input.RData",
+    zipped_runs = zipped_runs
   )
 
   for (k1 in seq_along(id_scen_used)) {
-    sim_data <- new.env(parent = emptyenv())
-    load(
-      file = file.path(
-        path,
-        name_sw2_run,
-        paste0("sw_output_sc", id_scen_used[k1], ".RData")
-      ),
-      envir = sim_data
+    sim_data <- load_sw2_rda(
+      path = file.path(path, name_sw2_run),
+      fname = paste0("sw_output_sc", id_scen_used[k1], ".RData"),
+      zipped_runs = zipped_runs
     )
 
     tmp <- lapply(
@@ -1825,6 +1887,7 @@ metric_AI <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1846,7 +1909,8 @@ metric_AI <- function(
           sw2_vars = c(pet = "pet_cm", ppt = "ppt"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- matrix(
@@ -1877,6 +1941,7 @@ metric_RR2022predictors_annualClim <- function(
   id_scen_used,
   list_years_scen_used,
   out = "across_years",
+  zipped_runs = FALSE,
   soils,
   ...
 ) {
@@ -1945,7 +2010,8 @@ metric_RR2022predictors_annualClim <- function(
               ),
               varnames_are_fixed = TRUE
             )
-          )
+          ),
+          zipped_runs = zipped_runs
         )
 
 

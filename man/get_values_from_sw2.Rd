@@ -14,7 +14,8 @@ get_values_from_sw2(
   sw2_tp,
   sw2_out,
   sw2_var,
-  varnames_are_fixed = TRUE
+  varnames_are_fixed = TRUE,
+  zipped_runs = FALSE
 )
 }
 \arguments{
@@ -52,6 +53,9 @@ of the output group(s) corresponding to the \code{sw2_out}.}
 \code{sw2_var} is taken literally. Otherwise, \code{sw2_var}
 are interpreted as regular expressions
 (and may thus return multiple columns).}
+
+\item{zipped_runs}{A logical value. Describes whether \code{name_sw2_run}
+is a zip archive or a regular folder.}
 }
 \value{
 A list with three elements: \itemize{

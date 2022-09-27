@@ -105,8 +105,9 @@
 \item{path}{A character string. The path to the simulation project folder
 that contains the individual folder of each simulated site.}
 
-\item{name_sw2_run}{A character string. The name of the folder of the
-simulated site for which metrics are to be calculated.
+\item{name_sw2_run}{A character string. The name of the folder
+(or zip archive, see \code{zipped_runs}) of the simulated site
+for which metrics are to be calculated.
 \pkg{rSOILWAT2} input and output is organized following conventions of
 \pkg{rSFSW2}, i.e., inputs for each scenario are stored in a list object
 named \var{\dQuote{swRunScenariosData}} which is stored
@@ -115,6 +116,9 @@ and output data is stored for each scenario separately in an object
 named \var{\dQuote{runDataSC}}
 in a file \var{\dQuote{sw_output_scX.RData}} where
 \code{X} is the number of the scenario.}
+
+\item{zipped_runs}{A logical value. Describes whether \code{name_sw2_run}
+is a zip archive or a regular folder.}
 
 \item{id_scen_used}{An integer vector. The numbers of scenarios for which
 metrics are to be calculated.}
@@ -171,7 +175,7 @@ across which the aggregation was calculated)
 \description{
 These functions have a name that starts with \code{metric_}.
 They have at least the following arguments:
-\code{path}, \code{name_sw2_run}, \code{id_scen_used},
+\code{path}, \code{name_sw2_run}, \code{zipped_runs}, \code{id_scen_used},
 \code{list_years_scen_used}, \code{out}, and \code{...}.
 }
 \section{Details}{

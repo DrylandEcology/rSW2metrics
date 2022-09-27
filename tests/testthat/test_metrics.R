@@ -49,9 +49,10 @@ test_that("Check metrics", {
 
 
   # List of metrics that call outdated `calc_univariate_from_sw2()` or
-  # `calc_multivariate_from_sw2()` and cannot deal with varying
-  # simulation periods or non-simulated requested years
-  # -- instead of up-to-date `collect_sw2_sim_data()`
+  # `calc_multivariate_from_sw2()`
+  # (instead of up-to-date `collect_sw2_sim_data()`) and cannot handle:
+  #  * varying simulation periods
+  #  * non-simulated requested years
   old_fun_metrics <- c(
     "metric_SWA_Seasonal_top50cm",
     "metric_SWP_SoilLayers_MeanMonthly",
@@ -82,10 +83,6 @@ test_that("Check metrics", {
 
   #------ Timing (only if interactively used)
   do_timing <- interactive() && !testthat::is_testing()
-  if (do_timing) {
-    print("do timing")
-    time_metrics <- vector("numeric", length = length(fun_metrics))
-  }
 
 
   #--- Create an example rSOILWAT2 simulation run with several scenarios
@@ -293,197 +290,257 @@ test_that("Check metrics", {
 
 
 
-  #------ Loop over metrics and aggregate ------
-  for (k1 in seq_along(fun_metrics)) {
-    is_out_ts <- has_fun_ts_as_output(fun_metrics[[k1]])
+  #------ Loop over unzipped and zipped versions of runs -------
+  for (kzip in c(FALSE, TRUE)) {
 
-    fun_args <- c(
-      args_template,
-      list_years_scen_used = if (is_out_ts) {
-        list(prjpars[["years_timeseries_by_scen"]])
-      } else {
-        list(prjpars[["years_aggs_by_scen"]])
+    #------ Zip folders ------
+    if (kzip) {
+      used_run_rSFSW2_names <- paste0(run_rSFSW2_names, ".zip")
+
+      # See rSFSW2/tools/SFSW2_project_zip3runs.R
+      for (ks in seq_len(N_sites)) {
+        fname_run <- file.path(
+          prjpars[["dir_sw2_output"]],
+          run_rSFSW2_names[ks]
+        )
+        fname_zip <- file.path(
+          prjpars[["dir_sw2_output"]],
+          used_run_rSFSW2_names[ks]
+        )
+
+        ret <- utils::zip(
+          zipfile = fname_zip,
+          files = fname_run,
+          flags = "-jrTq0"
+        )
+
+        if (ret == 0 && file.exists(fname_zip)) {
+          unlink(fname_run, recursive = TRUE)
+        } else {
+          stop("Zipping of simulation output failed.")
+        }
       }
-    )
-
-    N_sites_used <- if (fun_metrics[[k1]] %in% old_fun_metrics) 2 else N_sites
-    ids_used_runs <- seq_len(N_sites_used)
-
-
-    #--- Call aggregation function for rSOILWAT2 input/output for each site `s`
-    if (!do_timing) {
-      res <- foo_metrics(
-        fun = fun_metrics[k1],
-        fun_args = fun_args,
-        run_rSFSW2_names = run_rSFSW2_names[ids_used_runs],
-        is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
-        N_sites = N_sites_used
-      )
 
     } else {
-      time_metrics[k1] <- system.time(
+      used_run_rSFSW2_names <- run_rSFSW2_names
+    }
+
+
+    #------ Prepare timing information ------
+    if (do_timing) {
+      time_metrics <- vector("numeric", length = length(fun_metrics))
+    }
+
+
+    #------ Loop over metrics and aggregate ------
+    for (k1 in seq_along(fun_metrics)) {
+      is_out_ts <- has_fun_ts_as_output(fun_metrics[[k1]])
+
+      fun_args <- c(
+        args_template,
+        list_years_scen_used = if (is_out_ts) {
+          list(prjpars[["years_timeseries_by_scen"]])
+        } else {
+          list(prjpars[["years_aggs_by_scen"]])
+        },
+        zipped_runs = kzip
+      )
+
+      N_sites_used <- if (fun_metrics[[k1]] %in% old_fun_metrics) 2 else N_sites
+      ids_used_runs <- seq_len(N_sites_used)
+
+
+      #--- Call aggregation function for rSOILWAT2 input/output for each site
+      if (!do_timing) {
         res <- foo_metrics(
           fun = fun_metrics[k1],
           fun_args = fun_args,
-          run_rSFSW2_names = run_rSFSW2_names[ids_used_runs],
+          run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
           is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
           N_sites = N_sites_used
         )
-      )[["elapsed"]]
-    }
-
-
-    #--- Check that output contains columns for each requested year x scenario
-    N_yrs_expected <- sum(lengths(fun_args[["list_years_scen_used"]]))
-    expect_identical(
-      vapply(res, ncol, FUN.VALUE = NA_integer_) - 2L,
-      rep(N_yrs_expected, length(res))
-    )
-
-
-    values_all_sites <- format_metric_Nsim(
-      x = do.call(rbind, res),
-      names = run_rSFSW2_names,
-      prjpars = prjpars,
-      do_collect_inputs = FALSE,
-      fun_name = fun_metrics[k1],
-      is_out_ts = is_out_ts
-    )
-
-    #--- Check that formatted output has column names
-    expect_false(anyNA(colnames(values_all_sites)))
-
-
-    #--- Check consistency of the one output time step
-    submetric_timesteps <- unique(
-      identify_submetric_timesteps(values_all_sites[, "group"])
-    )
-
-    tmp <- submetric_timesteps != "yearly"
-    if (any(tmp)) {
-      # Check that time step occurs as pattern in function name (if not annual)
-      expect_true(
-        grepl(!!submetric_timesteps[tmp], !!fun_metrics[k1], ignore.case = TRUE)
-      )
-    } else {
-      # Check that no subannual timestep occurs in annual function name
-      # Avoid exceptions
-      tmp <- any(vapply(
-        "seasonality",
-        function(x) grepl(x, fun_metrics[k1], ignore.case = TRUE),
-        FUN.VALUE = NA
-      ))
-      if (!tmp) {
-        for (ts_suba in names(list_subannual_timesteps())) {
-          expect_false(
-            grepl(!!ts_suba, !!fun_metrics[k1], ignore.case = TRUE)
-          )
-        }
-      }
-    }
-
-    # Check that there is exactly one time step
-    expect_length(!!c(fun_metrics[k1], submetric_timesteps), n = 2)
-
-
-    #--- Calculate aggregations across years
-    output <- if (is_out_ts) {
-      aggs_across_years(
-        values_all_sites,
-        fun = prjpars[["fun_aggs_across_yrs"]],
-        list_years = prjpars[["years_timeseries_by_scen"]],
-        id_scens = prjpars[["id_scen_used"]],
-        combine = TRUE
-      )
-    } else {
-      values_all_sites
-    }
-
-
-    #--- Check that output is a data.frame
-    # with character vectors (for `site` and `group`) and
-    # with numeric/logical vectors (for metric values/SW2toTable)
-    expect_equal(
-      vapply(
-        output,
-        function(x) {
-          !is.list(x) &&
-            is.vector(x) &&
-            typeof(x) %in% c("character", "integer", "double", "logical")
-        },
-        FUN.VALUE = NA
-      ),
-      rep(TRUE, ncol(output)),
-      ignore_attr = "names"
-    )
-
-
-    #--- Check output against stored copy of previous output
-    # note: previous values depend on the (minor) version of rSOILWAT2
-    # skip if used rSOILWAT2 version differs too much from version used
-    #      to create values of previous output
-
-    if (any(eqv)) {
-      vtag <- paste0("v", names(eqv)[which(eqv)])
-
-      if (FALSE) {
-        # `testthat::expect_snapshot_value()` doesn't properly work
-        # for our situation as of v3.0.1:
-        # - style "deparse" leads to errors such 'could not find function "-"'
-        # - if a new metric is changed or added to the package,
-        #   then all tests that are sorted alphabetically later will fail,
-        #   likely because
-        #   * all snapshots are stored in the same huge file and
-        #   * differences are not resolve correctly
-        # - the function produces for style = "serialize" a snapshot of c. 12 MB
-        #   while saving individual "rds" consumes in total only 3.3 MB
-        expect_snapshot_value(x = output, style = "serialize")
 
       } else {
-        ftest_output <- file.path(
-          dir_test_data,
-          vtag,
-          paste0("ref_", fun_metrics[k1], ".rds")
+        time_metrics[k1] <- system.time(
+          res <- foo_metrics(
+            fun = fun_metrics[k1],
+            fun_args = fun_args,
+            run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
+            is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
+            N_sites = N_sites_used
+          )
+        )[["elapsed"]]
+      }
+
+
+      #--- Check that output contains columns for each requested year x scenario
+      N_yrs_expected <- sum(lengths(fun_args[["list_years_scen_used"]]))
+      expect_identical(
+        vapply(res, ncol, FUN.VALUE = NA_integer_) - 2L,
+        rep(N_yrs_expected, length(res))
+      )
+
+
+      values_all_sites <- format_metric_Nsim(
+        x = do.call(rbind, res),
+        names = used_run_rSFSW2_names,
+        prjpars = prjpars,
+        do_collect_inputs = FALSE,
+        fun_name = fun_metrics[k1],
+        is_out_ts = is_out_ts
+      )
+
+      #--- Check that formatted output has column names
+      expect_false(anyNA(colnames(values_all_sites)))
+
+
+      #--- Check consistency of the one output time step
+      submetric_timesteps <- unique(
+        identify_submetric_timesteps(values_all_sites[, "group"])
+      )
+
+      tmp <- submetric_timesteps != "yearly"
+      if (any(tmp)) {
+        # Check that time step occurs as pattern in function name
+        # (if not annual)
+        expect_true(
+          grepl(
+            !!submetric_timesteps[tmp],
+            !!fun_metrics[k1],
+            ignore.case = TRUE
+          )
         )
 
-        if (file.exists(ftest_output)) {
-          ref_output <- readRDS(ftest_output)
-
-          ids <- if (vtag == "v5.0" && nrow(output) > nrow(ref_output)) {
-            output[["site"]] %in% run_rSFSW2_names[1:2]
-          } else {
-            seq_len(nrow(output))
+      } else {
+        # Check that no subannual timestep occurs in annual function name
+        # Avoid exceptions
+        tmp <- any(vapply(
+          "seasonality",
+          function(x) grepl(x, fun_metrics[k1], ignore.case = TRUE),
+          FUN.VALUE = NA
+        ))
+        if (!tmp) {
+          for (ts_suba in names(list_subannual_timesteps())) {
+            expect_false(
+              grepl(!!ts_suba, !!fun_metrics[k1], ignore.case = TRUE)
+            )
           }
-          expect_identical(output[ids, ], ref_output, label = fun_metrics[k1])
-
-        } else if (create_new_reference_output) {
-          succeed(paste("New reference stored for", shQuote(fun_metrics[k1])))
-
-          dir.create(
-            dirname(ftest_output),
-            recursive = TRUE,
-            showWarnings = FALSE
-          )
-          saveRDS(output, file = ftest_output, compress = "xz")
         }
       }
 
-    } else {
-      warning(
-        shQuote(fun_metrics[k1]),
-        ": comparisons against previous values skipped ",
-        "because installed rSOILWAT2 v", used_rSOILWAT2_version,
-        " differs too much from any version used to create reference values."
+      # Check that there is exactly one time step
+      expect_length(!!c(fun_metrics[k1], submetric_timesteps), n = 2)
+
+
+      #--- Calculate aggregations across years
+      output <- if (is_out_ts) {
+        aggs_across_years(
+          values_all_sites,
+          fun = prjpars[["fun_aggs_across_yrs"]],
+          list_years = prjpars[["years_timeseries_by_scen"]],
+          id_scens = prjpars[["id_scen_used"]],
+          combine = TRUE
+        )
+      } else {
+        values_all_sites
+      }
+
+
+      #--- Check that output is a data.frame
+      # with character vectors (for `site` and `group`) and
+      # with numeric/logical vectors (for metric values/SW2toTable)
+      expect_equal(
+        vapply(
+          output,
+          function(x) {
+            !is.list(x) &&
+              is.vector(x) &&
+              typeof(x) %in% c("character", "integer", "double", "logical")
+          },
+          FUN.VALUE = NA
+        ),
+        rep(TRUE, ncol(output)),
+        ignore_attr = "names"
       )
+
+
+      #--- Check output against stored copy of previous output
+      # note: previous values depend on the (minor) version of rSOILWAT2
+      # skip if used rSOILWAT2 version differs too much from version used
+      #      to create values of previous output
+
+      if (any(eqv)) {
+        vtag <- paste0("v", names(eqv)[which(eqv)])
+
+        if (FALSE) {
+          # `testthat::expect_snapshot_value()` doesn't properly work
+          # for our situation as of v3.0.1:
+          # - style "deparse" leads to errors such 'could not find function "-"'
+          # - if a new metric is changed or added to the package,
+          #   then all tests that are sorted alphabetically later will fail,
+          #   likely because
+          #   * all snapshots are stored in the same huge file and
+          #   * differences are not resolve correctly
+          # - the function produces for style = "serialize" a
+          #   snapshot of c. 12 MB while saving individual "rds" consumes
+          #   in total only 3.3 MB
+          expect_snapshot_value(x = output, style = "serialize")
+
+        } else {
+          ftest_output <- file.path(
+            dir_test_data,
+            vtag,
+            paste0("ref_", fun_metrics[k1], ".rds")
+          )
+
+          if (file.exists(ftest_output)) {
+            ref_output <- readRDS(ftest_output)
+
+            ids <- if (vtag == "v5.0" && nrow(output) > nrow(ref_output)) {
+              output[["site"]] %in% run_rSFSW2_names[1:2]
+            } else {
+              seq_len(nrow(output))
+            }
+            expect_identical(output[ids, ], ref_output, label = fun_metrics[k1])
+
+          } else if (create_new_reference_output) {
+            succeed(paste("New reference stored for", shQuote(fun_metrics[k1])))
+
+            dir.create(
+              dirname(ftest_output),
+              recursive = TRUE,
+              showWarnings = FALSE
+            )
+            saveRDS(output, file = ftest_output, compress = "xz")
+          }
+        }
+
+      } else {
+        warning(
+          shQuote(fun_metrics[k1]),
+          ": comparisons against previous values skipped ",
+          "because installed rSOILWAT2 v", used_rSOILWAT2_version,
+          " differs too much from any version used to create reference values."
+        )
+      }
+    }
+
+
+    #------ Report on timing (only if interactively used) ------
+    if (do_timing) {
+      ttime <- data.frame(metric = fun_metrics, time = time_metrics)
+      cat(
+        "Timing of metrics based on simulations organized in ",
+        if (kzip) "zipped archives" else "folders",
+        ":",
+        sep = "",
+        fill = TRUE
+      )
+      print(ttime[order(ttime[["time"]], decreasing = TRUE), ])
     }
   }
 
 
-  #------ Report on timing (only if interactively used) ------
-  if (do_timing) {
-    ttime <- data.frame(metric = fun_metrics, time = time_metrics)
-    print(ttime[order(ttime[["time"]], decreasing = TRUE), ])
-  }
 
 
   #------ Cleanup ------

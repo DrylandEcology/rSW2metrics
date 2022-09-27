@@ -10,6 +10,7 @@ metric_PPT_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -23,7 +24,8 @@ metric_PPT_JJA <- function(
     months = 6:8,
     fun_time = sum,
     var_scaler = 10,
-    include_year = include_year
+    include_year = include_year,
+    zipped_runs = zipped_runs
   )
 }
 
@@ -32,6 +34,7 @@ metric_Tmean_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -45,7 +48,8 @@ metric_Tmean_JJA <- function(
     months = 6:8,
     fun_time = mean,
     var_scaler = 1,
-    include_year = include_year
+    include_year = include_year,
+    zipped_runs = zipped_runs
   )
 }
 
@@ -54,6 +58,7 @@ metric_Tmean_JJA <- function(
 get_SWA_JJA <- function(
   path, name_sw2_run, id_scen_used,
   out_label,
+  zipped_runs = FALSE,
   list_years_scen_used,
   include_year = FALSE,
   soils,
@@ -76,7 +81,8 @@ get_SWA_JJA <- function(
           sw2_vars = c(swc = "Lyr"),
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     swa_daily <- calc_SWA_mm(
@@ -127,6 +133,7 @@ get_SWA_JJA <- function(
 metric_SWAat0to020cm39bar_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -149,6 +156,7 @@ metric_SWAat0to020cm39bar_JJA <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat0to020cm39bar_mean_JJA_mm",
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -159,6 +167,7 @@ metric_SWAat0to020cm39bar_JJA <- function(
 metric_SWAat0to100cm39bar_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -172,6 +181,7 @@ metric_SWAat0to100cm39bar_JJA <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat0to100cm39bar_mean_JJA_mm",
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = c(0, 100),
     SWP_limit_MPa = -3.9,
@@ -182,6 +192,7 @@ metric_SWAat0to100cm39bar_JJA <- function(
 metric_SWAat20to100cm39bar_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -204,6 +215,7 @@ metric_SWAat20to100cm39bar_JJA <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to100cm39bar_mean_JJA_mm",
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -214,6 +226,7 @@ metric_SWAat20to100cm39bar_JJA <- function(
 metric_SWAat20to040cm39bar_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -236,6 +249,7 @@ metric_SWAat20to040cm39bar_JJA <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to040cm39bar_mean_JJA_mm",
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -247,6 +261,7 @@ metric_SWAat20to040cm39bar_JJA <- function(
 metric_SWAat40to060cm39bar_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -269,6 +284,7 @@ metric_SWAat40to060cm39bar_JJA <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat40to060cm39bar_mean_JJA_mm",
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -280,6 +296,7 @@ metric_SWAat40to060cm39bar_JJA <- function(
 metric_SWAat60to080cm39bar_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -302,6 +319,7 @@ metric_SWAat60to080cm39bar_JJA <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat60to080cm39bar_mean_JJA_mm",
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -314,6 +332,7 @@ metric_SWAat60to080cm39bar_JJA <- function(
 metric_SWAat80to100cm39bar_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -336,6 +355,7 @@ metric_SWAat80to100cm39bar_JJA <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat80to100cm39bar_mean_JJA_mm",
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -347,6 +367,7 @@ metric_DR_JJA <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -360,7 +381,8 @@ metric_DR_JJA <- function(
     months = 6:8,
     fun_time = sum,
     var_scaler = 10,
-    include_year = include_year
+    include_year = include_year,
+    zipped_runs = zipped_runs
   )
 }
 
@@ -369,6 +391,7 @@ metric_PPT_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -388,7 +411,8 @@ metric_PPT_daily <- function(
           sw2_vars = "ppt",
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- format_values_to_matrix(
@@ -408,6 +432,7 @@ metric_Tmean_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -427,7 +452,8 @@ metric_Tmean_daily <- function(
           sw2_vars = c(tmean = "avg_C"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- format_values_to_matrix(
@@ -448,6 +474,7 @@ get_SWA_daily <- function(
   list_years_scen_used,
   out_label,
   include_year = FALSE,
+  zipped_runs = FALSE,
   out = c("ts_years", "across_years"),
   fun_aggs_across_yrs = mean,
   soils,
@@ -479,7 +506,8 @@ get_SWA_daily <- function(
               sw2_vars = c(swc = "Lyr"),
               varnames_are_fixed = FALSE
             )
-          )
+          ),
+          zipped_runs = zipped_runs
         )
 
         swa_daily <- calc_SWA_mm(
@@ -527,6 +555,7 @@ get_SWA_daily <- function(
 metric_SWAat0to020cm39bar_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -550,6 +579,7 @@ metric_SWAat0to020cm39bar_daily <- function(
     list_years_scen_used = list_years_scen_used,
     out = out,
     out_label = "SWAat0to020cm39bar_mm",
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -560,6 +590,7 @@ metric_SWAat0to020cm39bar_daily <- function(
 metric_SWAat0to100cm39bar_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -574,6 +605,7 @@ metric_SWAat0to100cm39bar_daily <- function(
     list_years_scen_used = list_years_scen_used,
     out = out,
     out_label = "SWAat0to100cm39bar_mm",
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = c(0, 100),
     SWP_limit_MPa = -3.9,
@@ -585,6 +617,7 @@ metric_SWAat0to100cm39bar_daily <- function(
 metric_SWAat20to100cm39bar_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -608,6 +641,7 @@ metric_SWAat20to100cm39bar_daily <- function(
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to100cm39bar_mm",
     out = out,
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -618,6 +652,7 @@ metric_SWAat20to100cm39bar_daily <- function(
 metric_SWAat20to040cm39bar_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -641,6 +676,7 @@ metric_SWAat20to040cm39bar_daily <- function(
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to040cm39bar_mm",
     out = out,
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -652,6 +688,7 @@ metric_SWAat20to040cm39bar_daily <- function(
 metric_SWAat40to060cm39bar_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils,
   include_year = FALSE,
   ...
@@ -675,6 +712,7 @@ metric_SWAat40to060cm39bar_daily <- function(
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat40to060cm39bar_mm",
     out = out,
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -688,6 +726,7 @@ metric_SWAat60to080cm39bar_daily <- function(
   out = "ts_years",
   soils,
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -709,6 +748,7 @@ metric_SWAat60to080cm39bar_daily <- function(
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat60to080cm39bar_mm",
     out = out,
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -722,6 +762,7 @@ metric_SWAat80to100cm39bar_daily <- function(
   out = "ts_years",
   soils,
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -743,6 +784,7 @@ metric_SWAat80to100cm39bar_daily <- function(
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat80to100cm39bar_mm",
     out = out,
+    zipped_runs = zipped_runs,
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
@@ -755,6 +797,7 @@ metric_DR_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -774,7 +817,8 @@ metric_DR_daily <- function(
           sw2_vars = c(dr = "lowLayerDrain_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- format_values_to_matrix(
@@ -796,6 +840,7 @@ metric_TEPET_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -819,7 +864,8 @@ metric_TEPET_daily <- function(
           ),
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     t_daily <- 10 * apply(sim_data[["day"]][["values"]][["t"]], 1, sum)

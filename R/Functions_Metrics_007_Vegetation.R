@@ -2,6 +2,7 @@
 metric_land_cover_v1 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -21,7 +22,8 @@ metric_land_cover_v1 <- function(
           sw2_vars = c(ppt = "ppt", tmax = "max_C", tmin = "min_C"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     tmp_meteo <- cbind(
@@ -86,6 +88,7 @@ metric_land_cover_v1 <- function(
 metric_land_cover_v2 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -108,7 +111,8 @@ metric_land_cover_v2 <- function(
           ),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- t(do.call(cbind, sim_data[["cover"]][["values"]]))
@@ -124,6 +128,7 @@ get_veg_biomass_v2 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   include_year = FALSE,
   timestep = c("yearly", "monthly"),
+  zipped_runs = FALSE,
   ...
 ) {
   timestep <- match.arg(timestep)
@@ -150,7 +155,8 @@ get_veg_biomass_v2 <- function(
           sw2_vars = tmp_veg,
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- format_values_to_matrix(
@@ -168,6 +174,7 @@ metric_veg_biomass_annual_v2 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -179,6 +186,7 @@ metric_veg_biomass_annual_v2 <- function(
     list_years_scen_used = list_years_scen_used,
     include_year = include_year,
     timestep = "yearly",
+    zipped_runs = zipped_runs,
     ...
   )
 }
@@ -187,6 +195,7 @@ metric_veg_biomass_monthly_v2 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -198,6 +207,7 @@ metric_veg_biomass_monthly_v2 <- function(
     list_years_scen_used = list_years_scen_used,
     include_year = include_year,
     timestep = "monthly",
+    zipped_runs = zipped_runs,
     ...
   )
 }
@@ -211,6 +221,7 @@ get_veg_biomass_v1 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   include_year = FALSE,
   timestep = c("yearly", "monthly"),
+  zipped_runs = FALSE,
   ...
 ) {
   timestep <- match.arg(timestep)
@@ -243,6 +254,7 @@ get_veg_biomass_v1 <- function(
           varnames_are_fixed = TRUE
         )
       ),
+      zipped_runs = zipped_runs,
       fail = FALSE
     )
 
@@ -266,6 +278,7 @@ metric_veg_biomass_annual_v1 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -277,6 +290,7 @@ metric_veg_biomass_annual_v1 <- function(
     list_years_scen_used = list_years_scen_used,
     include_year = include_year,
     timestep = "yearly",
+    zipped_runs = zipped_runs,
     ...
   )
 }
@@ -285,6 +299,7 @@ metric_veg_biomass_monthly_v1 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -296,6 +311,7 @@ metric_veg_biomass_monthly_v1 <- function(
     list_years_scen_used = list_years_scen_used,
     include_year = include_year,
     timestep = "monthly",
+    zipped_runs = zipped_runs,
     ...
   )
 }

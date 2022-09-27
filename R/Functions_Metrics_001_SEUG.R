@@ -5,6 +5,7 @@
 metric_TemperatureMean_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   ...
 ) {
@@ -12,6 +13,7 @@ metric_TemperatureMean_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -28,6 +30,7 @@ metric_TemperatureMean_Seasonal <- function(
 metric_TemperatureMin_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   ...
 ) {
@@ -35,6 +38,7 @@ metric_TemperatureMin_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -50,6 +54,7 @@ metric_TemperatureMin_Seasonal <- function(
 metric_TemperatureMax_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   ...
 ) {
@@ -57,6 +62,7 @@ metric_TemperatureMax_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -72,6 +78,7 @@ metric_TemperatureMax_Seasonal <- function(
 metric_FrostDays_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   ...
 ) {
@@ -79,6 +86,7 @@ metric_FrostDays_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -97,6 +105,7 @@ metric_FrostDays_Seasonal <- function(
 metric_PPT_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   ...
 ) {
@@ -104,6 +113,7 @@ metric_PPT_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -120,6 +130,7 @@ metric_PPT_Seasonal <- function(
 metric_PET_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   ...
 ) {
@@ -127,6 +138,7 @@ metric_PET_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -144,6 +156,7 @@ metric_PET_Seasonal <- function(
 metric_Transpiration_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   ...
 ) {
@@ -151,6 +164,7 @@ metric_Transpiration_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -171,6 +185,7 @@ metric_Transpiration_Seasonal <- function(
 metric_Evaporation_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   ...
 ) {
@@ -179,6 +194,7 @@ metric_Evaporation_Seasonal <- function(
   # Evaporation from bare-soil
   tmp_Esoil <- calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -197,6 +213,7 @@ metric_Evaporation_Seasonal <- function(
   #  (iii) as sublimation from snow
   tmp_Eother <- calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -225,6 +242,7 @@ get_VWC_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   group_by_month, first_month_of_year,
   soils, used_depth_range_cm,
+  zipped_runs = FALSE,
   ...
 ) {
 
@@ -234,6 +252,7 @@ get_VWC_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -253,6 +272,7 @@ get_VWC_Seasonal <- function(
 metric_VWC_Seasonal_wholeprofile <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
   ...
@@ -264,6 +284,7 @@ metric_VWC_Seasonal_wholeprofile <- function(
 
   get_VWC_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -276,6 +297,7 @@ metric_VWC_Seasonal_wholeprofile <- function(
 metric_VWC_Seasonal_top50cm <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
   ...
@@ -287,6 +309,7 @@ metric_VWC_Seasonal_top50cm <- function(
 
   get_VWC_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -302,6 +325,7 @@ metric_VWC_Seasonal_top50cm <- function(
 metric_SWP_SoilLayers_MeanMonthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  zipped_runs = FALSE,
   soils,
   ...
 ) {
@@ -317,6 +341,7 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
 
   vwc <- calc_multivariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = seq_len(12),
@@ -389,6 +414,7 @@ get_SWA_Seasonal <- function(
   group_by_month, first_month_of_year,
   soils, used_depth_range_cm,
   crit_SWP_MPa,
+  zipped_runs = FALSE,
   ...
 ) {
 
@@ -405,6 +431,7 @@ get_SWA_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -425,6 +452,7 @@ get_SWA_Seasonal <- function(
 metric_SWA_Seasonal_wholeprofile <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
   ...
@@ -436,6 +464,7 @@ metric_SWA_Seasonal_wholeprofile <- function(
 
   get_SWA_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -449,6 +478,7 @@ metric_SWA_Seasonal_wholeprofile <- function(
 metric_SWA_Seasonal_top50cm <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
   ...
@@ -460,6 +490,7 @@ metric_SWA_Seasonal_top50cm <- function(
 
   get_SWA_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -481,6 +512,7 @@ get_WetSoilDays_Seasonal <- function(
   group_by_month, first_month_of_year,
   soils, used_depth_range_cm,
   crit_SWP_MPa,
+  zipped_runs = FALSE,
   ...
 ) {
 
@@ -489,6 +521,7 @@ get_WetSoilDays_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -506,6 +539,7 @@ get_WetSoilDays_Seasonal <- function(
 metric_WetSoilDays_Seasonal_wholeprofile <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
   ...
@@ -517,6 +551,7 @@ metric_WetSoilDays_Seasonal_wholeprofile <- function(
 
   get_WetSoilDays_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -531,6 +566,7 @@ metric_WetSoilDays_Seasonal_top50cm <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
   ...
@@ -542,6 +578,7 @@ metric_WetSoilDays_Seasonal_top50cm <- function(
 
   get_WetSoilDays_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -562,6 +599,7 @@ get_DrySoilDays_Seasonal <- function(
   group_by_month, first_month_of_year,
   soils, used_depth_range_cm,
   crit_SWP_MPa,
+  zipped_runs = FALSE,
   ...
 ) {
 
@@ -570,6 +608,7 @@ get_DrySoilDays_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -588,6 +627,7 @@ metric_DrySoilDays_Seasonal_wholeprofile <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,  ...
 ) {
@@ -598,6 +638,7 @@ metric_DrySoilDays_Seasonal_wholeprofile <- function(
 
   get_DrySoilDays_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -611,6 +652,7 @@ metric_DrySoilDays_Seasonal_wholeprofile <- function(
 metric_DrySoilDays_Seasonal_top50cm <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
+  zipped_runs = FALSE,
   out = "ts_years",
   group_by_month, first_month_of_year,
   soils,
@@ -623,6 +665,7 @@ metric_DrySoilDays_Seasonal_top50cm <- function(
 
   get_DrySoilDays_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -643,6 +686,7 @@ get_NonDrySWA_Seasonal <- function(
   group_by_month, first_month_of_year,
   soils, used_depth_range_cm,
   crit_SWP_MPa,
+  zipped_runs = FALSE,
   ...
 ) {
 
@@ -659,6 +703,7 @@ get_NonDrySWA_Seasonal <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -679,6 +724,7 @@ get_NonDrySWA_Seasonal <- function(
 metric_NonDrySWA_Seasonal_wholeprofile <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
+  zipped_runs = FALSE,
   out = "ts_years",
   group_by_month, first_month_of_year,
   soils,
@@ -691,6 +737,7 @@ metric_NonDrySWA_Seasonal_wholeprofile <- function(
 
   get_NonDrySWA_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -705,6 +752,7 @@ metric_NonDrySWA_Seasonal_top50cm <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
   ...
@@ -716,6 +764,7 @@ metric_NonDrySWA_Seasonal_top50cm <- function(
 
   get_NonDrySWA_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -739,6 +788,7 @@ get_ExtremeShortTermDryStress_Seasonal <- function(
   group_by_month, first_month_of_year,
   soils, used_depth_range_cm,
   crit_SWP_MPa, n_extremes,
+  zipped_runs = FALSE,
   ...
 ) {
 
@@ -749,6 +799,7 @@ get_ExtremeShortTermDryStress_Seasonal <- function(
 
   calc_multivariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -778,6 +829,7 @@ get_ExtremeShortTermDryStress_Seasonal <- function(
 metric_ExtremeShortTermDryStress_Seasonal_wholeprofile <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
+  zipped_runs = FALSE,
   out = "ts_years",
   group_by_month, first_month_of_year,
   soils,
@@ -790,6 +842,7 @@ metric_ExtremeShortTermDryStress_Seasonal_wholeprofile <- function(
 
   get_ExtremeShortTermDryStress_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -804,6 +857,7 @@ metric_ExtremeShortTermDryStress_Seasonal_wholeprofile <- function(
 metric_ExtremeShortTermDryStress_Seasonal_top50cm <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
+  zipped_runs = FALSE,
   out = "ts_years",
   group_by_month, first_month_of_year,
   soils,
@@ -816,6 +870,7 @@ metric_ExtremeShortTermDryStress_Seasonal_top50cm <- function(
 
   get_ExtremeShortTermDryStress_Seasonal(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = group_by_month,
@@ -838,6 +893,7 @@ get_SemiDryDuration_Annual <- function(
   first_month_of_year,
   soils, used_depth_range_cm,
   crit_SWP_MPa,
+  zipped_runs = FALSE,
   ...
 ) {
 
@@ -848,6 +904,7 @@ get_SemiDryDuration_Annual <- function(
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = rep(0, 12),
@@ -875,6 +932,7 @@ metric_SemiDryDuration_Annual_wholeprofile <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   first_month_of_year,
   soils,
   ...
@@ -886,6 +944,7 @@ metric_SemiDryDuration_Annual_wholeprofile <- function(
 
   get_SemiDryDuration_Annual(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     first_month_of_year = first_month_of_year,
@@ -899,6 +958,7 @@ metric_SemiDryDuration_Annual_top50cm <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   first_month_of_year,
   soils,
   ...
@@ -910,6 +970,7 @@ metric_SemiDryDuration_Annual_top50cm <- function(
 
   get_SemiDryDuration_Annual(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     first_month_of_year = first_month_of_year,
@@ -929,6 +990,7 @@ metric_SemiDryDuration_Annual_top50cm <- function(
 metric_CorTP_Annual <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
+  zipped_runs = FALSE,
   out = "ts_years",
   first_month_of_year,
   ...
@@ -937,6 +999,7 @@ metric_CorTP_Annual <- function(
 
   calc_multivariate_from_sw2(
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     group_by_month = rep(0, 12),

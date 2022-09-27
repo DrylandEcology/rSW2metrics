@@ -35,6 +35,7 @@
 #' @export
 metric_SW2toTable_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
+  zipped_runs = FALSE,
   out = "across_years",
   dir_out_SW2toTable = file.path("..", "Outputs"),
   format_share_SW2toTable = c("rds", "csv"),
@@ -76,24 +77,18 @@ metric_SW2toTable_daily <- function(
 
 
     # Extract rSOILWAT2 input object: `swRunScenariosData`
-    sim_input <- new.env(parent = emptyenv())
-    load(
-      file = file.path(path, name_sw2_run, "sw_input.RData"),
-      envir = sim_input
+    sim_input <- load_sw2_rda(
+      path = file.path(path, name_sw2_run),
+      fname = "sw_input.RData",
+      zipped_runs = zipped_runs
     )
-
 
     #--- Load rSOILWAT2 output object: `runDataSC`
-    sim_data <- new.env(parent = emptyenv())
-    load(
-      file = file.path(
-        path,
-        name_sw2_run,
-        paste0("sw_output_sc", id_scen_used[k1], ".RData")
-      ),
-      envir = sim_data
-    )
-    sim_data <- sim_data[["runDataSC"]]
+    sim_data <- load_sw2_rda(
+      path = file.path(path, name_sw2_run),
+      fname = paste0("sw_output_sc", id_scen_used[k1], ".RData"),
+      zipped_runs = zipped_runs
+    )[["runDataSC"]]
 
 
     #--- Prepare data

@@ -1,17 +1,28 @@
 
 #--- Helper functions ----------------------------------------------------------
 check_all_output_available_of_run <- function(
-  path_to_run, N_scen, check_input = TRUE
+  path_to_run,
+  N_scen,
+  zipped_runs = FALSE,
+  check_input = TRUE
 ) {
-  files <- list.files(file.path(path_to_run), full.names = TRUE)
+  if (zipped_runs) {
+    # data frame with file names and file sizes
+    files <- utils::unzip(path_to_run, list = TRUE)
+    fnum <- nrow(files)
+    fsizes <- files[, "Length", drop = TRUE]
 
-  fnum <- length(files)
-  fsizes <- vapply(
-    files,
-    function(f) file.size(f),
-    FUN.VALUE = NA_real_,
-    USE.NAMES = FALSE
-  )
+  } else {
+    files <- list.files(file.path(path_to_run), full.names = TRUE)
+    fnum <- length(files)
+
+    fsizes <- vapply(
+      files,
+      function(f) file.size(f),
+      FUN.VALUE = NA_real_,
+      USE.NAMES = FALSE
+    )
+  }
 
   # Expect: One output file per scenario plus one file for inputs
   isTRUE(all(
@@ -60,6 +71,7 @@ prepare_soils_for_site <- function(
   path,
   name_sw2_run,
   name_sw2_run_soils = NULL,
+  zipped_runs = FALSE,
   soils = NULL,
   soil_variables = NULL,
   var_soilsite = "site"
@@ -110,6 +122,7 @@ prepare_soils_for_site <- function(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = 1,
+      zipped_runs = zipped_runs,
       sw2_soil_var = nsv
     )
 
@@ -347,6 +360,8 @@ weighted_mean_across_soillayers <- function(x, w) {
 #' @param name_sw2_run A character string. The \pkg{rSFSW2} name identifying
 #'   a run, i.e., the full experimental label x site name. The folder name
 #'   within \code{path}.
+#' @param zipped_runs A logical value. Describes whether \code{name_sw2_run}
+#'   is a zip archive or a regular folder.
 #' @param group_by_month An integer vector of length 12. The group IDs of each
 #'   month. If no grouping is requested, then provide,
 #'   e.g., \code{rep(0, 12)}.
@@ -384,12 +399,14 @@ weighted_mean_across_soillayers <- function(x, w) {
 #' @md
 get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
   group_by_month, first_month_of_year,
-  sw2_tp, sw2_out, sw2_var, varnames_are_fixed = TRUE
+  sw2_tp, sw2_out, sw2_var, varnames_are_fixed = TRUE,
+  zipped_runs = FALSE
 ) {
 
   x <- extract_from_sw2(
     path = path,
     name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen = id_scen,
     sw2_tp = sw2_tp,
     sw2_outs = sw2_out,
@@ -440,6 +457,7 @@ get_swp_weighted <- function(
   path, name_sw2_run, id_scen,
   years,
   soils,
+  zipped_runs = FALSE,
   used_depth_range_cm = NULL,
   ...
 ) {
@@ -448,6 +466,7 @@ get_swp_weighted <- function(
   vwc <- extract_from_sw2(
     path = path,
     name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen = id_scen,
     years = years,
     sw2_tp = "Day",
@@ -461,6 +480,7 @@ get_swp_weighted <- function(
   T_by_lyr <- extract_from_sw2(
     path = path,
     name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen = id_scen,
     years = years,
     sw2_tp = "Day",
@@ -1053,6 +1073,7 @@ get_variable_in_months <- function(
   fun_time = sum,
   var_scaler = 1,
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   res <- list()
@@ -1070,7 +1091,8 @@ get_variable_in_months <- function(
           sw2_vars = sw2_var,
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
 
@@ -1418,6 +1440,30 @@ determine_sw2_sim_time <- function(
 }
 
 
+# Load rSOILWAT2 output
+# A small timing example suggests that loading simulation data from zipped
+# archives is about 10% slower (6.8 milliseconds) for a
+# simulation output rda-file of 9 MB from an archive with 21 scenarios
+load_sw2_rda <- function(path, fname, zipped_runs = FALSE) {
+  sw2_data <- new.env(parent = emptyenv())
+
+  con <- if (zipped_runs) {
+    unz(path, filename = fname)
+  } else {
+    file.path(path, fname)
+  }
+
+  load(file = con, envir = sw2_data)
+
+  if (zipped_runs) {
+    close(con) # make sure connection is closed
+  }
+
+  sw2_data
+}
+
+
+
 collect_sw2_sim_data <- function(
   path,
   name_sw2_run,
@@ -1431,7 +1477,8 @@ collect_sw2_sim_data <- function(
       varnames_are_fixed = TRUE
     )
   ),
-  fail = TRUE
+  fail = TRUE,
+  zipped_runs = FALSE
 ) {
   n_sets <- length(output_sets)
 
@@ -1447,15 +1494,12 @@ collect_sw2_sim_data <- function(
 
 
   #--- Load rSOILWAT2 output object: `runDataSC`
-  sim_data <- new.env(parent = emptyenv())
-  load(
-    file = file.path(
-      path,
-      name_sw2_run,
-      paste0("sw_output_sc", id_scen, ".RData")
-    ),
-    envir = sim_data
+  sim_data <- load_sw2_rda(
+    path = file.path(path, name_sw2_run),
+    fname = paste0("sw_output_sc", id_scen, ".RData"),
+    zipped_runs = zipped_runs
   )
+
 
   #--- Extract variables
   res <- vector(mode = "list", length = n_sets)

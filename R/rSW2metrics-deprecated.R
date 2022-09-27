@@ -27,6 +27,7 @@
 calc_univariate_from_sw2 <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used, group_by_month, first_month_of_year,
+  zipped_runs = FALSE,
   group_label = "season",
   req_ts = TRUE,
   sw2_tp, sw2_out, sw2_var,
@@ -49,6 +50,7 @@ calc_univariate_from_sw2 <- function(
     x <- get_values_from_sw2(
       id_scen = id_scen_used[k],
       path, name_sw2_run,
+      zipped_runs = zipped_runs,
       group_by_month, first_month_of_year,
       sw2_tp, sw2_out, sw2_var, varnames_are_fixed
     )
@@ -183,6 +185,7 @@ calc_multivariate_from_sw2 <- function(
   list_years_scen_used, group_by_month, first_month_of_year,
   group_label = "season",
   req_ts = TRUE,
+  zipped_runs = FALSE,
   sw2_tp, sw2_outs, sw2_vars,
   varnames_are_fixed = TRUE,
   funs_across_each_var,
@@ -203,6 +206,7 @@ calc_multivariate_from_sw2 <- function(
     x <- get_values_from_sw2(
       id_scen = id_scen_used[k],
       path, name_sw2_run,
+      zipped_runs = zipped_runs,
       group_by_month, first_month_of_year,
       sw2_tp, sw2_outs, sw2_vars, varnames_are_fixed
     )
@@ -354,7 +358,8 @@ extract_from_sw2 <- function(
   sw2_tp = c("Day", "Month", "Year"),
   sw2_outs,
   sw2_vars,
-  varnames_are_fixed = TRUE
+  varnames_are_fixed = TRUE,
+  zipped_runs = FALSE
 ) {
 
   .Deprecated(new = "collect_sw2_sim_data")
@@ -363,14 +368,10 @@ extract_from_sw2 <- function(
   sw2_tp <- match.arg(sw2_tp)
 
   #--- Load rSOILWAT2 output object: `runDataSC`
-  sim_data <- new.env(parent = emptyenv())
-  load(
-    file = file.path(
-      path,
-      name_sw2_run,
-      paste0("sw_output_sc", id_scen, ".RData")
-    ),
-    envir = sim_data
+  sim_data <- load_sw2_rda(
+    path = file.path(path, name_sw2_run),
+    fname = paste0("sw_output_sc", id_scen, ".RData"),
+    zipped_runs = zipped_runs
   )
 
   #--- Extract variables

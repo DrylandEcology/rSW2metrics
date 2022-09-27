@@ -16,8 +16,9 @@
 \item{path}{A character string. The path to the simulation project folder
 that contains the individual folder of each simulated site.}
 
-\item{name_sw2_run}{A character string. The name of the folder of the
-simulated site for which metrics are to be calculated.
+\item{name_sw2_run}{A character string. The name of the folder
+(or zip archive, see \code{zipped_runs}) of the simulated site
+for which metrics are to be calculated.
 \pkg{rSOILWAT2} input and output is organized following conventions of
 \pkg{rSFSW2}, i.e., inputs for each scenario are stored in a list object
 named \var{\dQuote{swRunScenariosData}} which is stored
@@ -27,12 +28,18 @@ named \var{\dQuote{runDataSC}}
 in a file \var{\dQuote{sw_output_scX.RData}} where
 \code{X} is the number of the scenario.}
 
-\item{...}{Additional arguments}
+\item{zipped_runs}{A logical value. Describes whether \code{name_sw2_run}
+is a zip archive or a regular folder.}
+
+\item{id_scen}{An integer value. The scenario number for which
+input values are to be collected.}
+
+\item{...}{Additional arguments.}
 }
 \description{
 These functions have a name that starts with \code{collect_input_}.
 They have at least the following arguments:
-\code{path}, \code{name_sw2_run}, and \code{...}.
+\code{path}, \code{name_sw2_run}, \code{zipped_runs}, and \code{...}.
 }
 \section{List of currently available input collectors:}{
  \itemize{
