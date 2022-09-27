@@ -25,14 +25,16 @@ Specify arguments/options and select calls to requested metrics.
 on the command line.
 }
 
-Example code for copying the three files to your project folder:\preformatted{file.copy(
+Example code for copying the three files to your project folder:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{file.copy(
   from = list.files(
     path = system.file("exec", package = "rSW2metrics"),
     full.names = TRUE
   ),
   to = PATH_TO_YOUR_PROJECT
 )
-}
+}\if{html}{\out{</div>}}
 }
 
 \section{Notes}{

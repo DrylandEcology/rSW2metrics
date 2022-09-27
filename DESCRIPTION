@@ -40,5 +40,5 @@ BugReports: https://github.com/DrylandEcology/rSW2metrics/issues
 Encoding: UTF-8
 Config/testthat/edition: 3
 Language: en-US
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 Roxygen: list(markdown = TRUE)
