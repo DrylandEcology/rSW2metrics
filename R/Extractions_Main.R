@@ -410,9 +410,9 @@ extract_metrics <- function(args) {
   dir_runs_rSFSW2 <- list.files(prjpars[["dir_sw2_output"]], full.names = TRUE)
   stopifnot(length(dir_runs_rSFSW2) > 0)
   run_rSFSW2_names <- basename(dir_runs_rSFSW2)
-  zipped_runs <- grepl("\\.zip$", run_rSFSW2_names)
+  zipped_runs <- endsWith(run_rSFSW2_names, ".zip")
 
-  if (all(zipped_runs) || all(!zipped_runs)) {
+  if (all(zipped_runs) || !any(zipped_runs)) {
     zipped_runs <- all(zipped_runs)
   } else {
     stop("All or no output may be stored in zip archives but not mixed.")

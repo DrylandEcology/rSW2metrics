@@ -1859,14 +1859,18 @@ metric_SMTRs <- function(
     tmp <- lapply(
       list_years_scen_used[[k1]],
       function(yrs) {
-        # nolint start: line_length_linter.
-        rSOILWAT2::swYears_EndYear(sim_input[["swRunScenariosData"]][[k1]]) <- 9999
-        rSOILWAT2::swYears_StartYear(sim_input[["swRunScenariosData"]][[k1]]) <- yrs[[1]]
-        rSOILWAT2::swYears_EndYear(sim_input[["swRunScenariosData"]][[k1]]) <- yrs[length(yrs)]
-        # nolint end
+        tmp_swin <- sim_input[["swRunScenariosData"]][[k1]]
+
+        # Update with selected time period
+        rSOILWAT2::swYears_EndYear(tmp_swin) <- 1L + max(
+          rSOILWAT2::swYears_StartYear(tmp_swin),
+          yrs[length(yrs)]
+        )
+        rSOILWAT2::swYears_StartYear(tmp_swin) <- yrs[[1]]
+        rSOILWAT2::swYears_EndYear(tmp_swin) <- yrs[length(yrs)]
 
         tmp <- rSW2funs::calc_SMTRs(
-          sim_in = sim_input[["swRunScenariosData"]][[k1]],
+          sim_in = tmp_swin,
           sim_out = sim_data[["runDataSC"]]
         )
 

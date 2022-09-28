@@ -48,8 +48,8 @@ test_that("Check metrics", {
   fun_metrics <- list_all_metrics()
 
 
-  # List of metrics that call outdated `calc_univariate_from_sw2()` or
-  # `calc_multivariate_from_sw2()`
+  # List of metrics that call outdated `calc_univariate_from_sw2()`
+  # or `calc_multivariate_from_sw2()`
   # (instead of up-to-date `collect_sw2_sim_data()`) and cannot handle:
   #  * varying simulation periods
   #  * non-simulated requested years
