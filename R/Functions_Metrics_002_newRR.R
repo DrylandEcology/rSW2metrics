@@ -1067,13 +1067,21 @@ metric_FrostDaysAtNeg5C <- function(
 }
 
 
+# Amount of variation among seasons
+calc_seasonal_variability <- function(x, ts_year) {
+  tapply(
+    X = x,
+    INDEX = ts_year,
+    FUN = function(x) sd(x) / mean(x)
+  )
+}
 
-# CorTempPPT: Correlation between monthly temperature and
-# precipitation by year
-calc_CorTempPPT <- function(mon_temp, mon_ppt, mon_year) {
+# Correlation between x and y by year
+# Seasonal timing (if y is monthly temperature)
+calc_CorXY_byYear <- function(x, y, ts_year) {
   as.vector(by(
-    data = cbind(mon_ppt, mon_temp),
-    INDICES = mon_year,
+    data = cbind(x, y),
+    INDICES = ts_year,
     FUN = function(x) cor(x[, 1], x[, 2])
   ))
 }
@@ -1107,11 +1115,11 @@ metric_CorTempPPT <- function(
       zipped_runs = zipped_runs
     )
 
-    tmp <- calc_CorTempPPT(
+    tmp <- calc_CorXY_byYear(
       # TODO: why `tmin` and not `tmean`?
-      mon_temp = sim_data[["mon"]][["values"]][["tmin"]],
-      mon_ppt =  sim_data[["mon"]][["values"]][["ppt"]],
-      mon_year = sim_data[["mon"]][["time"]][, "Year"]
+      x = sim_data[["mon"]][["values"]][["tmin"]],
+      y =  sim_data[["mon"]][["values"]][["ppt"]],
+      ts_year = sim_data[["mon"]][["time"]][, "Year"]
     )
 
     res[[k1]] <- if (include_year) {
@@ -1934,7 +1942,8 @@ metric_AI <- function(
 #' 19 predictors of resilience & resistance indicators
 #'
 #' @section Notes:
-#'   Argument `fun_aggs_across_yrs` is ignored.
+#'   * Argument `fun_aggs_across_yrs` is ignored.
+#'   * Values are `NA` if any year is requested but un-simulated.
 #'
 #' @references JC Chambers et al. (in prep)
 #'
@@ -1986,19 +1995,23 @@ metric_RR2022predictors_annualClim <- function(
             ),
             day = list(
               sw2_tp = "Day",
-              sw2_outs = c("TEMP", "TEMP", "PET", "AET"),
+              sw2_outs = c("TEMP", "TEMP"),
               sw2_vars = c(
                 tmax = "max_C",
-                tmin = "min_C",
-                pet = "pet_cm",
-                et = "evapotr_cm"
+                tmin = "min_C"
               ),
               varnames_are_fixed = TRUE
             ),
             mon = list(
               sw2_tp = "Month",
-              sw2_outs = c("PRECIP", "TEMP", "TEMP"),
-              sw2_vars = c(ppt = "ppt", tmean = "avg_C", tmin = "min_C"),
+              sw2_outs = c("PRECIP", "TEMP", "TEMP", "PET", "AET"),
+              sw2_vars = c(
+                ppt = "ppt",
+                tmean = "avg_C",
+                tmin = "min_C",
+                pet = "pet_cm",
+                et = "evapotr_cm"
+              ),
               varnames_are_fixed = TRUE
             ),
             yr = list(
@@ -2020,20 +2033,9 @@ metric_RR2022predictors_annualClim <- function(
 
 
         #--- Intermediate variables
-        tmp_cwd <- calc_new_yearly_aggregations(
-          x_daily = list(
-            time = sim_data[["day"]][["time"]],
-            values = list(
-              cwd = calc_CWD_mm(
-                pet_cm = sim_data[["day"]][["values"]][["pet"]],
-                et_cm = sim_data[["day"]][["values"]][["et"]]
-              )
-            )
-          ),
-          temp_monthly = sim_data[["mon"]], # (Monthly) mean air temperature
-          fun_time = sum,
-          fun_extreme = max,
-          output = c("seasonal_variability", "seasonality")
+        tmp_cwd <- calc_CWD_mm(
+          pet_cm = sim_data[["mon"]][["values"]][["pet"]],
+          et_cm = sim_data[["mon"]][["values"]][["et"]]
         )
 
         # DDDat5C0to100cm30bar
@@ -2152,10 +2154,23 @@ metric_RR2022predictors_annualClim <- function(
           ),
 
           #   CWD_mon_corr_temp_mean -- CWD-seasonality__mean
-          CWD_mon_corr_temp_mean = mean(tmp_cwd[, "seasonality"]),
+          CWD_mon_corr_temp_mean = mean(
+            calc_CorXY_byYear(
+              # correlate against Tmean (unlike other seasonal timing metrics)
+              # because `metric_CWD()` uses Tmean
+              x = sim_data[["mon"]][["values"]][["tmean"]],
+              y = tmp_cwd,
+              ts_year = sim_data[["mon"]][["time"]][, "Year"]
+            )
+          ),
 
           #   CWD_mon_cv_mean -- CWD-seasonal_variability__mean
-          CWD_mon_cv_mean = mean(tmp_cwd[, "seasonal_variability"]),
+          CWD_mon_cv_mean = mean(
+            calc_seasonal_variability(
+              x = tmp_cwd,
+              ts_year = sim_data[["mon"]][["time"]][, "Year"]
+            )
+          ),
 
           #   DDD_mean -- DDDat5C0to100cm30bar-values__mean
           DDD_mean = mean(
@@ -2171,11 +2186,11 @@ metric_RR2022predictors_annualClim <- function(
 
           #   CorTempPPT_mean -- CorTempPPT-seasonality__mean
           CorTempPPT_mean = mean(
-            calc_CorTempPPT(
+            calc_CorXY_byYear(
               # TODO: why `tmin` and not `tmean`?
-              mon_temp = sim_data[["mon"]][["values"]][["tmin"]],
-              mon_ppt =  sim_data[["mon"]][["values"]][["ppt"]],
-              mon_year = sim_data[["mon"]][["time"]][, "Year"]
+              x = sim_data[["mon"]][["values"]][["tmin"]],
+              y =  sim_data[["mon"]][["values"]][["ppt"]],
+              ts_year = sim_data[["mon"]][["time"]][, "Year"]
             )
           ),
 
