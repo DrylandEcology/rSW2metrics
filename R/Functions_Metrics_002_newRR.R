@@ -2180,7 +2180,9 @@ metric_RR2022predictors_annualClim <- function(
           ),
 
           #   DeepDrainage_mean -- DR-DeepDrainage_mm_annual__mean
-          DeepDrainage_mean = mean(sim_data[["yr"]][["values"]][["drainage"]])
+          DeepDrainage_mean = 10 * mean(
+            sim_data[["yr"]][["values"]][["drainage"]]
+          )
         ))
       }
     )
