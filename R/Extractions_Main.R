@@ -873,7 +873,31 @@ format_metric_Nsim <- function(
 
 
 
-#' Interface to formatted output of a metric for one simulation
+#' Direct interface to formatted output of a metric for one simulation
+#'
+#' @examples
+#' path <- "path/to/run"
+#' runname = "name_of_sim_folder"
+#' res <- rSW2metrics:::formatted_metric_1sim(
+#'   metric_foo_name = "metric_RR2022predictors_annualClim",
+#'   foo_args = list(
+#'     path = path,
+#'     name_sw2_run = runname,
+#'     zipped_runs = FALSE,
+#'     id_scen_used = 1,
+#'     list_years_scen_used = list(list(hist = 1980:2020)),
+#'     out = "across_years",
+#'     soils = rSW2metrics:::prepare_soils_for_site(
+#'       path = path,
+#'       name_sw2_run = runname,
+#'       name_sw2_run_soils = runname,
+#'       zipped_runs = FALSE
+#'     ),
+#'     fun_aggs_across_yrs = "mean"
+#'   ),
+#'   do_collect_inputs = FALSE
+#' )
+#'
 #' @noRd
 formatted_metric_1sim <- function(
   metric_foo_name,
@@ -909,7 +933,10 @@ formatted_metric_1sim <- function(
 
   is_out_ts <- identical(foo_args[["out"]], "ts_years")
 
-  if (is_out_ts) {
+  if (foo_args[["out"]] == "raw") {
+    res
+  } else {
+
     prjpars <- list(id_scen_used = foo_args[["id_scen_used"]])
     if (is_out_ts) {
       prjpars[["years_timeseries_by_scen"]] <-
@@ -927,8 +954,5 @@ formatted_metric_1sim <- function(
       fun_name = metric_foo_name,
       is_out_ts = is_out_ts
     )
-
-  } else if (foo_args[["out"]] == "raw") {
-    res
   }
 }
