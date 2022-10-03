@@ -625,7 +625,7 @@ extract_metrics <- function(args) {
     has_sw2_output <- check_all_output_available_of_run(
       path_to_run = file.path(fun_args[["path"]], run_rSFSW2_names[s]),
       N_scen = prjpars[["N_scen"]],
-      zipped_runs = args[["zipped_runs"]],
+      zipped_runs = fun_args[["zipped_runs"]],
       check_input = prjpars[["has_rSOILWAT2_inputs"]]
     )
 
