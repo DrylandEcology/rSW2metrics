@@ -301,6 +301,7 @@ calc_SWP_MPa <- function(
     # No soil layers in the depth range
     used_time <- switch(out, ts_years = time, across_years = unique(time))
     values <- as.data.frame(rep_len(NA, length.out = length(used_time)))
+    colnames(values) <- NULL
   }
 
   list(
