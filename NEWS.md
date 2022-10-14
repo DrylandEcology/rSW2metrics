@@ -7,6 +7,9 @@
   volumetric water content was not stored in output object.
 * `metric_RR2022predictors_annualClim()` now correctly calculates
   "DeepDrainage_mean" and "CWD_mon_corr_temp_mean".
+* New `metric_RR2022predictors_annual()` provides annual time series of
+  metrics underlying the `RR2022predictors` of
+  `metric_RR2022predictors_annualClim()`.
 
 # rSW2metrics v0.1.0
 * Initial release.

@@ -36,6 +36,7 @@
 \alias{metric_PPT_daily}
 \alias{metric_PPT_dailyClim}
 \alias{metric_PPT_monthlyClim}
+\alias{metric_RR2022predictors_annual}
 \alias{metric_RR2022predictors_annualClim}
 \alias{metric_Radiation_annual}
 \alias{metric_Radiation_monthly}
@@ -230,6 +231,7 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_PPT_daily}
   \item \var{metric_PPT_dailyClim}
   \item \var{metric_PPT_monthlyClim}
+  \item \var{metric_RR2022predictors_annual}
   \item \var{metric_RR2022predictors_annualClim}
   \item \var{metric_Radiation_annual}
   \item \var{metric_Radiation_monthly}

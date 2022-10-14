@@ -501,7 +501,12 @@ test_that("Check metrics", {
             } else {
               seq_len(nrow(output))
             }
-            expect_identical(output[ids, ], ref_output, label = fun_metrics[k1])
+            expect_equal(
+              output[ids, ],
+              expected = ref_output,
+              label = fun_metrics[k1],
+              tolerance = sqrt(.Machine[["double.eps"]])
+            )
 
           } else if (create_new_reference_output) {
             succeed(paste("New reference stored for", shQuote(fun_metrics[k1])))
