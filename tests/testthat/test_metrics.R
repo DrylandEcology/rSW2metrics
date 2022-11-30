@@ -195,7 +195,9 @@ test_that("Check metrics", {
         years_sim_timeseries_by_scen[[sc]]
       }
 
-      rSOILWAT2::swWeather_FirstYearHistorical(sw2_in) <- -1
+      if (getNamespaceVersion("rSOILWAT2") < as.numeric_version("6.0.0")) {
+        rSOILWAT2::swWeather_FirstYearHistorical(sw2_in) <- -1
+      }
       rSOILWAT2::swYears_StartYear(sw2_in) <- 0
       rSOILWAT2::swYears_EndYear(sw2_in) <- years[length(years)]
       rSOILWAT2::swYears_StartYear(sw2_in) <- years[[1]]
