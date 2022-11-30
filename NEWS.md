@@ -6,10 +6,13 @@
   bulk volumetric water content (from soil moisture content) for the case when
   volumetric water content was not stored in output object.
 * `metric_RR2022predictors_annualClim()` now correctly calculates
-  "DeepDrainage_mean" and "CWD_mon_corr_temp_mean".
+  `"DeepDrainage_mean"` and `"CWD_mon_corr_temp_mean"`.
 * New `metric_RR2022predictors_annual()` provides annual time series of
   metrics underlying the `RR2022predictors` of
   `metric_RR2022predictors_annualClim()`.
+* Tests of metrics that compare values against previous output now use
+  the most recent, stored copy instead of requiring a copy created with the
+  current version of `rSOILWAT2`.
 
 # rSW2metrics v0.1.0
 * Initial release.

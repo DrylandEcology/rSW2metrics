@@ -6,11 +6,9 @@ test_that("Test data availability", {
 
 
 #--- rSOILWAT2 versions with reference output files available
-# NOTE: update reference output for new major/minor releases of rSOILWAT2
-#   * add new version number to `list_rSOILWAT2_versions`
+# NOTE: may need to update references for new major/minor releases of rSOILWAT2
 #   * set `create_new_reference_output` to TRUE
 #     (and re-set back to FALSE when completed)
-list_rSOILWAT2_versions <- c("5.0", "5.1", "5.2", "5.3")
 create_new_reference_output <- FALSE
 
 # NA = detect currently installed version
@@ -250,31 +248,6 @@ test_that("Check metrics", {
   }
 
 
-  #--- Deal with version numbers
-
-  # Update list of rSOILWAT2 version with next not-yet released one
-  # so that identification of data for specific major/minor works correctly
-  tmp <- as.numeric_version(
-    list_rSOILWAT2_versions[length(list_rSOILWAT2_versions)]
-  )
-  tmp[[c(1, 2)]] <- as.integer(tmp[[c(1, 2)]]) + 1
-  nextv <- as.character(tmp)
-
-  # Identify version
-  compv <- vapply(
-    sort(unique(c(list_rSOILWAT2_versions, nextv))),
-    function(ev) {
-      c(
-        isTRUE(used_rSOILWAT2_version >= ev),
-        isTRUE(used_rSOILWAT2_version < ev)
-      )
-    },
-    FUN.VALUE = rep(NA, 2L)
-  )
-
-  eqv <- compv[1, -ncol(compv)] & compv[2, -1]
-
-
 
   #--- Calculate metrics for example simulation and compare with previous output
   args_template <- list(
@@ -464,68 +437,149 @@ test_that("Check metrics", {
       )
 
 
-      #--- Check output against stored copy of previous output
+
+      #--- * Check output against stored copy of previous output ------
       # note: previous values depend on the (minor) version of rSOILWAT2
-      # skip if used rSOILWAT2 version differs too much from version used
-      #      to create values of previous output
+      vused <- paste(
+        strsplit(
+          used_rSOILWAT2_version,
+          split = ".",
+          fixed = TRUE
+        )[[1]][1:2],
+        collapse = "."
+      )
 
-      if (any(eqv)) {
-        vtag <- paste0("v", names(eqv)[which(eqv)])
+      do_create_new_reference_output <- create_new_reference_output
 
-        if (FALSE) {
-          # `testthat::expect_snapshot_value()` doesn't properly work
-          # for our situation as of v3.0.1:
-          # - style "deparse" leads to errors such 'could not find function "-"'
-          # - if a new metric is changed or added to the package,
-          #   then all tests that are sorted alphabetically later will fail,
-          #   likely because
-          #   * all snapshots are stored in the same huge file and
-          #   * differences are not resolve correctly
-          # - the function produces for style = "serialize" a
-          #   snapshot of c. 12 MB while saving individual "rds" consumes
-          #   in total only 3.3 MB
-          expect_snapshot_value(x = output, style = "serialize")
+      #--- Locate previous output
+      # Output derived with rSOILWAT2 at the current version or at the
+      # most recent previous and available version,
+      # but not at a later version than current
+      ftest_outputs <- list.files(
+        path = dir_test_data,
+        pattern = paste0("ref_", fun_metrics[k1], ".rds"),
+        recursive = TRUE,
+        full.names = TRUE
+      )
 
+      vhas <- sub("v", "", basename(dirname(ftest_outputs)), fixed = TRUE)
+      compvs <- which(as.numeric_version(vhas) <= as.numeric_version(vused))
+
+      ftest_output <- ftest_outputs[compvs[length(compvs)]]
+      has_test_output <- length(ftest_output) == 1L
+
+      vtag <- basename(dirname(ftest_output))
+
+
+      #--- Compare output against previous output
+      if (has_test_output) {
+        # Fail test if previous output is different:
+        #  !create_new_reference_output OR
+        #  (create_new_reference_output AND previous output is current version)
+
+        # Save new file if previous output is different:
+        #  (create_new_reference_output AND previous output is old version)
+
+        ref_output <- readRDS(ftest_output)
+
+        # Check versions
+        has_outdated_version <-
+          as.numeric_version(sub("v", "", vtag, fixed = TRUE)) <
+          as.numeric_version(vused)
+
+
+        ids <- if (FALSE && vtag == "v5.0" && nrow(output) > nrow(ref_output)) {
+          # previously, reference for v5.0 contained values for sites 1 and 2
+          output[["site"]] %in% run_rSFSW2_names[1:2]
         } else {
-          ftest_output <- file.path(
-            dir_test_data,
-            vtag,
-            paste0("ref_", fun_metrics[k1], ".rds")
-          )
-
-          if (file.exists(ftest_output)) {
-            ref_output <- readRDS(ftest_output)
-
-            ids <- if (vtag == "v5.0" && nrow(output) > nrow(ref_output)) {
-              output[["site"]] %in% run_rSFSW2_names[1:2]
-            } else {
-              seq_len(nrow(output))
-            }
-            expect_equal(
-              output[ids, ],
-              expected = ref_output,
-              label = fun_metrics[k1],
-              tolerance = sqrt(.Machine[["double.eps"]])
-            )
-
-          } else if (create_new_reference_output) {
-            succeed(paste("New reference stored for", shQuote(fun_metrics[k1])))
-
-            dir.create(
-              dirname(ftest_output),
-              recursive = TRUE,
-              showWarnings = FALSE
-            )
-            saveRDS(output, file = ftest_output, compress = "xz")
-          }
+          seq_len(nrow(output))
         }
 
-      } else {
-        warning(
-          shQuote(fun_metrics[k1]),
-          ": comparisons against previous values skipped ",
-          "because installed rSOILWAT2 v", used_rSOILWAT2_version,
-          " differs too much from any version used to create reference values."
+
+        if (create_new_reference_output && has_outdated_version) {
+          # Since we may save output as new file,
+          # skip expectation if previous output is different
+          do_test <- isTRUE(
+            all.equal(
+              target = output[ids, ],
+              current = ref_output,
+              tolerance = sqrt(.Machine[["double.eps"]])
+            )
+          )
+
+          do_create_new_reference_output <- !do_test
+
+        } else {
+          # Test expectation in any case because we will not save a new file
+          do_test <- TRUE
+          do_create_new_reference_output <- FALSE
+        }
+
+
+        if (do_test) {
+          expect_equal(
+            output[ids, ],
+            expected = ref_output,
+            label = fun_metrics[k1],
+            tolerance = sqrt(.Machine[["double.eps"]])
+          )
+        }
+      }
+
+
+      #--- Create new reference output or warn
+      if (do_create_new_reference_output) {
+        vtag_used <- paste0("v", vused)
+
+        ftest_new_output <- file.path(
+          dir_test_data,
+          vtag_used,
+          paste0("ref_", fun_metrics[k1], ".rds")
+        )
+
+        if (isTRUE(file.exists(ftest_new_output))) {
+          fail(
+            paste(
+              "Reference of", shQuote(fun_metrics[k1]),
+              "for", vtag_used,
+              "already exists and is different from output."
+            )
+          )
+
+        } else {
+          msg <- paste(
+            "New reference of", shQuote(fun_metrics[k1]),
+            "for", vtag_used,
+            "stored on disk because",
+            if (has_test_output) {
+              paste0(
+                "output is different from previous reference for ",
+                vtag,
+                "."
+              )
+            } else {
+              "previous reference does not exist."
+            }
+          )
+
+          succeed(msg)
+
+          dir.create(
+            dirname(ftest_new_output),
+            recursive = TRUE,
+            showWarnings = FALSE
+          )
+          saveRDS(output, file = ftest_new_output, compress = "xz")
+        }
+
+      } else if (!has_test_output) {
+        fail(
+          paste0(
+            shQuote(fun_metrics[k1]),
+            ": no comparisons against previous values ",
+            "because reference values could not be found or ",
+            "created (see `create_new_reference_output`)."
+          )
         )
       }
     }
