@@ -186,6 +186,7 @@ metric_SW2toTable_daily <- function(
       et <- 10 * slot(slot(sim_data, "AET"), "Day")
 
       data_sim[["evapotranspiration"]] <- cbind(
+        Sim_PET_mm = 10 * slot(slot(sim_data, "PET"), "Day")[, "pet_cm"],
         Sim_ET_mm = et[, "evapotr_cm"],
         Sim_T_mm = if ("tran_cm" %in% colnames(et)) {
           et[, "tran_cm"]
