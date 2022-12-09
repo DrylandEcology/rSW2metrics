@@ -2104,11 +2104,11 @@ get_RR2022predictors_annual <- function(
 
       # Potential evapotranspiration
       #   PET -- Climate-PET_mm_annual
-      PET = sim_data[["yr"]][["values"]][["pet"]],
+      PET = 10 * sim_data[["yr"]][["values"]][["pet"]],
 
       # Evapotranspiration
       #   ET -- ET-ET_mm_annual
-      ET = sim_data[["yr"]][["values"]][["et"]],
+      ET = 10 * sim_data[["yr"]][["values"]][["et"]],
 
       # Climatic water deficit
       #   CWD -- CWD-values
