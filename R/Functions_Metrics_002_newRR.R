@@ -1334,7 +1334,30 @@ metric_Radiation_monthly <- function(
 }
 
 
-
+#' Annual climate variables
+#'
+#' @return A return object where `group` contains the following annual
+#' variables:
+#'   * `"PET_mm_annual"`
+#'   * `"CWD_mm_annual"`
+#'   * `"Tmax_mean_C_annual"`
+#'   * `"Tmean_mean_C_annual"`
+#'   * `"Tmin_mean_C_annual"`
+#'   * `"Trange_diurnal_C_annual"`
+#'   * `"Tmean_C_SD_annual"`
+#'   * `"Tmean_hottestmonth_C_annual"`
+#'   * `"Tmean_coldestmonth_C_annual"`
+#'   * `"PPT_mm_annual"`
+#'   * `"Rain_mm_annual"`
+#'   * `"Snowfall_mm_annual"`
+#'   * `"Snowpack_SWE_mm_annual"`
+#'   * `"Rain_to_PPT_annual"`
+#'   * `"PPTinJAS_to_PPT_annual"`
+#'   * `"PPTinJAS_mm_annual"`
+#'   * `"PPT_wettestmonth_mm_annual"`
+#'   * `"PPT_driestmonth_mm_annual"`
+#'
+#' @noRd
 metric_Climate_annual <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
@@ -1894,7 +1917,13 @@ metric_SMTRs <- function(
 
 
 
-#--- AI = aridity index [mm/mm] = PPT/PET
+#' Annual AI = aridity index [mm/mm] = PPT/PET
+#'
+#' @return A return object where `group` contains the following annual
+#' variable:
+#'   * `"AI"`
+#'
+#' @noRd
 metric_AI <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
@@ -2207,6 +2236,29 @@ metric_RR2022predictors_annual <- function(
 #' means, standard deviations, or coefficients of variation of
 #' annual values (see `metric_RR2022predictors_annual()`).
 #'
+#' @return A return object where `group` contains the following annual
+#' variables:
+#'    * `"Tmean_mean"`
+#'    * `"Trange_diurnal_mean"`
+#'    * `"Tmean_coldestmonth_mean"`
+#'    * `"Tmean_coldestmonth_sd"`
+#'    * `"Tmean_hottestmonth_sd"`
+#'    * `"PPT_mean"`
+#'    * `"PPT_cv"`
+#'    * `"Rain_mean"`
+#'    * `"PPTinJAS_mean"`
+#'    * `"PPT_driestmonth_mean"`
+#'    * `"PET_cv"`
+#'    * `"ET_cv"`
+#'    * `"CWD_mean"`
+#'    * `"CWD_mon_corr_temp_mean"`
+#'    * `"CWD_mon_cv_mean"`
+#'    * `"DDD_mean"`
+#'    * `"DSI_duration_mean"`
+#'    * `"CorTempPPT_mean"`
+#'    * `"DeepDrainage_mean"`
+#'
+#'
 #' @section Notes:
 #'   * Argument `fun_aggs_across_yrs` is ignored.
 #'   * Values are `NA` if any year is requested but un-simulated.
@@ -2340,3 +2392,39 @@ metric_RR2022predictors_annualClim <- function(
 
   res
 }
+
+
+
+#' Annual time series of ecological drought metrics
+#'
+#' @references Chenoweth et al. (in revision)
+#'
+#' @section Details:
+#' The following functions produce all metrics used by Chenoweth et al.:
+#'   * climate metrics
+#'       * `metric_Climate_annual()`
+#'       * `metric_AI()`
+#'   * overall conditions
+#'       * `metric_CWD()`
+#'       * `metric_SWAat0to100cm39bar()`
+#'       * `metric_TDDat5C()`
+#'       * `metric_DDDat5C0to100cm30bar()`
+#'       * `metric_WDDat5C0to100cm15bar()`
+#'       * `metric_FrostDaysAtNeg5C()`
+#'   * extreme drought
+#'       * `metric_CWD()`
+#'       * `metric_DDDat5C0to100cm30bar()`
+#'       * `metric_DSIat0to100cm15bar()`
+#'       * `metric_DSIat0to100cm15bar()`
+#'   * seasonal timing
+#'       * `metric_CorTempPPT()`
+#'       * `metric_CWD()`
+#'       * `metric_SWAat0to100cm39bar()`
+#'       * `metric_WDDat5C0to100cm15bar()`
+#'   * seasonal variability
+#'       * `metric_CWD()`
+#'       * `metric_SWAat0to100cm39bar()`
+#'       * `metric_TDDat5C()`
+#'
+#' @noRd
+NULL
