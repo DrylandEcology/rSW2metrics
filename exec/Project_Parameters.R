@@ -98,5 +98,5 @@ format_share_SW2toTable <- "rds"
 # Groups of variables to include in output
 #   - "all" (default, includes all the following)
 #   - "meteo", "snow", "radiation", "waterbalance", "evapotranspiration",
-#     "soiltemperature", "VWC", "SWP"
+#     "soiltemperature", "VWC", "SWP", "SWAat30bar", "MDD"
 outputs_SW2toTable <- "all"

@@ -240,6 +240,17 @@ calc_wetdry <- function(
 # v1b: Temp > limit & sm <> limit & snow == 0
 # wet based on any(SWC[i] > SWC_limit)
 # dry based on all(SWC[i] < SWC_limit)
+#' @param sim_data A named list or environment with the following elements
+#'   - `"swp_daily"` with two elements
+#'       - `"values"`, a list which contains the named element `"swp"`,
+#'         a two-dimensional object of daily soil water potential `[-bar]`
+#'       - `"time"` (that is passed through)
+#'   - `"temp_daily"`, a list `"values"` which contains the named element
+#'     `"tmean"`, a vector of daily mean air temperatures `[C]`
+#'   - `"swe_daily"`, a list `"values"` which contains the named element
+#'     `"swe"`, a vector of daily snow-water equivalents `[cm]`
+#'
+#' @noRd
 calc_MDD_daily <- function(
   sim_data,
   soils,

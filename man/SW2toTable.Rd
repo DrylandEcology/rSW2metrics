@@ -15,7 +15,7 @@ metric_SW2toTable_daily(
   dir_out_SW2toTable = file.path("..", "Outputs"),
   format_share_SW2toTable = c("rds", "csv"),
   outputs_SW2toTable = c("all", "meteo", "snow", "radiation", "waterbalance",
-    "evapotranspiration", "soiltemperature", "VWC", "SWP", "SWAat30bar"),
+    "evapotranspiration", "soiltemperature", "VWC", "SWP", "SWAat30bar", "MDD"),
   share_soillayer_ids = NULL,
   ...
 )
