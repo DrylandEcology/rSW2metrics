@@ -616,11 +616,10 @@ metric_DDDat5C0to100cm30bar <- function(
 #' The base (= critical) amount of soil water `SWC_crit[i]` is specified via a
 #' critical soil water potential `SWP_crit`, here \code{SWP_limit_MPa}, e.g.,
 #' `SWP_crit = -3.0 MPa`.
-#' A pedotransfer function of the water release curve is used to
+#' The water release curve employed during the simulation run is used to
 #' translate `SWP` into volumetric water content `VWC`, i.e.,
-#' \deqn{VWC_crit[i,matric] = f(SWP_crit, soil texture[i])}
-#' where soil texture is the weight fractions of sand, clay, and silt of
-#' the matric soil component.
+#' \deqn{VWC_crit[i,matric] = f(SWP_crit, SWRCp[i])}
+#' where `SWRCp` are the parameters describing the water release curve.
 #' However, the translation is only valid for the matric soil, i.e.,
 #' the component without coarse fragments.
 #'

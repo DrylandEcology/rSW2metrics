@@ -194,11 +194,10 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
 #' After soil moisture has been aggregated across soil layers
 #' if requested (`method` is `"across_profile"`) and
 #' aggregated across years if requested (`out` is `"across_years"`), then
-#' a pedotransfer function of the water release curve is used to
+#' the water release curve employed during the simulation run is used to
 #' translate volumetric water content `VWC` into `SWP`, i.e.,
-#' \deqn{SWP[i,matric] = f(VWC, soil texture[i])}
-#' where soil texture is the weight fractions of sand, clay, and silt of
-#' the matric soil component.
+#' \deqn{SWP[i,matric] = f(VWC, SWRCp[i])}
+#' where `SWRCp` are the parameters describing the water release curve.
 #' Note, the translation is only valid for the matric soil, i.e.,
 #' the component without coarse fragments.
 #'
