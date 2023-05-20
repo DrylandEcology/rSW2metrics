@@ -1,6 +1,6 @@
 Package: rSW2metrics
 Title: Calculate Ecohydrological Metrics from SOILWAT2 Simulations
-Version: 0.2.0
+Version: 0.3.0-9000
 Authors@R: c(
   person(
     "Daniel", "Schlaepfer",
