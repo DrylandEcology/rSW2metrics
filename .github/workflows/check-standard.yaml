@@ -1,8 +1,9 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 
-# workflow derived from "check-standard" workflow
-
+# modifications from default workflow
+#     a minimal latex setup is required to create pdf vignettes
+#   * install rSOILWAT2 separately because `pak` doesn't handle submodules
 on:
   push:
     branches: [main, release/**]
