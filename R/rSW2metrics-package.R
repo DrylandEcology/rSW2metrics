@@ -93,14 +93,15 @@ rd_section_listing_metrics <- function() {
 #'
 #' These functions have a name that starts with `metric_`.
 #' They have at least the following arguments:
-#' `path`, `name_sw2_run`, `id_scen_used`,
+#' `path`, `name_sw2_run`, \code{zipped_runs}, `id_scen_used`,
 #' `list_years_scen_used`, `out`, and `...`.
 #'
 #'
 #' @param path A character string. The path to the simulation project folder
 #'   that contains the individual folder of each simulated site.
-#' @param name_sw2_run A character string. The name of the folder of the
-#'   simulated site for which metrics are to be calculated.
+#' @param name_sw2_run A character string. The name of the folder
+#'   (or zip archive, see \code{zipped_runs}) of the simulated site
+#'   for which metrics are to be calculated.
 #'   \pkg{rSOILWAT2} input and output is organized following conventions of
 #'   \pkg{rSFSW2}, i.e., inputs for each scenario are stored in a list object
 #'   named \var{\dQuote{swRunScenariosData}} which is stored
@@ -109,6 +110,8 @@ rd_section_listing_metrics <- function() {
 #'   named \var{\dQuote{runDataSC}}
 #'   in a file \var{\dQuote{sw_output_scX.RData}} where
 #'   \code{X} is the number of the scenario.
+#' @param zipped_runs A logical value. Describes whether \code{name_sw2_run}
+#'   is a zip archive or a regular folder.
 #' @param id_scen_used An integer vector. The numbers of scenarios for which
 #'   metrics are to be calculated.
 #' @param list_years_scen_used A list of integer vectors.
@@ -199,13 +202,14 @@ rd_section_listing_inputcollectors <- function() {
 #'
 #' These functions have a name that starts with \code{collect_input_}.
 #' They have at least the following arguments:
-#' \code{path}, \code{name_sw2_run}, and \code{...}.
+#' \code{path}, \code{name_sw2_run}, \code{zipped_runs}, and \code{...}.
 #'
 #'
 #' @param path A character string. The path to the simulation project folder
 #'   that contains the individual folder of each simulated site.
-#' @param name_sw2_run A character string. The name of the folder of the
-#'   simulated site for which metrics are to be calculated.
+#' @param name_sw2_run A character string. The name of the folder
+#'   (or zip archive, see \code{zipped_runs}) of the simulated site
+#'   for which metrics are to be calculated.
 #'   \pkg{rSOILWAT2} input and output is organized following conventions of
 #'   \pkg{rSFSW2}, i.e., inputs for each scenario are stored in a list object
 #'   named \var{\dQuote{swRunScenariosData}} which is stored
@@ -214,7 +218,11 @@ rd_section_listing_inputcollectors <- function() {
 #'   named \var{\dQuote{runDataSC}}
 #'   in a file \var{\dQuote{sw_output_scX.RData}} where
 #'   \code{X} is the number of the scenario.
-#' @param ... Additional arguments
+#' @param zipped_runs A logical value. Describes whether \code{name_sw2_run}
+#'   is a zip archive or a regular folder.
+#' @param id_scen An integer value. The scenario number for which
+#'   input values are to be collected.
+#' @param ... Additional arguments.
 #'
 #'
 #' @evalRd rd_section_listing_inputcollectors()

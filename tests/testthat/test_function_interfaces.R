@@ -3,6 +3,7 @@
 required_metrics_arguments <- c(
   "path",
   "name_sw2_run",
+  "zipped_runs",
   "id_scen_used",
   "list_years_scen_used",
   "out",
@@ -33,6 +34,7 @@ test_that("Check parameters of outside-facing metrics", {
 required_inputcollectors_arguments <- c(
   "path",
   "name_sw2_run",
+  "zipped_runs",
   "..."
 )
 
@@ -55,7 +57,8 @@ test_that("Check parameters of input collectors", {
 #--- `get_*()` functions load simulations and calculate a response ------
 required_get_arguments <- c(
   "path",
-  "name_sw2_run"
+  "name_sw2_run",
+  "zipped_runs"
 )
 
 test_that("check parameters of get_* functions", {

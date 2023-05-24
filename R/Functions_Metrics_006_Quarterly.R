@@ -8,6 +8,7 @@ metric_Climate_quarterly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -27,7 +28,8 @@ metric_Climate_quarterly <- function(
           sw2_vars = c(`tmean-C` = "avg_C", `ppt-mm` = "ppt"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     time <- data.frame(
@@ -75,6 +77,7 @@ metric_Climate_quarterly <- function(
 get_SWA_multilayer_quarterly <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
+  zipped_runs = FALSE,
   include_year = FALSE,
   soils,
   list_used_depth_range_cm = NULL,
@@ -104,7 +107,8 @@ get_SWA_multilayer_quarterly <- function(
           sw2_vars = c(swc = "Lyr"),
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     list_swa_daily <- lapply(
@@ -161,6 +165,7 @@ metric_SWAat0to020to100cm39bar_quarterly <- function(
   out = "ts_years",
   soils,
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -186,6 +191,7 @@ metric_SWAat0to020to100cm39bar_quarterly <- function(
   get_SWA_multilayer_quarterly(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    zipped_runs = zipped_runs,
     soils = soils,
     list_used_depth_range_cm = list_used_depth_range_cm,
     SWP_limit_MPa = SWP_limit_MPa,
@@ -200,6 +206,7 @@ metric_SWAat0to020to100cm39bar_quarterly <- function(
 metric_TDDat5C_quarterly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils, ...
 ) {
   stopifnot(check_metric_arguments(
@@ -232,7 +239,8 @@ metric_TDDat5C_quarterly <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     # TDD doesn't need SWP, but time is still required
@@ -274,6 +282,7 @@ metric_TDDat5C_quarterly <- function(
 #--- Quarterly sum of daily WDD
 get_WDD_quarterly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
+  zipped_runs = FALSE,
   out = "ts_years",
   soils,
   used_depth_range_cm = NULL,
@@ -307,7 +316,8 @@ get_WDD_quarterly <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     wdd_daily <- calc_MDD_daily(
@@ -336,6 +346,7 @@ get_WDD_quarterly <- function(
 metric_WDDat5C0to020cm15bar_quarterly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils, ...
 ) {
   stopifnot(check_metric_arguments(
@@ -345,6 +356,7 @@ metric_WDDat5C0to020cm15bar_quarterly <- function(
 
   get_WDD_quarterly(
     path, name_sw2_run, id_scen_used, list_years_scen_used,
+    zipped_runs = zipped_runs,
     out = "ts_years",
     soils,
     used_depth_range_cm = c(0, 20),
@@ -357,6 +369,7 @@ metric_WDDat5C0to020cm15bar_quarterly <- function(
 metric_WDDat5C0to100cm15bar_quarterly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   soils, ...
 ) {
   stopifnot(check_metric_arguments(
@@ -366,6 +379,7 @@ metric_WDDat5C0to100cm15bar_quarterly <- function(
 
   get_WDD_quarterly(
     path, name_sw2_run, id_scen_used, list_years_scen_used,
+    zipped_runs = zipped_runs,
     out = "ts_years",
     soils,
     used_depth_range_cm = c(0, 100),
@@ -380,6 +394,7 @@ metric_WDDat5C0to100cm15bar_quarterly <- function(
 #--- Quarterly sum of daily DDD
 get_DDD_quarterly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
+  zipped_runs = FALSE,
   out = "ts_years",
   soils,
   used_depth_range_cm = NULL,
@@ -413,7 +428,8 @@ get_DDD_quarterly <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     wdd_daily <- calc_MDD_daily(
@@ -442,7 +458,9 @@ get_DDD_quarterly <- function(
 metric_DDDat5C0to020cm30bar_quarterly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
@@ -451,6 +469,7 @@ metric_DDDat5C0to020cm30bar_quarterly <- function(
 
   get_DDD_quarterly(
     path, name_sw2_run, id_scen_used, list_years_scen_used,
+    zipped_runs = zipped_runs,
     out = "ts_years",
     soils,
     used_depth_range_cm = c(0, 20),
@@ -463,7 +482,9 @@ metric_DDDat5C0to020cm30bar_quarterly <- function(
 metric_DDDat5C0to100cm30bar_quarterly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
@@ -472,6 +493,7 @@ metric_DDDat5C0to100cm30bar_quarterly <- function(
 
   get_DDD_quarterly(
     path, name_sw2_run, id_scen_used, list_years_scen_used,
+    zipped_runs = zipped_runs,
     out = "ts_years",
     soils,
     used_depth_range_cm = c(0, 100),

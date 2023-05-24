@@ -315,6 +315,7 @@ calc_RecruitmentIndex_v3 <- function(
 metric_RecruitmentIndex_v4 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils,
   ...
 ) {
@@ -376,7 +377,8 @@ metric_RecruitmentIndex_v4 <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- t(calc_RecruitmentIndex_v3(
@@ -412,6 +414,7 @@ metric_RecruitmentIndex_v4 <- function(
 metric_RecruitmentIndex_v5 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils,
   ...
 ) {
@@ -473,7 +476,8 @@ metric_RecruitmentIndex_v5 <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- t(calc_RecruitmentIndex_v3(

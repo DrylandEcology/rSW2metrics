@@ -7,11 +7,12 @@
 #  * `calc_*()` functions calculate a response
 
 
-get_rh <- function(path, name_sw2_run, id_scen, years) {
+get_rh <- function(path, name_sw2_run, id_scen, years, zipped_runs = FALSE) {
   # Extract a variable from outputs as template
   res <- extract_from_sw2(
     path = path,
     name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen = id_scen,
     years = years,
     sw2_tp = "Day",
@@ -25,10 +26,10 @@ get_rh <- function(path, name_sw2_run, id_scen, years) {
   names(res[["values"]]) <- "rh"
 
   # Extract RH (from inputs)
-  sim_input <- new.env(parent = emptyenv())
-  load(
-    file = file.path(path, name_sw2_run, "sw_input.RData"),
-    envir = sim_input
+  sim_input <- load_sw2_rda(
+    path = file.path(path, name_sw2_run),
+    fname = "sw_input.RData",
+    zipped_runs = zipped_runs
   )
 
   # nolint start: object_usage_linter.
@@ -56,7 +57,9 @@ get_rh <- function(path, name_sw2_run, id_scen, years) {
 
 get_vpd <- function(
   path, name_sw2_run,
-  id_scen, years, group_by_month, first_month_of_year, ...
+  id_scen, years, group_by_month, first_month_of_year,
+  zipped_runs = FALSE,
+  ...
 ) {
   stopifnot(requireNamespace("rSW2data"))
 
@@ -67,6 +70,7 @@ get_vpd <- function(
   temp_min <- get_values_from_sw2(
     id_scen = id_scen,
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     group_by_month = seq_len(12),
     first_month_of_year = first_month_of_year,
     sw2_tp = "Day",
@@ -78,6 +82,7 @@ get_vpd <- function(
   temp_max <- get_values_from_sw2(
     id_scen = id_scen,
     path, name_sw2_run,
+    zipped_runs = zipped_runs,
     group_by_month = seq_len(12),
     first_month_of_year = first_month_of_year,
     sw2_tp = "Day",
@@ -86,7 +91,7 @@ get_vpd <- function(
     varnames_are_fixed = TRUE
   )
 
-  rh <- get_rh(path, name_sw2_run, id_scen = id_scen)
+  rh <- get_rh(path, name_sw2_run, id_scen = id_scen, zipped_runs = zipped_runs)
 
 
   cbind(
@@ -110,6 +115,7 @@ metric_CWD <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -137,7 +143,8 @@ metric_CWD <- function(
           sw2_vars = c(tmean = "avg_C"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     cwd_daily <- list(
@@ -233,6 +240,17 @@ calc_wetdry <- function(
 # v1b: Temp > limit & sm <> limit & snow == 0
 # wet based on any(SWC[i] > SWC_limit)
 # dry based on all(SWC[i] < SWC_limit)
+#' @param sim_data A named list or environment with the following elements
+#'   - `"swp_daily"` with two elements
+#'       - `"values"`, a list which contains the named element `"swp"`,
+#'         a two-dimensional object of daily soil water potential `[-bar]`
+#'       - `"time"` (that is passed through)
+#'   - `"temp_daily"`, a list `"values"` which contains the named element
+#'     `"tmean"`, a vector of daily mean air temperatures `[C]`
+#'   - `"swe_daily"`, a list `"values"` which contains the named element
+#'     `"swe"`, a vector of daily snow-water equivalents `[cm]`
+#'
+#' @noRd
 calc_MDD_daily <- function(
   sim_data,
   soils,
@@ -290,7 +308,9 @@ calc_MDD_daily <- function(
 metric_TDDat5C <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -324,7 +344,8 @@ metric_TDDat5C <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     # TDD doesn't need SWP, but time is still required
@@ -373,7 +394,9 @@ metric_TDDat5C <- function(
 metric_WDDat5C0to100cm15bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -419,7 +442,8 @@ metric_WDDat5C0to100cm15bar <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     wdd_daily <- calc_MDD_daily(
@@ -454,6 +478,7 @@ get_DDD_yearly <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils,
   used_depth_range_cm = NULL,
   Temp_limit_C = 5,
@@ -489,7 +514,8 @@ get_DDD_yearly <- function(
           sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     ddd_daily <- calc_MDD_daily(
@@ -520,7 +546,9 @@ get_DDD_yearly <- function(
 metric_DDDat5C0to030cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -533,6 +561,7 @@ metric_DDDat5C0to030cm30bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -547,7 +576,9 @@ metric_DDDat5C0to030cm30bar <- function(
 metric_DDDat5C0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -560,6 +591,7 @@ metric_DDDat5C0to100cm30bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -584,11 +616,10 @@ metric_DDDat5C0to100cm30bar <- function(
 #' The base (= critical) amount of soil water `SWC_crit[i]` is specified via a
 #' critical soil water potential `SWP_crit`, here \code{SWP_limit_MPa}, e.g.,
 #' `SWP_crit = -3.0 MPa`.
-#' A pedotransfer function of the water release curve is used to
+#' The water release curve employed during the simulation run is used to
 #' translate `SWP` into volumetric water content `VWC`, i.e.,
-#' \deqn{VWC_crit[i,matric] = f(SWP_crit, soil texture[i])}
-#' where soil texture is the weight fractions of sand, clay, and silt of
-#' the matric soil component.
+#' \deqn{VWC_crit[i,matric] = f(SWP_crit, SWRCp[i])}
+#' where `SWRCp` are the parameters describing the water release curve.
 #' However, the translation is only valid for the matric soil, i.e.,
 #' the component without coarse fragments.
 #'
@@ -692,6 +723,7 @@ get_SWA <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
@@ -720,7 +752,8 @@ get_SWA <- function(
           sw2_vars = c(tmean = "avg_C"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     swa_daily <- calc_SWA_mm(
@@ -751,6 +784,7 @@ get_SWA <- function(
 metric_SWAat0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils, ...
 ) {
   out <- match.arg(out)
@@ -764,6 +798,7 @@ metric_SWAat0to100cm30bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -776,6 +811,7 @@ metric_SWAat0to100cm30bar <- function(
 metric_SWAat0to100cm39bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils, ...
 ) {
   out <- match.arg(out)
@@ -789,6 +825,7 @@ metric_SWAat0to100cm39bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -841,6 +878,7 @@ get_DSI <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
@@ -864,7 +902,8 @@ get_DSI <- function(
           sw2_vars = c(swp = "Lyr"),
           varnames_are_fixed = FALSE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     tmp_dsi <- calc_DSI(
@@ -906,7 +945,9 @@ get_DSI <- function(
 metric_DSIat0to100cm15bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -919,6 +960,7 @@ metric_DSIat0to100cm15bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -931,7 +973,9 @@ metric_DSIat0to100cm15bar <- function(
 metric_DSIat0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
-  soils, ...
+  zipped_runs = FALSE,
+  soils,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -944,6 +988,7 @@ metric_DSIat0to100cm30bar <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
@@ -995,6 +1040,7 @@ calc_frost_doy <- function(
 metric_FrostDaysAtNeg5C <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1017,7 +1063,8 @@ metric_FrostDaysAtNeg5C <- function(
           sw2_vars = c(tmin = "min_C"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- t(calc_frost_doy(
@@ -1030,13 +1077,21 @@ metric_FrostDaysAtNeg5C <- function(
 }
 
 
+# Amount of variation among seasons
+calc_seasonal_variability <- function(x, ts_year) {
+  tapply(
+    X = x,
+    INDEX = ts_year,
+    FUN = function(x) sd(x) / mean(x)
+  )
+}
 
-# CorTempPPT: Correlation between monthly temperature and
-# precipitation by year
-calc_CorTempPPT <- function(mon_temp, mon_ppt, mon_year) {
+# Correlation between x and y by year
+# Seasonal timing (if y is monthly temperature)
+calc_CorXY_byYear <- function(x, y, ts_year) {
   as.vector(by(
-    data = cbind(mon_ppt, mon_temp),
-    INDICES = mon_year,
+    data = cbind(x, y),
+    INDICES = ts_year,
     FUN = function(x) cor(x[, 1], x[, 2])
   ))
 }
@@ -1045,6 +1100,7 @@ metric_CorTempPPT <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1065,14 +1121,15 @@ metric_CorTempPPT <- function(
           sw2_vars = c(tmin = "min_C", "ppt"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
-    tmp <- calc_CorTempPPT(
+    tmp <- calc_CorXY_byYear(
       # TODO: why `tmin` and not `tmean`?
-      mon_temp = sim_data[["mon"]][["values"]][["tmin"]],
-      mon_ppt =  sim_data[["mon"]][["values"]][["ppt"]],
-      mon_year = sim_data[["mon"]][["time"]][, "Year"]
+      x = sim_data[["mon"]][["values"]][["tmin"]],
+      y =  sim_data[["mon"]][["values"]][["ppt"]],
+      ts_year = sim_data[["mon"]][["time"]][, "Year"]
     )
 
     res[[k1]] <- if (include_year) {
@@ -1096,6 +1153,7 @@ get_SW2flux <- function(
   transform = function(x) x,
   out_labels,
   include_year = FALSE,
+  zipped_runs = FALSE,
   timestep = c("yearly", "monthly"),
   ...
 ) {
@@ -1116,7 +1174,8 @@ get_SW2flux <- function(
           sw2_vars = sw2_var,
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- format_values_to_matrix(
@@ -1143,6 +1202,7 @@ get_SW2flux <- function(
 metric_ET_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1152,6 +1212,7 @@ metric_ET_annual <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "AET",
     sw2_var = "evapotr_cm",
@@ -1164,6 +1225,7 @@ metric_ET_annual <- function(
 metric_ET_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1173,6 +1235,7 @@ metric_ET_monthly <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "AET",
     sw2_var = "evapotr_cm",
@@ -1188,6 +1251,7 @@ metric_ET_monthly <- function(
 metric_DR_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1197,6 +1261,7 @@ metric_DR_annual <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "DEEPSWC",
     sw2_var = "lowLayerDrain_cm",
@@ -1210,6 +1275,7 @@ metric_DR_annual <- function(
 metric_DR_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1219,6 +1285,7 @@ metric_DR_monthly <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "DEEPSWC",
     sw2_var = "lowLayerDrain_cm",
@@ -1233,6 +1300,7 @@ metric_DR_monthly <- function(
 metric_Radiation_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1242,6 +1310,7 @@ metric_Radiation_annual <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "PET",
     sw2_var = c("H_oh_MJm-2", "H_gt_MJm-2"),
@@ -1255,6 +1324,7 @@ metric_Radiation_annual <- function(
 metric_Radiation_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1264,6 +1334,7 @@ metric_Radiation_monthly <- function(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
+    zipped_runs = zipped_runs,
     list_years_scen_used = list_years_scen_used,
     sw2_out = "PET",
     sw2_var = c("H_oh_MJm-2", "H_gt_MJm-2"),
@@ -1273,12 +1344,36 @@ metric_Radiation_monthly <- function(
 }
 
 
-
+#' Annual climate variables
+#'
+#' @return A return object where `group` contains the following annual
+#' variables:
+#'   * `"PET_mm_annual"`
+#'   * `"CWD_mm_annual"`
+#'   * `"Tmax_mean_C_annual"`
+#'   * `"Tmean_mean_C_annual"`
+#'   * `"Tmin_mean_C_annual"`
+#'   * `"Trange_diurnal_C_annual"`
+#'   * `"Tmean_C_SD_annual"`
+#'   * `"Tmean_hottestmonth_C_annual"`
+#'   * `"Tmean_coldestmonth_C_annual"`
+#'   * `"PPT_mm_annual"`
+#'   * `"Rain_mm_annual"`
+#'   * `"Snowfall_mm_annual"`
+#'   * `"Snowpack_SWE_mm_annual"`
+#'   * `"Rain_to_PPT_annual"`
+#'   * `"PPTinJAS_to_PPT_annual"`
+#'   * `"PPTinJAS_mm_annual"`
+#'   * `"PPT_wettestmonth_mm_annual"`
+#'   * `"PPT_driestmonth_mm_annual"`
+#'
+#' @noRd
 metric_Climate_annual <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1321,7 +1416,8 @@ metric_Climate_annual <- function(
           ),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
 
@@ -1439,6 +1535,7 @@ metric_Climate_monthly <- function(
   id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   include_year = FALSE,
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1475,7 +1572,8 @@ metric_Climate_monthly <- function(
           ),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
 
@@ -1614,6 +1712,7 @@ get_Tmean_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "across_years"),
   fun_aggs_across_yrs = mean,
+  zipped_runs = FALSE,
   ...
 ) {
   res <- list()
@@ -1640,7 +1739,8 @@ get_Tmean_monthly <- function(
               sw2_vars = c(tmean = "avg_C"),
               varnames_are_fixed = TRUE
             )
-          )
+          ),
+          zipped_runs = zipped_runs
         )
 
         if (out == "ts_years") {
@@ -1675,6 +1775,7 @@ get_Tmean_monthly <- function(
 metric_Tmean_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -1682,6 +1783,7 @@ metric_Tmean_monthly <- function(
   get_Tmean_monthly(
     path = path,
     name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
@@ -1695,6 +1797,7 @@ metric_Tmean_monthly <- function(
 metric_Tmean_monthlyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  zipped_runs = FALSE,
   fun_aggs_across_yrs = mean,
   ...
 ) {
@@ -1703,6 +1806,7 @@ metric_Tmean_monthlyClim <- function(
   get_Tmean_monthly(
     path = path,
     name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
@@ -1718,6 +1822,7 @@ metric_PPT_monthlyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
   fun_aggs_across_yrs = mean,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -1740,7 +1845,8 @@ metric_PPT_monthlyClim <- function(
               sw2_vars = "ppt",
               varnames_are_fixed = TRUE
             )
-          )
+          ),
+          zipped_runs = zipped_runs
         )
 
         format_values_to_matrix(
@@ -1768,6 +1874,7 @@ metric_PPT_monthlyClim <- function(
 metric_SMTRs <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(
@@ -1777,34 +1884,34 @@ metric_SMTRs <- function(
 
   res <- list()
 
-  sim_input <- new.env(parent = emptyenv())
-  load(
-    file = file.path(path, name_sw2_run, "sw_input.RData"),
-    envir = sim_input
+  sim_input <- load_sw2_rda(
+    path = file.path(path, name_sw2_run),
+    fname = "sw_input.RData",
+    zipped_runs = zipped_runs
   )
 
   for (k1 in seq_along(id_scen_used)) {
-    sim_data <- new.env(parent = emptyenv())
-    load(
-      file = file.path(
-        path,
-        name_sw2_run,
-        paste0("sw_output_sc", id_scen_used[k1], ".RData")
-      ),
-      envir = sim_data
+    sim_data <- load_sw2_rda(
+      path = file.path(path, name_sw2_run),
+      fname = paste0("sw_output_sc", id_scen_used[k1], ".RData"),
+      zipped_runs = zipped_runs
     )
 
     tmp <- lapply(
       list_years_scen_used[[k1]],
       function(yrs) {
-        # nolint start: line_length_linter.
-        rSOILWAT2::swYears_EndYear(sim_input[["swRunScenariosData"]][[k1]]) <- 9999
-        rSOILWAT2::swYears_StartYear(sim_input[["swRunScenariosData"]][[k1]]) <- yrs[[1]]
-        rSOILWAT2::swYears_EndYear(sim_input[["swRunScenariosData"]][[k1]]) <- yrs[length(yrs)]
-        # nolint end
+        tmp_swin <- sim_input[["swRunScenariosData"]][[k1]]
+
+        # Update with selected time period
+        rSOILWAT2::swYears_EndYear(tmp_swin) <- 1L + max(
+          rSOILWAT2::swYears_StartYear(tmp_swin),
+          yrs[length(yrs)]
+        )
+        rSOILWAT2::swYears_StartYear(tmp_swin) <- yrs[[1]]
+        rSOILWAT2::swYears_EndYear(tmp_swin) <- yrs[length(yrs)]
 
         tmp <- rSW2funs::calc_SMTRs(
-          sim_in = sim_input[["swRunScenariosData"]][[k1]],
+          sim_in = tmp_swin,
           sim_out = sim_data[["runDataSC"]]
         )
 
@@ -1820,11 +1927,18 @@ metric_SMTRs <- function(
 
 
 
-#--- AI = aridity index [mm/mm] = PPT/PET
+#' Annual AI = aridity index [mm/mm] = PPT/PET
+#'
+#' @return A return object where `group` contains the following annual
+#' variable:
+#'   * `"AI"`
+#'
+#' @noRd
 metric_AI <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
   ...
 ) {
   out <- match.arg(out)
@@ -1846,7 +1960,8 @@ metric_AI <- function(
           sw2_vars = c(pet = "pet_cm", ppt = "ppt"),
           varnames_are_fixed = TRUE
         )
-      )
+      ),
+      zipped_runs = zipped_runs
     )
 
     res[[k1]] <- matrix(
@@ -1862,21 +1977,313 @@ metric_AI <- function(
 }
 
 
+get_RR2022predictors_annual <- function(
+  path,
+  name_sw2_run,
+  id_scen_used,
+  list_years_scen_used,
+  out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
+  soils,
+  ...
+) {
+  res <- list()
 
-#' 19 predictors of resilience & resistance indicators
+  out <- match.arg(out)
+
+  for (k1 in seq_along(id_scen_used)) {
+    sim_data <- collect_sw2_sim_data(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      output_sets = list(
+        swp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SWPMATRIC",
+          sw2_vars = c(swp = "Lyr"),
+          varnames_are_fixed = FALSE
+        ),
+        temp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        ),
+        swe_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SNOWPACK",
+          sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
+          varnames_are_fixed = TRUE
+        ),
+        day = list(
+          sw2_tp = "Day",
+          sw2_outs = c("TEMP", "TEMP"),
+          sw2_vars = c(
+            tmax = "max_C",
+            tmin = "min_C"
+          ),
+          varnames_are_fixed = TRUE
+        ),
+        mon = list(
+          sw2_tp = "Month",
+          sw2_outs = c("PRECIP", "TEMP", "TEMP", "PET", "AET"),
+          sw2_vars = c(
+            ppt = "ppt",
+            tmean = "avg_C",
+            tmin = "min_C",
+            pet = "pet_cm",
+            et = "evapotr_cm"
+          ),
+          varnames_are_fixed = TRUE
+        ),
+        yr = list(
+          sw2_tp = "Year",
+          sw2_outs = c("PRECIP", "PRECIP", "TEMP", "PET", "AET", "DEEPSWC"),
+          sw2_vars = c(
+            ppt = "ppt",
+            rain = "rain",
+            tmean = "avg_C",
+            pet = "pet_cm",
+            et = "evapotr_cm",
+            drainage = "lowLayerDrain_cm"
+          ),
+          varnames_are_fixed = TRUE
+        )
+      ),
+      zipped_runs = zipped_runs
+    )
+
+
+    #--- Intermediate variables
+    tmp_cwd <- calc_CWD_mm(
+      pet_cm = sim_data[["mon"]][["values"]][["pet"]],
+      et_cm = sim_data[["mon"]][["values"]][["et"]]
+    )
+
+    # DDDat5C0to100cm30bar
+    tmp_ddd <- calc_MDD_daily(
+      sim_data = sim_data,
+      soils = soils,
+      used_depth_range_cm = c(0, 100),
+      t_periods = list(op = `>`, limit = 5),
+      sm_periods = list(op = `<`, limit = -3)
+    )
+
+    # DSIat0to100cm15bar-mean
+    tmp_dsi <- vapply(
+      calc_DSI(
+        swp_daily_negbar = sim_data[["swp_daily"]][["values"]][["swp"]],
+        time_daily = sim_data[["swp_daily"]][["time"]],
+        soils = soils,
+        used_depth_range_cm = c(0, 100),
+        SWP_limit_MPa = -1.5
+      ),
+      mean,
+      FUN.VALUE = NA_real_
+    )
+
+
+    #--- Annual time series to derive RandomForest R&R predictors (2022-Feb-07)
+    res[[k1]] <- rbind(
+      # Annual mean temperature
+      #   Tmean -- TA-MAT_C
+      Tmean = sim_data[["yr"]][["values"]][["tmean"]],
+
+      # Temperature range (difference between tmax and tmin)
+      #   Trange_diurnal -- Climate-Trange_diurnal_C_annual
+      Trange_diurnal_mean = tapply(
+        X =
+          sim_data[["day"]][["values"]][["tmax"]] -
+          sim_data[["day"]][["values"]][["tmin"]],
+        INDEX = sim_data[["day"]][["time"]][, "Year"],
+        FUN = mean
+      ),
+
+      # Mean temperature of coldest month
+      #   Tmean_coldestmonth --
+      #     Climate-Tmean_coldestmonth_C_annual
+      Tmean_coldestmonth = tapply(
+        X = sim_data[["mon"]][["values"]][["tmean"]],
+        INDEX = sim_data[["mon"]][["time"]][, "Year"],
+        FUN = min
+      ),
+
+      # Mean temperature of hottest month
+      #   Tmean_hottestmonth -- Climate-Tmean_hottestmonth_C_annual
+      Tmean_hottestmonth = tapply(
+        X = sim_data[["mon"]][["values"]][["tmean"]],
+        INDEX = sim_data[["mon"]][["time"]][, "Year"],
+        FUN = max
+      ),
+
+      # Annual precipitation amount
+      #   PPT -- PPT-MAP_mm
+      PPT = 10 * sim_data[["yr"]][["values"]][["ppt"]],
+
+      # Annual rainfall amount
+      #   Rain -- Climate-Rain_mm_annual
+      Rain = 10 * sim_data[["yr"]][["values"]][["rain"]],
+
+      # Precipitation amount in months of July, August, and September
+      #   PPTinJAS -- Climate-PPTinJAS_mm_annual
+      PPTinJAS = 10 * tapply(
+        X = sim_data[["mon"]][["values"]][["ppt"]],
+        INDEX = sim_data[["mon"]][["time"]][, "Year"],
+        FUN = function(x) sum(x[7:9])
+      ),
+
+      # Precipitation amount of the driest month
+      #   PPT_driestmonth -- Climate-PPT_driestmonth_mm_annual
+      PPT_driestmonth = 10 * tapply(
+        X = sim_data[["mon"]][["values"]][["ppt"]],
+        INDEX = sim_data[["mon"]][["time"]][, "Year"],
+        FUN = min
+      ),
+
+      # Potential evapotranspiration
+      #   PET -- Climate-PET_mm_annual
+      PET = 10 * sim_data[["yr"]][["values"]][["pet"]],
+
+      # Evapotranspiration
+      #   ET -- ET-ET_mm_annual
+      ET = 10 * sim_data[["yr"]][["values"]][["et"]],
+
+      # Climatic water deficit
+      #   CWD -- CWD-values
+      CWD = calc_CWD_mm(
+        pet_cm = sim_data[["yr"]][["values"]][["pet"]],
+        et_cm = sim_data[["yr"]][["values"]][["et"]]
+      ),
+
+      #   CWD_mon_corr_temp -- CWD-seasonality
+      CWD_mon_corr_temp = calc_CorXY_byYear(
+        # correlate against Tmean (unlike other seasonal timing metrics)
+        # because `metric_CWD()` uses Tmean
+        x = sim_data[["mon"]][["values"]][["tmean"]],
+        y = tmp_cwd,
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
+      #   CWD_mon_cv -- CWD-seasonal_variability
+      CWD_mon_cv = calc_seasonal_variability(
+        x = tmp_cwd,
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
+      #   DDD -- DDDat5C0to100cm30bar-values
+      DDD = tapply(
+        X = tmp_ddd[["values"]][["mdd"]],
+        INDEX = tmp_ddd[["time"]][, "Year"],
+        FUN = sum
+      ),
+
+      #   DSI_duration -- DSIat0to100cm15bar-mean
+      DSI_duration = tmp_dsi,
+
+      #   CorTempPPT -- CorTempPPT-seasonality
+      CorTempPPT = calc_CorXY_byYear(
+        # TODO: why `tmin` and not `tmean`?
+        x = sim_data[["mon"]][["values"]][["tmin"]],
+        y =  sim_data[["mon"]][["values"]][["ppt"]],
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
+      #   DeepDrainage -- DR-DeepDrainage_mm_annual
+      DeepDrainage = 10 * sim_data[["yr"]][["values"]][["drainage"]]
+    )
+  }
+
+  res
+}
+
+
+#' Annual time series underlying the 19 R&R predictors
 #'
-#' @section Notes:
-#'   Argument `fun_aggs_across_yrs` is ignored.
+#' The 19 predictors of resilience & resistance indicators
+#' (see `metric_RR2022predictors_annualClim()`) are long-term
+#' means, standard deviations, or coefficients of variation of
+#' annual values.
 #'
 #' @references JC Chambers et al. (in prep)
 #'
 #' @noRd
+#' @md
+metric_RR2022predictors_annual <- function(
+  path,
+  name_sw2_run,
+  id_scen_used,
+  list_years_scen_used,
+  out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
+  soils,
+  ...
+) {
+  out <- match.arg(out)
+
+  stopifnot(check_metric_arguments(
+    out = out,
+    req_soil_vars = "depth_cm"
+  ))
+
+  get_RR2022predictors_annual(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    id_scen_used = id_scen_used,
+    list_years_scen_used = list_years_scen_used,
+    out = out,
+    zipped_runs = zipped_runs,
+    soils = soils,
+    ...
+  )
+}
+
+
+
+#' 19 predictors of resilience & resistance indicators
+#'
+#' The 19 predictors of resilience & resistance indicators are long-term
+#' means, standard deviations, or coefficients of variation of
+#' annual values (see `metric_RR2022predictors_annual()`).
+#'
+#' @return A return object where `group` contains the following annual
+#' variables:
+#'    * `"Tmean_mean"`
+#'    * `"Trange_diurnal_mean"`
+#'    * `"Tmean_coldestmonth_mean"`
+#'    * `"Tmean_coldestmonth_sd"`
+#'    * `"Tmean_hottestmonth_sd"`
+#'    * `"PPT_mean"`
+#'    * `"PPT_cv"`
+#'    * `"Rain_mean"`
+#'    * `"PPTinJAS_mean"`
+#'    * `"PPT_driestmonth_mean"`
+#'    * `"PET_cv"`
+#'    * `"ET_cv"`
+#'    * `"CWD_mean"`
+#'    * `"CWD_mon_corr_temp_mean"`
+#'    * `"CWD_mon_cv_mean"`
+#'    * `"DDD_mean"`
+#'    * `"DSI_duration_mean"`
+#'    * `"CorTempPPT_mean"`
+#'    * `"DeepDrainage_mean"`
+#'
+#'
+#' @section Notes:
+#'   * Argument `fun_aggs_across_yrs` is ignored.
+#'   * Values are `NA` if any year is requested but un-simulated.
+#'
+#' @references JC Chambers et al. (in prep)
+#'
+#' @noRd
+#' @md
 metric_RR2022predictors_annualClim <- function(
   path,
   name_sw2_run,
   id_scen_used,
   list_years_scen_used,
   out = "across_years",
+  zipped_runs = FALSE,
   soils,
   ...
 ) {
@@ -1885,232 +2292,107 @@ metric_RR2022predictors_annualClim <- function(
     req_soil_vars = "depth_cm"
   ))
 
+
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
     tmp <- lapply(
       list_years_scen_used[[k1]],
       function(yrs) {
-        sim_data <- collect_sw2_sim_data(
+        tmpx <- get_RR2022predictors_annual(
           path = path,
           name_sw2_run = name_sw2_run,
-          id_scen = id_scen_used[k1],
-          years = yrs,
-          output_sets = list(
-            swp_daily = list(
-              sw2_tp = "Day",
-              sw2_outs = "SWPMATRIC",
-              sw2_vars = c(swp = "Lyr"),
-              varnames_are_fixed = FALSE
-            ),
-            temp_daily = list(
-              sw2_tp = "Day",
-              sw2_outs = "TEMP",
-              sw2_vars = c(tmean = "avg_C"),
-              varnames_are_fixed = TRUE
-            ),
-            swe_daily = list(
-              sw2_tp = "Day",
-              sw2_outs = "SNOWPACK",
-              sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
-              varnames_are_fixed = TRUE
-            ),
-            day = list(
-              sw2_tp = "Day",
-              sw2_outs = c("TEMP", "TEMP", "PET", "AET"),
-              sw2_vars = c(
-                tmax = "max_C",
-                tmin = "min_C",
-                pet = "pet_cm",
-                et = "evapotr_cm"
-              ),
-              varnames_are_fixed = TRUE
-            ),
-            mon = list(
-              sw2_tp = "Month",
-              sw2_outs = c("PRECIP", "TEMP", "TEMP"),
-              sw2_vars = c(ppt = "ppt", tmean = "avg_C", tmin = "min_C"),
-              varnames_are_fixed = TRUE
-            ),
-            yr = list(
-              sw2_tp = "Year",
-              sw2_outs = c("PRECIP", "PRECIP", "TEMP", "PET", "AET", "DEEPSWC"),
-              sw2_vars = c(
-                ppt = "ppt",
-                rain = "rain",
-                tmean = "avg_C",
-                pet = "pet_cm",
-                et = "evapotr_cm",
-                drainage = "lowLayerDrain_cm"
-              ),
-              varnames_are_fixed = TRUE
-            )
-          )
-        )
-
-
-        #--- Intermediate variables
-        tmp_cwd <- calc_new_yearly_aggregations(
-          x_daily = list(
-            time = sim_data[["day"]][["time"]],
-            values = list(
-              cwd = calc_CWD_mm(
-                pet_cm = sim_data[["day"]][["values"]][["pet"]],
-                et_cm = sim_data[["day"]][["values"]][["et"]]
-              )
-            )
-          ),
-          temp_monthly = sim_data[["mon"]], # (Monthly) mean air temperature
-          fun_time = sum,
-          fun_extreme = max,
-          output = c("seasonal_variability", "seasonality")
-        )
-
-        # DDDat5C0to100cm30bar
-        tmp_ddd <- calc_MDD_daily(
-          sim_data = sim_data,
+          id_scen_used = id_scen_used[k1],
+          list_years_scen_used = list(yrs),
+          out = "ts_years",
+          zipped_runs = zipped_runs,
           soils = soils,
-          used_depth_range_cm = c(0, 100),
-          t_periods = list(op = `>`, limit = 5),
-          sm_periods = list(op = `<`, limit = -3)
-        )
-
-        # DSIat0to100cm15bar-mean
-        tmp_dsi <- vapply(
-          calc_DSI(
-            swp_daily_negbar = sim_data[["swp_daily"]][["values"]][["swp"]],
-            time_daily = sim_data[["swp_daily"]][["time"]],
-            soils = soils,
-            used_depth_range_cm = c(0, 100),
-            SWP_limit_MPa = -1.5
-          ),
-          mean,
-          FUN.VALUE = NA_real_
-        )
+          ...
+        )[[1L]]
 
 
-        #--- RandomForest R&R predictors (2022-Feb-07)
+        #--- Calculate RandomForest R&R predictors (2022-Feb-07)
+        # Long-term means, standard deviations, or coefficients of variation of
+        # annual values
         as.matrix(c(
           # Annual mean temperature
           #   Tmean_mean -- TA-MAT_C__mean
-          Tmean_mean = mean(sim_data[["yr"]][["values"]][["tmean"]]),
+          Tmean_mean = mean(tmpx["Tmean", , drop = TRUE]),
 
           # Temperature range (difference between tmax and tmin)
           #   Trange_diurnal_mean -- Climate-Trange_diurnal_C_annual__mean
           Trange_diurnal_mean = mean(
-            tapply(
-              X =
-                sim_data[["day"]][["values"]][["tmax"]] -
-                sim_data[["day"]][["values"]][["tmin"]],
-              INDEX = sim_data[["day"]][["time"]][, "Year"],
-              FUN = mean
-            )
+            tmpx["Trange_diurnal_mean", , drop = TRUE]
           ),
 
           # Mean temperature of coldest month
           #   Tmean_coldestmonth_mean --
           #     Climate-Tmean_coldestmonth_C_annual__mean
           Tmean_coldestmonth_mean = mean(
-            tmp_tcold <- tapply(
-              X = sim_data[["mon"]][["values"]][["tmean"]],
-              INDEX = sim_data[["mon"]][["time"]][, "Year"],
-              FUN = min
-            )
+            tmpx["Tmean_coldestmonth", , drop = TRUE]
           ),
 
           #   Tmean_coldestmonth_sd -- Climate-Tmean_coldestmonth_C_annual__sd
-          Tmean_coldestmonth_sd = sd(tmp_tcold),
+          Tmean_coldestmonth_sd = sd(
+            tmpx["Tmean_coldestmonth", , drop = TRUE]
+          ),
 
           # Mean temperature of hottest month
           #   Tmean_hottestmonth_sd -- Climate-Tmean_hottestmonth_C_annual__sd
           Tmean_hottestmonth_sd = sd(
-            tapply(
-              X = sim_data[["mon"]][["values"]][["tmean"]],
-              INDEX = sim_data[["mon"]][["time"]][, "Year"],
-              FUN = max
-            )
+            tmpx["Tmean_hottestmonth", , drop = TRUE]
           ),
 
           # Annual precipitation amount
           #   PPT_mean -- PPT-MAP_mm__mean
-          PPT_mean = 10 * mean(
-            tmp_ppt <- sim_data[["yr"]][["values"]][["ppt"]]
-          ),
+          PPT_mean = mean(tmpx["PPT", , drop = TRUE]),
 
           #   PPT_cv -- PPT-MAP_mm__cv
-          PPT_cv = cv(tmp_ppt),
+          PPT_cv = cv(tmpx["PPT", , drop = TRUE]),
 
           # Annual rainfall amount
           #   Rain_mean -- Climate-Rain_mm_annual__mean
-          Rain_mean = 10 * mean(sim_data[["yr"]][["values"]][["rain"]]),
+          Rain_mean = mean(tmpx["Rain", , drop = TRUE]),
 
           # Precipitation amount in months of July, August, and September
           #   PPTinJAS_mean -- Climate-PPTinJAS_mm_annual__mean
-          PPTinJAS_mean = 10 * mean(
-            tapply(
-              X = sim_data[["mon"]][["values"]][["ppt"]],
-              INDEX = sim_data[["mon"]][["time"]][, "Year"],
-              FUN = function(x) sum(x[7:9])
-            )
-          ),
+          PPTinJAS_mean = mean(tmpx["PPTinJAS", , drop = TRUE]),
 
           # Precipitation amount of the driest month
           #   PPT_driestmonth_mean -- Climate-PPT_driestmonth_mm_annual__mean
-          PPT_driestmonth_mean = 10 * mean(
-            tapply(
-              X = sim_data[["mon"]][["values"]][["ppt"]],
-              INDEX = sim_data[["mon"]][["time"]][, "Year"],
-              FUN = min
-            )
-          ),
+          PPT_driestmonth_mean = mean(tmpx["PPT_driestmonth", , drop = TRUE]),
 
           # Potential evapotranspiration
           #   PET_cv -- Climate-PET_mm_annual__cv
-          PET_cv = cv(sim_data[["yr"]][["values"]][["pet"]]),
+          PET_cv = cv(tmpx["PET", , drop = TRUE]),
 
           # Evapotranspiration
           #   ET_cv -- ET-ET_mm_annual__cv
-          ET_cv = cv(sim_data[["yr"]][["values"]][["et"]]),
+          ET_cv = cv(tmpx["ET", , drop = TRUE]),
 
           # Climatic water deficit
           #   CWD_mean -- CWD-values__mean
-          CWD_mean = mean(
-            calc_CWD_mm(
-              pet_cm = sim_data[["yr"]][["values"]][["pet"]],
-              et_cm = sim_data[["yr"]][["values"]][["et"]]
-            )
-          ),
+          CWD_mean = mean(tmpx["CWD", , drop = TRUE]),
 
           #   CWD_mon_corr_temp_mean -- CWD-seasonality__mean
-          CWD_mon_corr_temp_mean = mean(tmp_cwd[, "seasonality"]),
+          CWD_mon_corr_temp_mean = mean(
+            tmpx["CWD_mon_corr_temp", , drop = TRUE]
+          ),
 
           #   CWD_mon_cv_mean -- CWD-seasonal_variability__mean
-          CWD_mon_cv_mean = mean(tmp_cwd[, "seasonal_variability"]),
+          CWD_mon_cv_mean = mean(tmpx["CWD_mon_cv", , drop = TRUE]),
 
           #   DDD_mean -- DDDat5C0to100cm30bar-values__mean
-          DDD_mean = mean(
-            tapply(
-              X = tmp_ddd[["values"]][["mdd"]],
-              INDEX = tmp_ddd[["time"]][, "Year"],
-              FUN = sum
-            )
-          ),
+          DDD_mean = mean(tmpx["DDD", , drop = TRUE]),
 
           #   DSI_duration_mean -- DSIat0to100cm15bar-mean__mean
-          DSI_duration_mean = mean(tmp_dsi),
+          DSI_duration_mean = mean(tmpx["DSI_duration", , drop = TRUE]),
 
           #   CorTempPPT_mean -- CorTempPPT-seasonality__mean
-          CorTempPPT_mean = mean(
-            calc_CorTempPPT(
-              # TODO: why `tmin` and not `tmean`?
-              mon_temp = sim_data[["mon"]][["values"]][["tmin"]],
-              mon_ppt =  sim_data[["mon"]][["values"]][["ppt"]],
-              mon_year = sim_data[["mon"]][["time"]][, "Year"]
-            )
-          ),
+          CorTempPPT_mean = mean(tmpx["CorTempPPT", , drop = TRUE]),
 
           #   DeepDrainage_mean -- DR-DeepDrainage_mm_annual__mean
-          DeepDrainage_mean = mean(sim_data[["yr"]][["values"]][["drainage"]])
+          DeepDrainage_mean = mean(tmpx["DeepDrainage", , drop = TRUE])
         ))
       }
     )
@@ -2120,3 +2402,39 @@ metric_RR2022predictors_annualClim <- function(
 
   res
 }
+
+
+
+#' Annual time series of ecological drought metrics
+#'
+#' @references Chenoweth et al. (in revision)
+#'
+#' @section Details:
+#' The following functions produce all metrics used by Chenoweth et al.:
+#'   * climate metrics
+#'       * `metric_Climate_annual()`
+#'       * `metric_AI()`
+#'   * overall conditions
+#'       * `metric_CWD()`
+#'       * `metric_SWAat0to100cm39bar()`
+#'       * `metric_TDDat5C()`
+#'       * `metric_DDDat5C0to100cm30bar()`
+#'       * `metric_WDDat5C0to100cm15bar()`
+#'       * `metric_FrostDaysAtNeg5C()`
+#'   * extreme drought
+#'       * `metric_CWD()`
+#'       * `metric_DDDat5C0to100cm30bar()`
+#'       * `metric_DSIat0to100cm15bar()`
+#'       * `metric_DSIat0to100cm15bar()`
+#'   * seasonal timing
+#'       * `metric_CorTempPPT()`
+#'       * `metric_CWD()`
+#'       * `metric_SWAat0to100cm39bar()`
+#'       * `metric_WDDat5C0to100cm15bar()`
+#'   * seasonal variability
+#'       * `metric_CWD()`
+#'       * `metric_SWAat0to100cm39bar()`
+#'       * `metric_TDDat5C()`
+#'
+#' @noRd
+NULL

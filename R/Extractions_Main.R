@@ -410,12 +410,24 @@ extract_metrics <- function(args) {
   dir_runs_rSFSW2 <- list.files(prjpars[["dir_sw2_output"]], full.names = TRUE)
   stopifnot(length(dir_runs_rSFSW2) > 0)
   run_rSFSW2_names <- basename(dir_runs_rSFSW2)
+  zipped_runs <- endsWith(run_rSFSW2_names, ".zip")
+
+  if (all(zipped_runs) || !any(zipped_runs)) {
+    zipped_runs <- all(zipped_runs)
+  } else {
+    stop("All or no output may be stored in zip archives but not mixed.")
+  }
+
 
   # (Shortened) run identifier
   tag_run_rSFSW2_names <- if (prjpars[["N_exp"]] == 1) {
     prjpars[["make_short_run_names"]](run_rSFSW2_names)
   } else {
     run_rSFSW2_names
+  }
+
+  if (zipped_runs) {
+    tag_run_rSFSW2_names <- gsub("\\.zip$", "", tag_run_rSFSW2_names)
   }
 
 
@@ -529,7 +541,8 @@ extract_metrics <- function(args) {
   if (do_collect_inputs) {
     fun_args <- list(
       path = prjpars[["dir_sw2_output"]],
-      Nmax_soillayers = prjpars[["Nmax_soillayers"]]
+      Nmax_soillayers = prjpars[["Nmax_soillayers"]],
+      zipped_runs = zipped_runs
     )
 
   } else {
@@ -543,7 +556,8 @@ extract_metrics <- function(args) {
       },
       fun_aggs_across_yrs = prjpars[["fun_aggs_across_yrs"]],
       group_by_month = prjpars[["season_by_month"]],
-      first_month_of_year = prjpars[["first_month_of_year"]]
+      first_month_of_year = prjpars[["first_month_of_year"]],
+      zipped_runs = zipped_runs
     )
 
 
@@ -611,6 +625,7 @@ extract_metrics <- function(args) {
     has_sw2_output <- check_all_output_available_of_run(
       path_to_run = file.path(fun_args[["path"]], run_rSFSW2_names[s]),
       N_scen = prjpars[["N_scen"]],
+      zipped_runs = fun_args[["zipped_runs"]],
       check_input = prjpars[["has_rSOILWAT2_inputs"]]
     )
 
@@ -718,6 +733,7 @@ process_values_one_site <- function(
       path = fun_args[["path"]],
       name_sw2_run = name_sw2_run,
       name_sw2_run_soils = name_sw2_run_soils,
+      zipped_runs = fun_args[["zipped_runs"]],
       soils = soils,
       soil_variables = soil_variables
     )
@@ -788,8 +804,8 @@ format_metric_Nsim <- function(
   }
 
 
-  #--- Add run identifiers
-  x[, 1] <- names[x[, 1]]
+  #--- Add run identifiers (remove ".zip")
+  x[, 1] <- gsub("\\.zip$", "", names)[x[, 1]]
 
 
   #--- Add column names
@@ -857,13 +873,38 @@ format_metric_Nsim <- function(
 
 
 
-#' Interface to formatted output of a metric for one simulation
+#' Direct interface to formatted output of a metric for one simulation
+#'
+#' @examples
+#' path <- "path/to/run"
+#' runname = "name_of_sim_folder"
+#' res <- rSW2metrics:::formatted_metric_1sim(
+#'   metric_foo_name = "metric_RR2022predictors_annualClim",
+#'   foo_args = list(
+#'     path = path,
+#'     name_sw2_run = runname,
+#'     zipped_runs = FALSE,
+#'     id_scen_used = 1,
+#'     list_years_scen_used = list(list(hist = 1980:2020)),
+#'     out = "across_years",
+#'     soils = rSW2metrics:::prepare_soils_for_site(
+#'       path = path,
+#'       name_sw2_run = runname,
+#'       name_sw2_run_soils = runname,
+#'       zipped_runs = FALSE
+#'     ),
+#'     fun_aggs_across_yrs = "mean"
+#'   ),
+#'   do_collect_inputs = FALSE
+#' )
+#'
 #' @noRd
 formatted_metric_1sim <- function(
   metric_foo_name,
   foo_args = list(
     path = NULL,
     name_sw2_run = NULL,
+    zipped_runs = FALSE,
     id_scen_used = NULL,
     list_years_scen_used = NULL,
     soils = NULL,
@@ -874,6 +915,7 @@ formatted_metric_1sim <- function(
 
   req_arg_names <- c(
     "path", "name_sw2_run",
+    "zipped_runs",
     "id_scen_used", "list_years_scen_used",
     "soils",
     "out"
@@ -891,7 +933,10 @@ formatted_metric_1sim <- function(
 
   is_out_ts <- identical(foo_args[["out"]], "ts_years")
 
-  if (is_out_ts) {
+  if (foo_args[["out"]] == "raw") {
+    res
+  } else {
+
     prjpars <- list(id_scen_used = foo_args[["id_scen_used"]])
     if (is_out_ts) {
       prjpars[["years_timeseries_by_scen"]] <-
@@ -909,8 +954,5 @@ formatted_metric_1sim <- function(
       fun_name = metric_foo_name,
       is_out_ts = is_out_ts
     )
-
-  } else if (foo_args[["out"]] == "raw") {
-    res
   }
 }

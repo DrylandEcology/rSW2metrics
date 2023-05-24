@@ -10,11 +10,12 @@ metric_SW2toTable_daily(
   name_sw2_run,
   id_scen_used,
   list_years_scen_used,
+  zipped_runs = FALSE,
   out = "across_years",
   dir_out_SW2toTable = file.path("..", "Outputs"),
   format_share_SW2toTable = c("rds", "csv"),
   outputs_SW2toTable = c("all", "meteo", "snow", "radiation", "waterbalance",
-    "evapotranspiration", "soiltemperature", "VWC", "SWP", "SWAat30bar"),
+    "evapotranspiration", "soiltemperature", "VWC", "SWP", "SWAat30bar", "MDD"),
   share_soillayer_ids = NULL,
   ...
 )
@@ -23,8 +24,9 @@ metric_SW2toTable_daily(
 \item{path}{A character string. The path to the simulation project folder
 that contains the individual folder of each simulated site.}
 
-\item{name_sw2_run}{A character string. The name of the folder of the
-simulated site for which metrics are to be calculated.
+\item{name_sw2_run}{A character string. The name of the folder
+(or zip archive, see \code{zipped_runs}) of the simulated site
+for which metrics are to be calculated.
 \pkg{rSOILWAT2} input and output is organized following conventions of
 \pkg{rSFSW2}, i.e., inputs for each scenario are stored in a list object
 named \var{\dQuote{swRunScenariosData}} which is stored
@@ -40,6 +42,9 @@ metrics are to be calculated.}
 \item{list_years_scen_used}{A list of integer vectors.
 Each scenario in \code{id_scen_used} must have a corresponding vector of
 calendar years (for which the metrics) will be calculated.}
+
+\item{zipped_runs}{A logical value. Describes whether \code{name_sw2_run}
+is a zip archive or a regular folder.}
 
 \item{out}{A character string. Signaling whether the functions returns
 a time series of yearly values or an aggregate (e.g., mean) across years.

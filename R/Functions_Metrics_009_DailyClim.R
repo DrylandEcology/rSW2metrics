@@ -6,6 +6,7 @@ metric_Tmean_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
   fun_aggs_across_yrs = mean,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -29,7 +30,8 @@ metric_Tmean_dailyClim <- function(
               sw2_vars = c(tmean = "avg_C"),
               varnames_are_fixed = TRUE
             )
-          )
+          ),
+          zipped_runs = zipped_runs
         )
 
         format_values_to_matrix(
@@ -59,6 +61,7 @@ metric_PPT_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
   fun_aggs_across_yrs = mean,
+  zipped_runs = FALSE,
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
@@ -82,7 +85,8 @@ metric_PPT_dailyClim <- function(
               sw2_vars = "ppt",
               varnames_are_fixed = TRUE
             )
-          )
+          ),
+          zipped_runs = zipped_runs
         )
 
         format_values_to_matrix(
@@ -112,6 +116,7 @@ metric_SWAat0to020cm39bar_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
   fun_aggs_across_yrs = mean,
+  zipped_runs = FALSE,
   soils,
   ...
 ) {
@@ -133,6 +138,7 @@ metric_SWAat0to020cm39bar_dailyClim <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
+    zipped_runs = zipped_runs,
     fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWAat0to020cm39bar_mm",
     soils = soils,
@@ -148,6 +154,7 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
   fun_aggs_across_yrs = mean,
+  zipped_runs = FALSE,
   soils,
   ...
 ) {
@@ -169,6 +176,7 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
+    zipped_runs = zipped_runs,
     fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWAat20to100cm39bar_mm",
     soils = soils,
@@ -186,11 +194,10 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
 #' After soil moisture has been aggregated across soil layers
 #' if requested (`method` is `"across_profile"`) and
 #' aggregated across years if requested (`out` is `"across_years"`), then
-#' a pedotransfer function of the water release curve is used to
+#' the water release curve employed during the simulation run is used to
 #' translate volumetric water content `VWC` into `SWP`, i.e.,
-#' \deqn{SWP[i,matric] = f(VWC, soil texture[i])}
-#' where soil texture is the weight fractions of sand, clay, and silt of
-#' the matric soil component.
+#' \deqn{SWP[i,matric] = f(VWC, SWRCp[i])}
+#' where `SWRCp` are the parameters describing the water release curve.
 #' Note, the translation is only valid for the matric soil, i.e.,
 #' the component without coarse fragments.
 #'
@@ -293,6 +300,7 @@ calc_SWP_MPa <- function(
     # No soil layers in the depth range
     used_time <- switch(out, ts_years = time, across_years = unique(time))
     values <- as.data.frame(rep_len(NA, length.out = length(used_time)))
+    colnames(values) <- NULL
   }
 
   list(
@@ -311,6 +319,7 @@ get_SWP_daily <- function(
   used_depth_range_cm = NULL,
   method = "across_profile",
   out = c("ts_years", "across_years"),
+  zipped_runs = FALSE,
   fun_aggs_across_yrs = mean,
   out_label = "SWP_MPa",
   include_year = FALSE,
@@ -341,7 +350,8 @@ get_SWP_daily <- function(
               sw2_vars = c(swc = "Lyr"),
               varnames_are_fixed = FALSE
             )
-          )
+          ),
+          zipped_runs = zipped_runs
         )
 
         swp_daily <- calc_SWP_MPa(
@@ -389,6 +399,7 @@ get_SWP_daily <- function(
 metric_SWPat0to020cm_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  zipped_runs = FALSE,
   fun_aggs_across_yrs = mean,
   soils,
   ...
@@ -411,6 +422,7 @@ metric_SWPat0to020cm_dailyClim <- function(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out = out,
+    zipped_runs = zipped_runs,
     fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWPat0to020cm_MPa",
     soils = soils,
@@ -424,6 +436,7 @@ metric_SWPat0to020cm_dailyClim <- function(
 metric_SWPat20to100cm_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "across_years",
+  zipped_runs = FALSE,
   fun_aggs_across_yrs = mean,
   soils,
   ...
@@ -445,6 +458,7 @@ metric_SWPat20to100cm_dailyClim <- function(
   get_SWP_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    zipped_runs = zipped_runs,
     out = out,
     fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWPat20to100cm_MPa",

@@ -311,7 +311,7 @@ mean_cv_mmk <- function(x, na.rm = TRUE, ...) {
     mtmp
 
   } else {
-    NA
+    rep(NA_real_, 2L)
   }
 
   c(
@@ -365,7 +365,7 @@ mean_sd_cv_mmk <- function(x, na.rm = TRUE, ...) {
     mtmp
 
   } else {
-    NA
+    rep(NA_real_, 2L)
   }
 
   c(

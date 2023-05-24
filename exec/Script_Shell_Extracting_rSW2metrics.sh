@@ -53,6 +53,8 @@ Rscript Script_to_Extract_Metric.R -o=Radiation_annual -fun=metric_Radiation_ann
 Rscript Script_to_Extract_Metric.R -o=Radiation_monthly -fun=metric_Radiation_monthly ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=RecruitmentIndex_v4 -fun=metric_RecruitmentIndex_v4 ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=RecruitmentIndex_v5 -fun=metric_RecruitmentIndex_v5 ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=RR2022predictors_annual -fun=metric_RR2022predictors_annual ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=RR2022predictors_annualClim -fun=metric_RR2022predictors_annualClim ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SemiDryDuration_Annual_top50cm -fun=metric_SemiDryDuration_Annual_top50cm ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SemiDryDuration_Annual_wholeprofile -fun=metric_SemiDryDuration_Annual_wholeprofile ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SMTRs_annualClim -fun=metric_SMTRs ${mode} ${parallel} ${prjoptions}

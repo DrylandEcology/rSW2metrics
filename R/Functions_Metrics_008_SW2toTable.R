@@ -35,13 +35,14 @@
 #' @export
 metric_SW2toTable_daily <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
+  zipped_runs = FALSE,
   out = "across_years",
   dir_out_SW2toTable = file.path("..", "Outputs"),
   format_share_SW2toTable = c("rds", "csv"),
   outputs_SW2toTable = c(
     "all", "meteo", "snow",
     "radiation", "waterbalance", "evapotranspiration",
-    "soiltemperature", "VWC", "SWP", "SWAat30bar"
+    "soiltemperature", "VWC", "SWP", "SWAat30bar", "MDD"
   ),
   share_soillayer_ids = NULL,
   ...
@@ -76,43 +77,35 @@ metric_SW2toTable_daily <- function(
 
 
     # Extract rSOILWAT2 input object: `swRunScenariosData`
-    sim_input <- new.env(parent = emptyenv())
-    load(
-      file = file.path(path, name_sw2_run, "sw_input.RData"),
-      envir = sim_input
+    sim_input <- load_sw2_rda(
+      path = file.path(path, name_sw2_run),
+      fname = "sw_input.RData",
+      zipped_runs = zipped_runs
     )
-
 
     #--- Load rSOILWAT2 output object: `runDataSC`
-    sim_data <- new.env(parent = emptyenv())
-    load(
-      file = file.path(
-        path,
-        name_sw2_run,
-        paste0("sw_output_sc", id_scen_used[k1], ".RData")
-      ),
-      envir = sim_data
-    )
-    sim_data <- sim_data[["runDataSC"]]
+    sim_data <- load_sw2_rda(
+      path = file.path(path, name_sw2_run),
+      fname = paste0("sw_output_sc", id_scen_used[k1], ".RData"),
+      zipped_runs = zipped_runs
+    )[["runDataSC"]]
 
 
-    #--- Prepare data
+    #---* Prepare data ------
     # Soil layers
     soils <- rSOILWAT2::swSoils_Layers(
       sim_input[["swRunScenariosData"]][[id_scen_used[k1]]]
     )
-    depths0 <- formatC(
-      c(0, soils[, "depth_cm"]),
-      width = width_soiltag,
-      flag = 0
-    )
+    depths0 <- c(0, soils[, "depth_cm"])
+    widths_cm <- diff(depths0)
+    depths0_str <- formatC(depths0, width = width_soiltag, flag = 0)
     soil_widths_str <- paste0(
-      depths0[-length(depths0)],
+      depths0_str[-length(depths0_str)],
       "to",
-      depths0[-1],
+      depths0_str[-1],
       "_cm"
     )
-    soil_lowerdepths_str <- paste0(depths0[-1], "_cm")
+    soil_lowerdepths_str <- paste0(depths0_str[-1], "_cm")
 
     nlyrs_sim <- nrow(soils)
     ids_cols <- if (!is.null(share_soillayer_ids)) {
@@ -121,21 +114,33 @@ metric_SW2toTable_daily <- function(
       seq_len(nlyrs_sim)
     }
 
+    if (any(c("all", "SWAat30bar", "MDD") %in% outputs_SW2toTable)) {
+      mtrcs_soils <- list(
+        depth_cm = soils[, "depth_cm"],
+        sand_frac = soils[, "sand_frac"],
+        clay_frac = soils[, "clay_frac"],
+        gravel_content = soils[, "gravel_content"]
+      )
+    }
+
+
+    #--- Prepare moisture data
     # VWC
-    sim_vwc <- slot(slot(sim_data, var_vwc), "Day")
+    tmp_vwc <- slot(slot(sim_data, var_vwc), "Day")
 
     # SWC (SOILWAT2 units, i.e., centimeters)
-    sim_swc <- slot(slot(sim_data, var_swc), "Day")
+    tmp_swc <- slot(slot(sim_data, var_swc), "Day")
 
-    sim_sim <- if (nrow(sim_vwc) > 0) {
-      sim_vwc
-    } else if (nrow(sim_swc) > 0) {
-      sim_swc
+    sim_sim <- if (nrow(tmp_vwc) > 0) {
+      tmp_vwc
+    } else if (nrow(tmp_swc) > 0) {
+      tmp_swc
     } else {
       stop("Neither ", var_vwc, " nor ", var_swc, " was stored as output.")
     }
 
-    # Calendar dates
+
+    #--- * Calendar dates ------
     dates <- as.POSIXlt(strptime(
       paste(sim_sim[, "Year"], sim_sim[, "Day"], sep = "-"),
       format = "%Y-%j"
@@ -152,6 +157,11 @@ metric_SW2toTable_daily <- function(
     ))
     # nolint end
 
+    sim_vwc <- tmp_vwc[, 2 + ids_cols, drop = FALSE]
+    sim_swc <- tmp_swc[, 2 + ids_cols, drop = FALSE]
+
+
+    #--- * meteo ------
     if (any(c("all", "meteo") %in% outputs_SW2toTable)) {
       data_sim[["meteo"]] <- cbind(
         Input_AirTemp_max_C = slot(slot(sim_data, "TEMP"), "Day")[, "max_C"],
@@ -160,15 +170,25 @@ metric_SW2toTable_daily <- function(
       )
     }
 
+
+    #--- * snow ------
+    sim_swe <- if (
+      any(c("all", "snow", "MDD") %in% outputs_SW2toTable)
+    ) {
+      slot(
+        slot(sim_data, "SNOWPACK"),
+        "Day"
+      )[, "snowpackWaterEquivalent_cm"]
+    }
+
     if (any(c("all", "snow") %in% outputs_SW2toTable)) {
       data_sim[["snow"]] <- cbind(
-        Sim_SWE_mm = 10 * slot(
-          slot(sim_data, "SNOWPACK"),
-          "Day"
-        )[, "snowpackWaterEquivalent_cm"]
+        Sim_SWE_mm = 10 * sim_swe
       )
     }
 
+
+    #--- * radiation ------
     if (any(c("all", "radiation") %in% outputs_SW2toTable)) {
       data_sim[["radiation"]] <- cbind(
         `Sim_Hoh_MJm-2` = slot(slot(sim_data, "PET"), "Day")[, "H_oh_MJm-2"],
@@ -176,6 +196,8 @@ metric_SW2toTable_daily <- function(
       )
     }
 
+
+    #--- * waterbalance ------
     if (any(c("all", "waterbalance") %in% outputs_SW2toTable)) {
       data_sim[["waterbalance"]] <- cbind(
         Sim_Infiltration_mm = 10 * slot(
@@ -189,10 +211,13 @@ metric_SW2toTable_daily <- function(
       )
     }
 
+
+    #--- * evapotranspiration ------
     if (any(c("all", "evapotranspiration") %in% outputs_SW2toTable)) {
       et <- 10 * slot(slot(sim_data, "AET"), "Day")
 
       data_sim[["evapotranspiration"]] <- cbind(
+        Sim_PET_mm = 10 * slot(slot(sim_data, "PET"), "Day")[, "pet_cm"],
         Sim_ET_mm = et[, "evapotr_cm"],
         Sim_T_mm = if ("tran_cm" %in% colnames(et)) {
           et[, "tran_cm"]
@@ -231,6 +256,8 @@ metric_SW2toTable_daily <- function(
       )
     }
 
+
+    #--- * soiltemperature ------
     if (any(c("all", "soiltemperature") %in% outputs_SW2toTable)) {
 
       if (getNamespaceVersion("rSOILWAT2") >= as.numeric_version("5.3.1")) {
@@ -287,15 +314,17 @@ metric_SW2toTable_daily <- function(
       data_sim[["soiltemperature"]] <- tmp_soiltemp
     }
 
+
+    #--- * VWC ------
     if (any(c("all", "VWC") %in% outputs_SW2toTable)) {
       tmp <- if (nrow(sim_vwc) > 0) {
-        sim_vwc[, 2 + ids_cols, drop = FALSE]
+        sim_vwc
       } else if (nrow(sim_swc) > 0) {
-        # calculate VWC as SWC / depth
+        # calc VWC (bulk) as SWC / width, see `rSOILWAT2::get_soilmoisture()`
         sweep(
-          sim_swc[, 2 + ids_cols, drop = FALSE],
+          sim_swc,
           MARGIN = 2,
-          STATS = soils[ids_cols, "depth_cm"],
+          STATS = widths_cm[ids_cols],
           FUN = "/"
         )
       }
@@ -304,27 +333,30 @@ metric_SW2toTable_daily <- function(
       data_sim[["VWC"]] <- tmp
     }
 
-    if (any(c("all", "SWP") %in% outputs_SW2toTable)) {
-      tmp <- -1 / 10 * slot(
+
+    #--- * SWP ------
+    sim_swp <- if (
+      any(c("all", "SWP", "MDD") %in% outputs_SW2toTable)
+    ) {
+      slot(
         slot(sim_data, "SWPMATRIC"),
         "Day"
       )[, 2 + ids_cols, drop = FALSE]
-      colnames(tmp) <- paste0("Sim_SWP_MPa_", soil_widths_str[ids_cols])
-
-      data_sim[["SWP"]] <- tmp
     }
 
+    if (any(c("all", "SWP") %in% outputs_SW2toTable)) {
+      colnames(sim_swp) <- paste0("Sim_SWP_MPa_", soil_widths_str[ids_cols])
+      data_sim[["SWP"]] <- -1 / 10 * sim_swp
+    }
+
+
+    #--- * SWAat30bar ------
     if (any(c("all", "SWAat30bar") %in% outputs_SW2toTable)) {
       tmp <- calc_SWA_mm(
         sim_swc_daily = list(
-          values = list(swc = sim_swc[, 2 + ids_cols, drop = FALSE])
+          values = list(swc = sim_swc)
         ),
-        soils = list(
-          depth_cm = soils[, "depth_cm"],
-          sand_frac = soils[, "sand_frac"],
-          clay_frac = soils[, "clay_frac"],
-          gravel_content = soils[, "gravel_content"]
-        ),
+        soils = mtrcs_soils,
         used_depth_range_cm = NULL,
         SWP_limit_MPa = -3,
         method = "by_layer"
@@ -335,6 +367,60 @@ metric_SW2toTable_daily <- function(
       data_sim[["SWAat30bar"]] <- tmp
     }
 
+
+    #--- * MDD (moisture degree days) ------
+    if (any(c("all", "MDD") %in% outputs_SW2toTable)) {
+      mdd_data <- list(
+        swp_daily = list(
+          values = list(swp = sim_swp),
+          time = array(dim = c(nrow(sim_swp), 1L))
+        ),
+        temp_daily = list(
+          values = list(
+            tmean = slot(slot(sim_data, "TEMP"), "Day")[, "avg_C"]
+          )
+        ),
+        swe_daily = list(
+          values = list(swe = sim_swe)
+        )
+      )
+
+      # see `metric_TDDat5C()`
+      tmp_tdd <- calc_MDD_daily(
+        sim_data = mdd_data,
+        soils = mtrcs_soils,
+        used_depth_range_cm = NULL,
+        t_periods = list(op = `>`, limit = 5),
+        sm_periods = list(op = `>`, limit = -Inf)
+      )[["values"]][[1]]
+
+      # see `metric_WDDat5C0to100cm15bar()`
+      tmp_wdd <- calc_MDD_daily(
+        sim_data = mdd_data,
+        soils = mtrcs_soils,
+        used_depth_range_cm = c(0, 100),
+        t_periods = list(op = `>`, limit = 5),
+        sm_periods = list(op = `>`, limit = -1.5)
+      )[["values"]][[1]]
+
+      # see `metric_DDDat5C0to100cm30bar()`
+      tmp_ddd <- calc_MDD_daily(
+        sim_data = mdd_data,
+        soils = mtrcs_soils,
+        used_depth_range_cm = c(0, 100),
+        t_periods = list(op = `>`, limit = 5),
+        sm_periods = list(op = `<`, limit = -3)
+      )[["values"]][[1]]
+
+      data_sim[["MDD"]] <- cbind(
+        Sim_TDDat5C_Cxday = tmp_tdd,
+        Sim_WDDat5C0to100cm15bar_Cxday = tmp_wdd,
+        Sim_DDDat5C0to100cm30bar_Cxday = tmp_ddd
+      )
+    }
+
+
+    #--- * Pull everything together and write csv to disk ------
     data_sim <- do.call(cbind, data_sim)
 
     # Write to disk
@@ -351,7 +437,7 @@ metric_SW2toTable_daily <- function(
   }
 
 
-  #--- Produce a mock "metric" as the package expects
+  #---* Produce a mock "metric" as the package expects ------
   lapply(
     id_scen_used,
     function(k1) {
