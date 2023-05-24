@@ -1,4 +1,4 @@
-# rSW2metrics v0.2.0-9000
+# rSW2metrics v0.2.0
 * `rSW2metrics` can now handle simulation output that is stored either in
   zipped archives (or in folders as before); metric and extraction functions
   gained a logical argument `zipped_runs`.
