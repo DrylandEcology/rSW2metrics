@@ -1,4 +1,11 @@
 # rSW2metrics v0.3.0-9000
+* `rSW2metrics` can now utilize new functionality for
+  soil water retention curves `SWRC` introduced with `rSOILWAT2` `v6.0.0` while
+  continuing to support earlier versions
+    * new internal `convert_with_swrc()` translates between
+      volumetric water content and soil water potential
+      for any suitable version combination of `rSOILWAT2` input objects
+      and currently installed `rSOILWAT2` package
 
 
 # rSW2metrics v0.2.0

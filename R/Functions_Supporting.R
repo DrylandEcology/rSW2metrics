@@ -1612,3 +1612,80 @@ collect_sw2_sim_data <- function(
 
   res
 }
+
+
+#' Translates between `VWC` and `SWP` using a soil water retention curve
+#'
+#' Available functionality depends on the currently installed version
+#' of `rSOILWAT2` and of the version of `rSOILWAT2` that was used
+
+
+#' Convert between `VWC` and `SWP` using a soil water retention curve
+#'
+#' @param x A numeric object with values of either
+#' volumetric water content or of soil water potential.
+#' @param direction A text string.
+#' @param use_swrc_v6 A logical value whether the new `SWRC` funtionality
+#' with `rSOILWAT2` `>= v6.0.0` can be used, see
+#' [load_swrcp_and_usage()].
+#' @param fcoarse A numeric vector. Set to zero values if `vwc` represent
+#' the matric component.
+#' @param sand A numeric vector.
+#' @param clay A numeric vector.
+#' @param swrcp A numeric matrix with parameters of the `SWRC`,
+#' see [`rSOILWAT2::SWRCs`].
+#' @param swrc_name A text string; the name of the `SWRC`,
+#' see [rSOILWAT2::swrc_names()].
+#'
+#' @seealso [rSOILWAT2::swrc_conversion()]
+#'
+#' @section Details:
+#' Available functionality depends on the currently installed version
+#' of `rSOILWAT2` and of the version of `rSOILWAT2` that was used
+#' to create the simulation input object `sw_in`, see
+#' [load_swrcp_and_usage()].
+#'
+#' @section Details:
+#' If `use_swrc_v6` is `TRUE`, then `fcoarse`, `swrcp`, and `swrc_name`
+#' are required arguments.
+#' @section Details:
+#' If `use_swrc_v6` is `FALSE`, then `sand` and `clay` are required
+#' arguments.
+#'
+convert_with_swrc <- function(
+  x,
+  direction = c("vwc_to_swp", "swp_to_vwc"),
+  use_swrc_v6 = getNamespaceVersion("rSOILWAT2") >= as.numeric_version("6.0.0"),
+  fcoarse = NULL,
+  sand = NULL,
+  clay = NULL,
+  swrcp = NULL,
+  swrc_name = NULL
+) {
+
+  direction <- match.arg(direction)
+  use_swrc_v6 <- isTRUE(as.logical(use_swrc_v6[[1L]]))
+
+  if (use_swrc_v6) {
+    # `rSOILWAT2::swrc_swp_to_vwc()` expects bulk VWC`;
+    # set `fcoarse` to zero if `vwc` represent the matric component
+    rSOILWAT2::swrc_conversion(
+      direction = direction,
+      x = x,
+      fcoarse = fcoarse,
+      swrc = list(
+        swrc_name = swrc_name,
+        swrcp = swrcp
+      )
+    )
+
+  } else {
+    fun <- switch(
+      EXPR = direction,
+      vwc_to_swp = rSOILWAT2::VWCtoSWP,
+      swp_to_vwc = rSOILWAT2::SWPtoVWC
+    )
+
+    fun(x, sand = sand, clay = clay)
+  }
+}
