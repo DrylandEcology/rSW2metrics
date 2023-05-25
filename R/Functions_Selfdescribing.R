@@ -22,6 +22,11 @@ has_fun_soils_as_arg <- function(fun) {
   isTRUE("soils" %in% names(formals(fun)))
 }
 
+
+has_fun_swrc_as_arg <- function(fun) {
+  isTRUE("swrcp_and_usage" %in% names(formals(fun)))
+}
+
 has_fun_ts_as_output <- function(fun) {
   tmp <- sort(eval(formals(fun)[["out"]]))
   isTRUE(identical(tmp, "ts_years") || identical(tmp, c("raw", "ts_years")))

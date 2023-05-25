@@ -6,6 +6,13 @@
       volumetric water content and soil water potential
       for any suitable version combination of `rSOILWAT2` input objects
       and currently installed `rSOILWAT2` package
+    * new internal `has_fun_swrc_as_arg()` detects if a metric function
+      requires a `SWRC` translation by checking for the presence of a
+      `"swrcp_and_usage"` argument
+    * metrics that require a `SWRC` translation gain argument
+      `"swrcp_and_usage"`; this argument contains all necessary information
+      about the `SWRC` which was active during a simulation, and is then
+      internally used to call `convert_with_swrc()`
 
 
 # rSW2metrics v0.2.0
