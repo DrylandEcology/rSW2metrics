@@ -444,3 +444,97 @@ extract_from_sw2 <- function(
     values = x_vals
   )
 }
+
+
+
+
+get_swp_weighted <- function(
+  path, name_sw2_run, id_scen,
+  years,
+  soils,
+  zipped_runs = FALSE,
+  used_depth_range_cm = NULL,
+  ...
+) {
+  warning("`get_swp_weighted()` uses matric-VWC!")
+  .Deprecated("SWRC not implemented.")
+
+  vwc <- extract_from_sw2(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
+    id_scen = id_scen,
+    years = years,
+    sw2_tp = "Day",
+    sw2_outs = "VWCMATRIC",
+    sw2_vars = "Lyr",
+    varnames_are_fixed = FALSE
+  )
+
+  N_days <- nrow(vwc[["values"]][[1]])
+
+  T_by_lyr <- extract_from_sw2(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
+    id_scen = id_scen,
+    years = years,
+    sw2_tp = "Day",
+    sw2_outs = "TRANSP",
+    sw2_vars = "transp_total_Lyr",
+    varnames_are_fixed = FALSE
+  )
+
+  widths_cm <- calc_soillayer_weights(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm
+  )
+
+  id_slyrs <- which(!is.na(widths_cm))
+  widths_cm <- widths_cm[id_slyrs]
+
+
+  tmp <- rep(NA, N_days)
+
+  for (k in seq_len(N_days)) {
+    tmp[k] <- if (sum(T_by_lyr[["values"]][[1]][k, id_slyrs]) > 0) {
+      # values weighted by transpiration per layer
+      rSOILWAT2::VWCtoSWP(
+        vwc = weighted.mean(
+          x = vwc[["values"]][[1]][k, id_slyrs],
+          w = T_by_lyr[["values"]][[1]][k, id_slyrs]
+        ),
+        sand = weighted.mean(
+          x = soils[["sand_frac"]][id_slyrs],
+          w = T_by_lyr[["values"]][[1]][k, id_slyrs]
+        ),
+        clay = weighted.mean(
+          x = soils[["clay_frac"]][id_slyrs],
+          w = T_by_lyr[["values"]][[1]][k, id_slyrs]
+        )
+      )
+
+    } else {
+      # values weighted by layer width
+      rSOILWAT2::VWCtoSWP(
+        vwc = weighted.mean(
+          x = vwc[["values"]][[1]][k, id_slyrs],
+          w = widths_cm
+        ),
+        sand = weighted.mean(
+          x = soils[["sand_frac"]][id_slyrs],
+          w = widths_cm
+        ),
+        clay = weighted.mean(
+          x = soils[["clay_frac"]][id_slyrs],
+          w = widths_cm
+        )
+      )
+    }
+  }
+
+  list(
+    time = vwc[["time"]],
+    values = list(swp_weighted = tmp)
+  )
+}
