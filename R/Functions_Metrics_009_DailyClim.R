@@ -118,6 +118,7 @@ metric_SWAat0to020cm39bar_dailyClim <- function(
   fun_aggs_across_yrs = mean,
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -142,6 +143,7 @@ metric_SWAat0to020cm39bar_dailyClim <- function(
     fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWAat0to020cm39bar_mm",
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9
   )
@@ -156,6 +158,7 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
   fun_aggs_across_yrs = mean,
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -180,6 +183,7 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
     fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWAat20to100cm39bar_mm",
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9
   )
@@ -202,12 +206,10 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
 #' the component without coarse fragments.
 #'
 #'
+#' @inheritParams metrics
 #' @param sim_swc_daily A numeric two-dimensional object with
 #'    daily \var{"swc"} for each soil layer in units of centimeters.
 #' @param time A numeric vector. Time for each row of `sim_swc_daily`.
-#' @param soils A named list with soil parameters \var{"depth_cm"},
-#'   \var{"sand_frac"},\var{"clay_frac"}, and \var{"gravel_content"}
-#'   as numeric vectors with values for each soil layer.
 #' @param used_depth_range_cm A numeric vector of length two.
 #' @param method A character string.
 #' @param out A character string.

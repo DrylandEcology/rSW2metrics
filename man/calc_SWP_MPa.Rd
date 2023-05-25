@@ -20,8 +20,8 @@ daily \var{"swc"} for each soil layer in units of centimeters.}
 
 \item{time}{A numeric vector. Time for each row of \code{sim_swc_daily}.}
 
-\item{soils}{A named list with soil parameters \var{"depth_cm"},
-\var{"sand_frac"},\var{"clay_frac"}, and \var{"gravel_content"}
+\item{soils}{A named list with soil parameters \code{"depth_cm"},
+\code{"sand_frac"}, \code{"clay_frac"}, and \code{"gravel_content"}
 as numeric vectors with values for each soil layer.}
 
 \item{used_depth_range_cm}{A numeric vector of length two.}
