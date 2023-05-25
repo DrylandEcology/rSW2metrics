@@ -327,6 +327,7 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
   out = "across_years",
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(
@@ -369,10 +370,15 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
     FUN = function(x) {
       tmp <- array(NA, dim = dim(x), dimnames = dimnames(x))
       for (k in seq_len(dim(x)[[3]])) {
-        tmp[, , k] <- rSOILWAT2::VWCtoSWP(
-          vwc = x[, , k],
+        tmp[, , k] <- convert_with_swrc(
+          x = x[, , k],
+          direction = "vwc_to_swp",
+          use_swrc_v6 = swrcp_and_usage[["use_swrc_v6"]],
+          fcoarse = rep(0, length(id_slyrs)),
           sand = soils[["sand_frac"]][id_slyrs],
-          clay = soils[["clay_frac"]][id_slyrs]
+          clay = soils[["clay_frac"]][id_slyrs],
+          swrcp = swrcp_and_usage[["swrcp"]][id_slyrs, , drop = FALSE],
+          swrc_name = swrcp_and_usage[["swrc_name"]]
         )
       }
       tmp
