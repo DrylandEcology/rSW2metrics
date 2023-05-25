@@ -21,7 +21,7 @@ volumetric water content or of soil water potential.}
 
 \item{direction}{A text string.}
 
-\item{use_swrc_v6}{A logical value whether the new \code{SWRC} funtionality
+\item{use_swrc_v6}{A logical value whether the new \code{SWRC} functionality
 with \code{rSOILWAT2} \verb{>= v6.0.0} can be used, see
 \code{\link[=load_swrcp_and_usage]{load_swrcp_and_usage()}}.}
 

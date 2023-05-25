@@ -378,6 +378,12 @@ extract_metrics <- function(args) {
   do_collect_inputs <- is_fun_collecting_inputs(args[["fun_name"]])
 
 
+  #------ Soil water retention curve information
+  is_swrc_input <- has_fun_swrc_as_arg(args[["fun_name"]])
+
+  #TODO: SWRC
+  has_prepared_swrc <- FALSE # has_prepared_swrc is not implemented yet
+
 
   #------ Directories
   dir.create(prjpars[["dir_out"]], recursive = TRUE, showWarnings = FALSE)
@@ -477,6 +483,18 @@ extract_metrics <- function(args) {
       fill = TRUE
     )
   }
+  if (is_swrc_input) {
+    cat(
+      shQuote(args[["fun_name"]]),
+      "requires soil water retention curve (SWRC) information as input:",
+      if (has_prepared_swrc) {
+        "pre-extracted SWRC data will be used."
+      } else {
+        "SWRC data will be extracted individually from simulation inputs."
+      },
+      fill = TRUE
+    )
+  }
   cat(
     shQuote(args[["fun_name"]]),
     if (do_collect_inputs) {
@@ -529,6 +547,15 @@ extract_metrics <- function(args) {
         "this is most efficient if soils have been collected with function ",
         "'collect_input_soillayers_xxx()'."
       )
+    }
+  }
+
+
+  if (is_swrc_input) {
+    if (has_prepared_swrc) {
+      #TODO: SWRC
+      swrcp_and_usage <- NULL
+      stop("swrcp_and_usage with 'has_prepared_swrc' is not implemented yet")
     }
   }
 
@@ -637,7 +664,9 @@ extract_metrics <- function(args) {
         name_sw2_run_soils = tag_run_rSFSW2_names[s],
         is_soils_input = is_soils_input,
         soils = if (exists("soils")) soils,
-        soil_variables = soil_variables
+        soil_variables = soil_variables,
+        is_swrc_input = is_swrc_input,
+        swrcp_and_usage = if (exists("swrcp_and_usage")) swrcp_and_usage
       )
 
       format_metric_1sim(x = res, id = s)
@@ -719,7 +748,9 @@ process_values_one_site <- function(
   name_sw2_run_soils = NULL,
   is_soils_input = FALSE,
   soils = NULL,
-  soil_variables = NULL
+  soil_variables = NULL,
+  is_swrc_input = FALSE,
+  swrcp_and_usage = NULL
 ) {
   # Add run-specific arguments
   used_args <- c(
@@ -728,15 +759,28 @@ process_values_one_site <- function(
   )
 
 
-  if (is_soils_input) {
-    used_args[["soils"]] <- prepare_soils_for_site(
+  if (is_soils_input || is_swrc_input) {
+    tmp_soils <- prepare_soils_for_site(
       path = fun_args[["path"]],
       name_sw2_run = name_sw2_run,
       name_sw2_run_soils = name_sw2_run_soils,
       zipped_runs = fun_args[["zipped_runs"]],
+      type = c(
+        if (is_soils_input) "soils",
+        if (is_swrc_input) "swrcp_and_usage"
+      ),
       soils = soils,
-      soil_variables = soil_variables
+      soil_variables = soil_variables,
+      swrcp_and_usage = swrcp_and_usage
     )
+
+    if (is_soils_input) {
+      used_args[["soils"]] <- tmp_soils[["soils"]]
+    }
+
+    if (is_swrc_input) {
+      used_args[["swrcp_and_usage"]] <- tmp_soils[["swrcp_and_usage"]]
+    }
   }
 
   # Call aggregation function for rSOILWAT2 input/output
@@ -878,6 +922,13 @@ format_metric_Nsim <- function(
 #' @examples
 #' path <- "path/to/run"
 #' runname = "name_of_sim_folder"
+#' soils_and_swrc <- rSW2metrics:::prepare_soils_for_site(
+#'   path = path,
+#'   name_sw2_run = runname,
+#'   name_sw2_run_soils = runname,
+#'   zipped_runs = FALSE,
+#'   type = c("soils", "swrcp_and_usage")
+#' )
 #' res <- rSW2metrics:::formatted_metric_1sim(
 #'   metric_foo_name = "metric_RR2022predictors_annualClim",
 #'   foo_args = list(
@@ -887,12 +938,8 @@ format_metric_Nsim <- function(
 #'     id_scen_used = 1,
 #'     list_years_scen_used = list(list(hist = 1980:2020)),
 #'     out = "across_years",
-#'     soils = rSW2metrics:::prepare_soils_for_site(
-#'       path = path,
-#'       name_sw2_run = runname,
-#'       name_sw2_run_soils = runname,
-#'       zipped_runs = FALSE
-#'     ),
+#'     soils = soils_and_swrc[["soils"]],
+#'     swrcp_and_usage = soils_and_swrc[["swrcp_and_usage"]],
 #'     fun_aggs_across_yrs = "mean"
 #'   ),
 #'   do_collect_inputs = FALSE
@@ -908,6 +955,7 @@ formatted_metric_1sim <- function(
     id_scen_used = NULL,
     list_years_scen_used = NULL,
     soils = NULL,
+    swrcp_and_usage = NULL,
     out = NULL
   ),
   do_collect_inputs = FALSE
@@ -918,6 +966,7 @@ formatted_metric_1sim <- function(
     "zipped_runs",
     "id_scen_used", "list_years_scen_used",
     "soils",
+    "swrcp_and_usage",
     "out"
   )
   has_arg_names <- req_arg_names %in% names(foo_args)

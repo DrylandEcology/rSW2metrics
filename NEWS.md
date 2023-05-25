@@ -13,6 +13,24 @@
       `"swrcp_and_usage"`; this argument contains all necessary information
       about the `SWRC` which was active during a simulation, and is then
       internally used to call `convert_with_swrc()`
+    * new functionality gathers information for the new `"swrcp_and_usage"`
+      arguments
+      (following structure of existing functionality that
+      prepares soil properties information for the `"soils"` arguments), i.e.,
+      such information can either be extracted from a `rSOILWAT2` input object
+      when needed to calculate a metrics or, alternatively
+      (but not implemented yet),
+      be loaded from a pre-prepared file stored on disk
+        * new `load_swrcp_and_usage()` determines available `SWRC` functionality
+          and prepares required parameters depending on `rSOILWAT2` version
+        * `process_values_one_site()`, `prepare_soils_for_site()`, and
+          `get_soillayers_variable()` gain arguments to load and/or prepare
+          necessary `SWRC` information at the same time as soil properties are
+          prepared (to avoid reading multiple times a `rSOILWAT2` input objects
+          from disk)
+        * `extract_metrics()` now checks if a metric requires
+          `SWRC` functionality and handles loading and/or preparing of
+          necessary information to be passed on to the metric function.
 
 
 # rSW2metrics v0.2.0
