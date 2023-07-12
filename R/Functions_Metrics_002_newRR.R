@@ -3111,10 +3111,14 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           ),
 
           # Fall recruitment wet-degree days `[C x day]`
-          RecruitmentFallWDD_mean =
-            mean(tmpx["RecruitmentFallWDD", , drop = TRUE]),
-          RecruitmentFallWDD_cv =
-            cv(tmpx["RecruitmentFallWDD", , drop = TRUE]),
+          RecruitmentFallWDD_mean = mean(
+            tmpx["RecruitmentFallWDD", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          RecruitmentFallWDD_cv = cv(
+            tmpx["RecruitmentFallWDD", , drop = TRUE],
+            na.rm = TRUE
+          ),
 
           # Spring recruitment onset `[day of year]`
           # Also, frequency of years with spring recruitment `[# / #]`
@@ -3141,10 +3145,14 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           ),
 
           # Spring recruitment wet-degree days `[C x day]`
-          RecruitmentSpringWDD_mean =
-            mean(tmpx["RecruitmentSpringWDD", , drop = TRUE]),
-          RecruitmentSpringWDD_cv =
-            cv(tmpx["RecruitmentSpringWDD", , drop = TRUE]),
+          RecruitmentSpringWDD_mean = mean(
+            tmpx["RecruitmentSpringWDD", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          RecruitmentSpringWDD_cv = cv(
+            tmpx["RecruitmentSpringWDD", , drop = TRUE],
+            na.rm = TRUE
+          ),
 
 
           #--- Available soil moisture
