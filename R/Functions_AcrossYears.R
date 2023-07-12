@@ -252,6 +252,12 @@ sen_slope <- function(x, ...) {
   }
 }
 
+#' Frequency of non-missing values
+#' @noRd
+frq <- function(x, ...) {
+  mean(!is.na(x))
+}
+
 
 #' Useful functions for aggregate statistics of values across years
 #'
