@@ -2176,7 +2176,13 @@ get_RR2022predictors_annual <- function(
 #' means, standard deviations, or coefficients of variation of
 #' annual values.
 #'
-#' @references JC Chambers et al. (in prep)
+#' @references Chambers, JC, Brown, JL, Bradford, JB, Board, DI, Campbell, SB,
+#' Clause, KJ, Hanberry, B, Schlaepfer, DR, & Urza, AK (2023)
+#' New indicators of ecological resilience and invasion resistance to support
+#' prioritization and management in the sagebrush biome, United States.
+#' Frontiers in Ecology and Evolution, 10, 1–17.
+#' \url{https://doi.org/10.3389/fevo.2022.1009268}
+#'
 #'
 #' @noRd
 #' @md
@@ -2244,7 +2250,12 @@ metric_RR2022predictors_annual <- function(
 #'   * Argument `fun_aggs_across_yrs` is ignored.
 #'   * Values are `NA` if any year is requested but un-simulated.
 #'
-#' @references JC Chambers et al. (in prep)
+#' @references Chambers, JC, Brown, JL, Bradford, JB, Board, DI, Campbell, SB,
+#' Clause, KJ, Hanberry, B, Schlaepfer, DR, & Urza, AK (2023)
+#' New indicators of ecological resilience and invasion resistance to support
+#' prioritization and management in the sagebrush biome, United States.
+#' Frontiers in Ecology and Evolution, 10, 1–17.
+#' \url{https://doi.org/10.3389/fevo.2022.1009268}
 #'
 #' @noRd
 #' @md
