@@ -2475,7 +2475,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 
 
     #--- Intermediate variables
-    tmp_cwd_monthly <- 10 * calc_CWD_mm(
+    tmp_cwd_monthly <- calc_CWD_mm(
       pet_cm = sim_data[["mon"]][["values"]][["pet"]],
       et_cm = sim_data[["mon"]][["values"]][["et"]]
     )
@@ -2633,7 +2633,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       ET = 10 * sim_data[["yr"]][["values"]][["et"]],
 
       # Climatic water deficit `[mm]` (where `CWD = PPT - ET`)
-      CWD = 10 * calc_CWD_mm(
+      CWD = calc_CWD_mm(
         pet_cm = sim_data[["yr"]][["values"]][["pet"]],
         et_cm = sim_data[["yr"]][["values"]][["et"]]
       ),
@@ -2642,7 +2642,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       # (where `CWDextreme10d` is the largest daily `CWD`
       # averaged over 10-day periods)
       CWDextreme010d = calc_extreme_funNday(
-        x = 10 * calc_CWD_mm(
+        x = calc_CWD_mm(
           pet_cm = sim_data[["day"]][["values"]][["pet"]],
           et_cm = sim_data[["day"]][["values"]][["et"]]
         ),
