@@ -1895,6 +1895,7 @@ metric_SMTRs <- function(
 }
 
 
+calc_AI <- function(ppt, pet) ppt / pet
 
 #' Annual AI = aridity index [mm/mm] = PPT/PET
 #'
@@ -1934,9 +1935,10 @@ metric_AI <- function(
     )
 
     res[[k1]] <- matrix(
-      data =
-        sim_data[["yr"]][["values"]][["ppt"]] /
-        sim_data[["yr"]][["values"]][["pet"]],
+      data = calc_AI(
+        ppt = sim_data[["yr"]][["values"]][["ppt"]],
+        pet = sim_data[["yr"]][["values"]][["pet"]]
+      ),
       nrow = 1,
       dimnames = list("AI", NULL)
     )
