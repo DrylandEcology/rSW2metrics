@@ -854,22 +854,9 @@ calc_DSI <- function(
     sm_periods = list(op = `<`, limit = SWP_limit_MPa)
   )
 
-  tapply(
-    X = dry_daily[["values"]][[1]],
-    INDEX = dry_daily[["time"]][, "Year"],
-    FUN = function(x) {
-      if (anyNA(x)) {
-        # propagate NAs
-        NA
-      } else {
-        tmp <- rle(x)
-        if (any(tmp[["values"]] == 1)) {
-          tmp[["lengths"]][tmp[["values"]]]
-        } else {
-          0
-        }
-      }
-    }
+  calc_durations_consecutive_periods(
+    x_periods = dry_daily[["values"]][[1]],
+    ts_years = dry_daily[["time"]][, "Year"]
   )
 }
 
@@ -1076,26 +1063,8 @@ metric_FrostDaysAtNeg5C <- function(
   res
 }
 
-
-# Amount of variation among seasons
-calc_seasonal_variability <- function(x, ts_year) {
-  tapply(
-    X = x,
-    INDEX = ts_year,
-    FUN = function(x) sd(x) / mean(x)
-  )
-}
-
 # Correlation between x and y by year
 # Seasonal timing (if y is monthly temperature)
-calc_CorXY_byYear <- function(x, y, ts_year) {
-  as.vector(by(
-    data = cbind(x, y),
-    INDICES = ts_year,
-    FUN = function(x) cor(x[, 1], x[, 2])
-  ))
-}
-
 metric_CorTempPPT <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
