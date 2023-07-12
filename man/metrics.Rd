@@ -23,6 +23,8 @@
 \alias{metric_DrySoilDays_Seasonal_wholeprofile}
 \alias{metric_ET_annual}
 \alias{metric_ET_monthly}
+\alias{metric_EcologicalDroughtMetrics2023_annual}
+\alias{metric_EcologicalDroughtMetrics2023_annualClim}
 \alias{metric_Evaporation_Seasonal}
 \alias{metric_ExtremeShortTermDryStress_Seasonal_top50cm}
 \alias{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}
@@ -218,6 +220,8 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \var{metric_DrySoilDays_Seasonal_wholeprofile}
   \item \var{metric_ET_annual}
   \item \var{metric_ET_monthly}
+  \item \var{metric_EcologicalDroughtMetrics2023_annual}
+  \item \var{metric_EcologicalDroughtMetrics2023_annualClim}
   \item \var{metric_Evaporation_Seasonal}
   \item \var{metric_ExtremeShortTermDryStress_Seasonal_top50cm}
   \item \var{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}
