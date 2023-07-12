@@ -2530,6 +2530,9 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       Temp_limit_C = -5
     )
 
+    # Convert +/-Inf to NA
+    tmp_frost_doys[!is.finite(tmp_frost_doys)] <- NA
+
     # Recruitment (metric_RecruitmentIndex_v5)
     tmp_recruit <- calc_RecruitmentIndex_v3(
       sim_data = sim_data, # passed to `calc_MDD_daily()`
