@@ -12,6 +12,10 @@ test_that("Test data availability", {
 create_new_reference_output <- FALSE
 
 # NA = detect currently installed version
+#   * basis rSOILWAT2 v5.0.4
+#   * rSOILWAT2 versions leading to significant differences in metrics
+#     (last patch for each minor version):
+#     v5.1.3, v5.2.0, v6.0.x
 used_rSOILWAT2_version <- NA
 
 
