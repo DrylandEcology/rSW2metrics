@@ -627,6 +627,9 @@ calc_durations_consecutive_periods <- function(x_periods, ts_years) {
 }
 
 
+#' @return A numeric vector with one value for each unique value of `ts_years`.
+#'
+#' @noRd
 calc_extreme_value_consecutive_periods <- function(
   x,
   x_periods,
@@ -642,7 +645,7 @@ calc_extreme_value_consecutive_periods <- function(
         tmp <- rle(x[, 1])
         if (anyNA(tmp[["values"]])) {
           # Propagate NAs
-          NA
+          NA_real_
         } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
           # Create index of days for each spell when
           # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
@@ -650,7 +653,7 @@ calc_extreme_value_consecutive_periods <- function(
           ids <- rep(ips, tmp[["lengths"]])
           ids[ids %in% ips[tmp[["values"]] != 1]] <- NA
 
-          tapply(X = x[, 2], INDEX = ids, FUN = fun_time)
+          as.numeric(tapply(X = x[, 2], INDEX = ids, FUN = fun_time))
 
         } else {
           # No days when `x_periods` is TRUE
