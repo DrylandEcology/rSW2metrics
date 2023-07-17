@@ -523,12 +523,45 @@ test_that("Check metrics", {
 
 
         if (do_test) {
+          #--- Check character columns: "site", "group"
+          var_str <- c("site", "group")
+
           expect_equal(
-            output[ids, ],
-            expected = ref_output,
+            output[ids, var_str, drop = FALSE],
+            expected = ref_output[, var_str, drop = FALSE],
             label = fun_metrics[k1],
             tolerance = sqrt(.Machine[["double.eps"]])
           )
+
+
+          #--- Check (numeric) results (but by "group" instead of year)
+          var_res <- colnames(output)[!(colnames(output) %in% var_str)]
+
+          res_output_by_group <- as.data.frame(
+            t(output[ids, var_res, drop = FALSE])
+          )
+          colnames(res_output_by_group) <- output[["group"]]
+
+          has_var_res <- setequal(
+            var_res,
+            colnames(ref_output)[!(colnames(ref_output) %in% var_str)]
+          )
+
+          expect_true(has_var_res)
+
+          if (has_var_res) {
+            ref_output_by_group <- as.data.frame(
+              t(ref_output[, var_res, drop = FALSE])
+            )
+            colnames(ref_output_by_group) <- ref_output[["group"]]
+
+            expect_equal(
+              res_output_by_group,
+              expected = ref_output_by_group,
+              label = fun_metrics[k1],
+              tolerance = sqrt(.Machine[["double.eps"]])
+            )
+          }
         }
       }
 
