@@ -600,7 +600,10 @@ calc_condition <- function(x, condition = list(op = `>`, limit = 0)) {
 }
 
 
-
+#' @return A list with an element (for each unique value of `ts_years`)
+#' that contains an integer vector.
+#'
+#' @noRd
 calc_durations_consecutive_periods <- function(x_periods, ts_years) {
   tapply(
     X = x_periods,
@@ -609,16 +612,17 @@ calc_durations_consecutive_periods <- function(x_periods, ts_years) {
       tmp <- rle(x)
       if (anyNA(tmp[["values"]])) {
         # Propagate NAs
-        NA
+        NA_integer_
       } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
         # Select duration of spells when
         # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
         tmp[["lengths"]][tmp[["values"]]]
       } else {
         # No days when `x_periods` is TRUE
-        0
+        0L
       }
-    }
+    },
+    simplify = FALSE
   )
 }
 
