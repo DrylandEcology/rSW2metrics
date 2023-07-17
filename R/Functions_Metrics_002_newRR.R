@@ -1005,16 +1005,18 @@ calc_frost_doy <- function(
   # Mid-year: summer solstice + 1 month
   # North: June solstice (Jun 20-22 = 171-173)
   # South: December solstice (Dec 20-23 = 354-357)
-  doy_mid <- 196 # July 15 (in non-leap year)
+  doy_mid <- 196L # July 15 (in non-leap year)
 
   res <- as.matrix(aggregate(
     x = is_frost,
     by = list(Year = sim_tmin_daily[["time"]][, "Year"]),
     function(x) {
       tmp <- which(x)
+      is_last <- tmp <= doy_mid
+      is_first <- tmp > doy_mid
       c(
-        last = max(tmp[tmp <= doy_mid]),
-        first = min(tmp[tmp > doy_mid])
+        last = if (any(is_last)) max(tmp[is_last]) else NA_integer_,
+        first = if (any(is_first)) min(tmp[is_first]) else NA_integer_
       )
     }
   ))
@@ -2529,9 +2531,6 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       sim_tmin_daily = sim_data[["day"]],
       Temp_limit_C = -5
     )
-
-    # Convert +/-Inf to NA
-    tmp_frost_doys[!is.finite(tmp_frost_doys)] <- NA
 
     # Recruitment (metric_RecruitmentIndex_v5)
     tmp_recruit <- calc_RecruitmentIndex_v3(

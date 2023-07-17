@@ -1,4 +1,6 @@
 # rSW2metrics v0.3.0-9000
+* `metric_FrostDaysAtNeg5C()` returns now `NAs` instead of `+/-Inf` for years
+  without a frost event.
 
 
 # rSW2metrics v0.2.0
