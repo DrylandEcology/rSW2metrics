@@ -2747,7 +2747,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
         as.vector(tmp_recruit[, "FallRecruitment_DurationDays"]),
 
       # Fall recruitment wet-degree days `[C x day]`
-      RecruitmentFallWDD = as.vector(tmp_recruit[, "SpringRecruitment_maxWDD"]),
+      RecruitmentFallWDD = as.vector(tmp_recruit[, "FallRecruitment_maxWDD"]),
 
       # Spring recruitment onset `[day of year]`
       RecruitmentSpringOnset =
