@@ -2613,6 +2613,22 @@ get_EcologicalDroughtMetrics2023_annual <- function(
         FUN = sum
       ),
 
+      # Seasonal variability of total growing degree days `[C x day]`
+      # (where `TDDssv = mean(monthly TDD) / sd(monthly TDD)`)
+      TDDssv = calc_seasonal_variability(
+        x = as.vector(
+          tapply(
+            X = tmp_tdd_daily[["values"]][["mdd"]],
+            INDEX = list(
+              Month = tmp_tdd_daily[["time"]][, "Month"],
+              Year = tmp_tdd_daily[["time"]][, "Year"]
+            ),
+            FUN = mean
+          )
+        ),
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
       # Warm season length `[day]`
       # (where `GrowingSeasonDuration` is the longest spell of days
       # with a positive `TDD`)
@@ -2866,6 +2882,8 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Seasonal timing of precipitation `[-]`: `"PPTsst_(mean)|(sd)"`
 #'      (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
 #'    * Total growing degree days `[C x day]`: `"TDD_(mean)|(cv)"`
+#'    * Seasonal variability of total growing degree days `[C x day / C x day]`: `"TDDssv_(mean)|(cv)"`
+#'      (where `TDDssv = mean(monthly TDD) / sd(monthly TDD)`)
 #'    * Warm season length `[day]`: `"GrowingSeasonDuration_(mean)|(cv)"`
 #'      (where `GrowingSeasonDuration` is the longest spell of days with a positive `TDD`)
 #'
@@ -2993,6 +3011,11 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           # Total growing degree days `[C x day]`
           TDD_mean = mean(tmpx["TDD", , drop = TRUE]),
           TDD_cv = cv(tmpx["TDD", , drop = TRUE]),
+
+          # Seasonal variability of growing degree days `[C x day / C x day]`
+          # (where `TDDssv = mean(monthly TDD) / sd(monthly TDD)`)
+          TDDssv_mean = mean(tmpx["TDDssv", , drop = TRUE]),
+          TDDssv_cv = cv(tmpx["TDDssv", , drop = TRUE]),
 
           # Warm season length `[day]`
           # (where `GrowingSeasonDuration` is the longest spell of days
