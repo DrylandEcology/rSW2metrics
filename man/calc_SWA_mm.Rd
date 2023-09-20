@@ -7,6 +7,7 @@
 calc_SWA_mm(
   sim_swc_daily,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
   method = c("across_profile", "by_layer")
@@ -17,9 +18,13 @@ calc_SWA_mm(
 "values" element containing daily \var{"swc"} for each soil layer
 in units of centimeters.}
 
-\item{soils}{A named list with soil parameters \var{"depth_cm"},
-\var{"sand_frac"},\var{"clay_frac"}, and \var{"gravel_content"}
+\item{soils}{A named list with soil parameters \code{"depth_cm"},
+\code{"sand_frac"}, \code{"clay_frac"}, and \code{"gravel_content"}
 as numeric vectors with values for each soil layer.}
+
+\item{swrcp_and_usage}{A named list with usage of and, if suitable,
+parameters of soil water retention curve;
+e.g., the output of \code{\link[=load_swrcp_and_usage]{load_swrcp_and_usage()}}.}
 
 \item{used_depth_range_cm}{A numeric vector of length two.}
 

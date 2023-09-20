@@ -121,12 +121,12 @@ rd_section_listing_metrics <- function() {
 #' @param out A character string. Signaling whether the functions returns
 #'   a time series of yearly values or an aggregate (e.g., mean) across years.
 #'   One of \var{\dQuote{ts_years}} or \var{\dQuote{across_years}}.
-#' @param soils A named list of numeric vectors. The presence of the
-#'   argument \code{soils} indicates that the function in question requires
-#'   soil information as inputs.
-#'   The named elements include \var{\dQuote{depth_cm}},
-#'   \var{\dQuote{sand_frac}}, and \var{\dQuote{clay_frac}} and
-#'   contain the respective values for each soil layer at the site.
+#' @param soils A named list with soil parameters `"depth_cm"`,
+#' `"sand_frac"`, `"clay_frac"`, and `"gravel_content"`
+#' as numeric vectors with values for each soil layer.
+#' @param swrcp_and_usage A named list with usage of and, if suitable,
+#' parameters of soil water retention curve;
+#' e.g., the output of [load_swrcp_and_usage()].
 #' @param ... Additional arguments
 #'
 #' @return
@@ -165,6 +165,11 @@ rd_section_listing_metrics <- function() {
 #' time step is annual (which may be omitted from the name of the function);
 #' sub-annual time steps include (case-insensitive):
 #' `Seasonal` (1 to 12 seasons per year); `quarterly`; `monthly`; and `daily`.
+#'
+#' @section Details:
+#' The presence of arguments `soils` and `swrcp_and_usage` indicates that
+#' the metric function requires as input soil properties or information on the
+#' soil water retention curve respectively.
 #'
 #' @section Notes:
 #' The metric [metric_SW2toTable_daily()] is an exception and produces

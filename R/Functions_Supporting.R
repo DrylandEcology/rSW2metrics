@@ -72,14 +72,28 @@ prepare_soils_for_site <- function(
   name_sw2_run,
   name_sw2_run_soils = NULL,
   zipped_runs = FALSE,
+  type = c("soils", "swrcp_and_usage"),
   soils = NULL,
   soil_variables = NULL,
+  swrcp_and_usage = NULL,
   var_soilsite = "site"
 ) {
-  used_soil <- NULL
+  type <- match.arg(type, several.ok = TRUE)
 
-  if (!missing(soils) && !is.null(soils) && !is.null(name_sw2_run_soils)) {
-    #--- Soils are pre-extracted: subset `soils`
+  used_soil <- NULL
+  used_swrc <- NULL
+
+
+  #--- Check if soils are requested and pre-extracted
+  req_soils <- "soils" %in% type
+
+  has_soils <-
+    !missing(soils) &&
+    !is.null(soils) &&
+    !is.null(name_sw2_run_soils)
+
+  if (req_soils && has_soils) {
+    #--- Soils are pre-extracted: subset `soils` to current site/run
 
     # Check that we got good soil variable names
     names_soil_variables <- names(soil_variables)
@@ -110,33 +124,66 @@ prepare_soils_for_site <- function(
       }
     )
     names(used_soil) <- names_soil_variables
+  }
 
-  } else {
-    #--- Soils are not pre-extracted: read values from files
-    if (is.null(soil_variables)) {
-      soil_variables <- list_soil_variables()
+
+  #--- Check if SWRC are requested and pre-extracted
+  req_swrc <- "swrcp_and_usage" %in% type
+
+  has_swrc <-
+    !missing(swrcp_and_usage) &&
+    !is.null(swrcp_and_usage) &&
+    !is.null(name_sw2_run_soils)
+
+  if (req_swrc && has_swrc) {
+    #--- SWRC are pre-extracted: subset `swrcp_and_usage` to current site/run
+    #TODO: SWRC
+    stop("pre-extracted swrcp_and_usage is not implemented yet")
+  }
+
+
+  #--- Soils and/or SWRC are not pre-extracted but requested
+  if (
+    (req_soils && !has_soils) ||
+    (req_swrc && !has_swrc)
+  ) {
+    nsv <- if (req_soils) {
+      #--- Soils are not pre-extracted: read values from files
+      if (is.null(soil_variables)) {
+        soil_variables <- list_soil_variables()
+      }
+      names(soil_variables)
     }
-    nsv <- names(soil_variables)
 
-    tmp_soils <- get_soillayers_variable(
+    tmp <- get_soillayers_variable(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = 1,
       zipped_runs = zipped_runs,
-      sw2_soil_var = nsv
+      sw2_soil_var = nsv,
+      get_swrcp_and_usage = req_swrc
     )
 
-    used_soil <- list(
-      depth_cm = if ("depth_cm" %in% nsv) tmp_soils["depth_cm", ],
-      sand_frac = if ("sand_frac" %in% nsv) tmp_soils["sand_frac", ],
-      clay_frac = if ("clay_frac" %in% nsv) tmp_soils["clay_frac", ],
-      gravel_content = if ("gravel_content" %in% nsv) {
-        tmp_soils["gravel_content", ]
-      }
-    )
+    if (req_soils) {
+      used_soil <- list(
+        depth_cm = if ("depth_cm" %in% nsv) tmp[["soils"]]["depth_cm", ],
+        sand_frac = if ("sand_frac" %in% nsv) tmp[["soils"]]["sand_frac", ],
+        clay_frac = if ("clay_frac" %in% nsv) tmp[["soils"]]["clay_frac", ],
+        gravel_content = if ("gravel_content" %in% nsv) {
+          tmp[["soils"]]["gravel_content", ]
+        }
+      )
+    }
+
+    if (req_swrc) {
+      used_swrc <- tmp[["swrcp_and_usage"]]
+    }
   }
 
-  used_soil
+  list(
+    soils = used_soil,
+    swrcp_and_usage = used_swrc
+  )
 }
 
 
@@ -451,98 +498,6 @@ get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
 
 
 #------ NEWRR DEVELOPMENT ERA ------
-
-
-get_swp_weighted <- function(
-  path, name_sw2_run, id_scen,
-  years,
-  soils,
-  zipped_runs = FALSE,
-  used_depth_range_cm = NULL,
-  ...
-) {
-  warning("`get_swp_weighted()` uses matric-VWC!")
-
-  vwc <- extract_from_sw2(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    zipped_runs = zipped_runs,
-    id_scen = id_scen,
-    years = years,
-    sw2_tp = "Day",
-    sw2_outs = "VWCMATRIC",
-    sw2_vars = "Lyr",
-    varnames_are_fixed = FALSE
-  )
-
-  N_days <- nrow(vwc[["values"]][[1]])
-
-  T_by_lyr <- extract_from_sw2(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    zipped_runs = zipped_runs,
-    id_scen = id_scen,
-    years = years,
-    sw2_tp = "Day",
-    sw2_outs = "TRANSP",
-    sw2_vars = "transp_total_Lyr",
-    varnames_are_fixed = FALSE
-  )
-
-  widths_cm <- calc_soillayer_weights(
-    soil_depths_cm = soils[["depth_cm"]],
-    used_depth_range_cm = used_depth_range_cm
-  )
-
-  id_slyrs <- which(!is.na(widths_cm))
-  widths_cm <- widths_cm[id_slyrs]
-
-
-  tmp <- rep(NA, N_days)
-
-  for (k in seq_len(N_days)) {
-    tmp[k] <- if (sum(T_by_lyr[["values"]][[1]][k, id_slyrs]) > 0) {
-      # values weighted by transpiration per layer
-      rSOILWAT2::VWCtoSWP(
-        vwc = weighted.mean(
-          x = vwc[["values"]][[1]][k, id_slyrs],
-          w = T_by_lyr[["values"]][[1]][k, id_slyrs]
-        ),
-        sand = weighted.mean(
-          x = soils[["sand_frac"]][id_slyrs],
-          w = T_by_lyr[["values"]][[1]][k, id_slyrs]
-        ),
-        clay = weighted.mean(
-          x = soils[["clay_frac"]][id_slyrs],
-          w = T_by_lyr[["values"]][[1]][k, id_slyrs]
-        )
-      )
-
-    } else {
-      # values weighted by layer width
-      rSOILWAT2::VWCtoSWP(
-        vwc = weighted.mean(
-          x = vwc[["values"]][[1]][k, id_slyrs],
-          w = widths_cm
-        ),
-        sand = weighted.mean(
-          x = soils[["sand_frac"]][id_slyrs],
-          w = widths_cm
-        ),
-        clay = weighted.mean(
-          x = soils[["clay_frac"]][id_slyrs],
-          w = widths_cm
-        )
-      )
-    }
-  }
-
-  list(
-    time = vwc[["time"]],
-    values = list(swp_weighted = tmp)
-  )
-}
-
 
 # Correlation between x and y by year
 # Seasonal timing (if y is monthly temperature)
@@ -1685,4 +1640,173 @@ collect_sw2_sim_data <- function(
   }
 
   res
+}
+
+
+#------ SOIL WATER RETENTION CURVES ------
+
+#' Load soil water retention curve information from a `rSOILWAT2` input object
+#'
+#' Available functionality depends on the currently installed version
+#' of `rSOILWAT2` and of the version of `rSOILWAT2` that was used
+#' to create the simulation input object `sw_in`.
+#'
+#' @param sw_in A `rSOILWAT2` input object of class `"swInputData"`.
+#'
+#' @return A named list including
+#'   * `"use_swrc_v6"`, a logical vector that is `TRUE`
+#'     if the installed version of the `rSOILWAT2` package is version `>= 6.0.0`
+#'     and if the the simulation input object `sw_in` was created by `rSOILWAT2`
+#'     version `>= 6.0.0` (or if it can be updated to such a version);
+#'   * `"swrc_name"`, the name of the soil water retention curve selected in
+#'     `sw_in` (only used if `"use_swrc_v6"`), see [rSOILWAT2::swrc_names()];
+#'   * `"swrcp"`, a matrix with parameters of the selected soil water retention
+#'     curve (only used if `"use_swrc_v6"`), see [`rSOILWAT2::SWRCs`].
+#'
+#' @seealso [convert_with_swrc()]
+load_swrcp_and_usage <- function(sw_in) {
+
+  use_sw2_v6 <- getNamespaceVersion("rSOILWAT2") >= as.numeric_version("6.0.0")
+  has_swrc <- isTRUE(
+    try(
+      rSOILWAT2::get_version(sw_in) >= as.numeric_version("6.0.0"),
+      silent = TRUE
+    )
+  )
+
+  if (!use_sw2_v6 && has_swrc) {
+    stop(
+      "Available 'rSOILWAT2' is older than v6.0.0",
+      " and cannot handle 'sw_in' which is v6.0.0 or later."
+    )
+  }
+
+  if (use_sw2_v6 && !has_swrc) {
+    sw_in <- rSOILWAT2::sw_upgrade(sw_in, verbose = FALSE)
+    has_swrc <- TRUE
+  }
+
+  use_swrc_v6 <- use_sw2_v6 && has_swrc
+
+  if (use_swrc_v6) {
+    swrc_flags <- rSOILWAT2::swSite_SWRCflags(sw_in)
+
+    swrcp <- if (rSOILWAT2::swSite_hasSWRCp(sw_in)) {
+      rSOILWAT2::swSoils_SWRCp(sw_in)
+    } else {
+      NA
+    }
+
+    if (anyNA(swrcp)) {
+      has_active_ptf <- isTRUE(
+        rSOILWAT2::check_ptf_availability(
+          swrc_flags[["ptf_name"]]
+        )
+      )
+
+      if (has_active_ptf) {
+        soils <- rSOILWAT2::swSoils_Layers(sw_in)
+
+        swrcp <- rSOILWAT2::ptf_estimate(
+          sand = soils[, "sand_frac"],
+          clay = soils[, "clay_frac"],
+          fcoarse = soils[, "gravel_content"],
+          # nolint start: nonportable_path_linter.
+          bdensity = soils[, "bulkDensity_g/cm^3"],
+          # nolint end: nonportable_path_linter.
+          swrc_name = swrc_flags[["swrc_name"]],
+          ptf_name = swrc_flags[["ptf_name"]],
+          fail = TRUE
+        )
+
+      } else {
+        stop(
+          "Missing SWRC parameters and ",
+          "requested PTF ", shQuote(swrc_flags[["ptf_name"]]),
+          " is not available."
+        )
+      }
+    }
+
+  } else {
+    swrc_flags <- NULL
+    swrcp <- NULL
+  }
+
+  list(
+    use_swrc_v6 = use_swrc_v6,
+    swrc_name = swrc_flags[["swrc_name"]],
+    swrcp = swrcp
+  )
+}
+
+
+#' Convert between `VWC` and `SWP` using a soil water retention curve
+#'
+#' @param x A numeric object with values of either
+#' volumetric water content or of soil water potential.
+#' @param direction A text string.
+#' @param use_swrc_v6 A logical value whether the new `SWRC` functionality
+#' with `rSOILWAT2` `>= v6.0.0` can be used, see
+#' [load_swrcp_and_usage()].
+#' @param fcoarse A numeric vector. Set to zero values if `vwc` represent
+#' the matric component.
+#' @param sand A numeric vector.
+#' @param clay A numeric vector.
+#' @param swrcp A numeric matrix with parameters of the `SWRC`,
+#' see [`rSOILWAT2::SWRCs`].
+#' @param swrc_name A text string; the name of the `SWRC`,
+#' see [rSOILWAT2::swrc_names()].
+#'
+#' @seealso [rSOILWAT2::swrc_conversion()]
+#'
+#' @section Details:
+#' Available functionality depends on the currently installed version
+#' of `rSOILWAT2` and of the version of `rSOILWAT2` that was used
+#' to create the simulation input object `sw_in`, see
+#' [load_swrcp_and_usage()].
+#'
+#' @section Details:
+#' If `use_swrc_v6` is `TRUE`, then `fcoarse`, `swrcp`, and `swrc_name`
+#' are required arguments.
+#' @section Details:
+#' If `use_swrc_v6` is `FALSE`, then `sand` and `clay` are required
+#' arguments.
+#'
+convert_with_swrc <- function(
+  x,
+  direction = c("vwc_to_swp", "swp_to_vwc"),
+  use_swrc_v6 = getNamespaceVersion("rSOILWAT2") >= as.numeric_version("6.0.0"),
+  fcoarse = NULL,
+  sand = NULL,
+  clay = NULL,
+  swrcp = NULL,
+  swrc_name = NULL
+) {
+
+  direction <- match.arg(direction)
+  use_swrc_v6 <- isTRUE(as.logical(use_swrc_v6[[1L]]))
+
+  if (use_swrc_v6) {
+    # `rSOILWAT2::swrc_swp_to_vwc()` expects bulk VWC`;
+    # set `fcoarse` to zero if `vwc` represent the matric component
+    rSOILWAT2::swrc_conversion(
+      direction = direction,
+      x = x,
+      fcoarse = fcoarse,
+      swrc = list(
+        swrc_name = swrc_name,
+        swrcp = swrcp
+      )
+    )
+
+  } else {
+    fun <- switch(
+      EXPR = direction,
+      vwc_to_swp = rSOILWAT2::VWCtoSWP,
+      swp_to_vwc = rSOILWAT2::SWPtoVWC
+    )
+
+    fun(x, sand = sand, clay = clay)
+  }
 }

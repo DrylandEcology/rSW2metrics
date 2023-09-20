@@ -327,6 +327,7 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
   out = "across_years",
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(
@@ -369,10 +370,15 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
     FUN = function(x) {
       tmp <- array(NA, dim = dim(x), dimnames = dimnames(x))
       for (k in seq_len(dim(x)[[3]])) {
-        tmp[, , k] <- rSOILWAT2::VWCtoSWP(
-          vwc = x[, , k],
+        tmp[, , k] <- convert_with_swrc(
+          x = x[, , k],
+          direction = "vwc_to_swp",
+          use_swrc_v6 = swrcp_and_usage[["use_swrc_v6"]],
+          fcoarse = rep(0, length(id_slyrs)),
           sand = soils[["sand_frac"]][id_slyrs],
-          clay = soils[["clay_frac"]][id_slyrs]
+          clay = soils[["clay_frac"]][id_slyrs],
+          swrcp = swrcp_and_usage[["swrcp"]][id_slyrs, , drop = FALSE],
+          swrc_name = swrcp_and_usage[["swrc_name"]]
         )
       }
       tmp
@@ -412,7 +418,9 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
 get_SWA_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   group_by_month, first_month_of_year,
-  soils, used_depth_range_cm,
+  soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
+  used_depth_range_cm,
   crit_SWP_MPa,
   zipped_runs = FALSE,
   ...
@@ -422,12 +430,24 @@ get_SWA_Seasonal <- function(
 
   id_slyrs <- which(!is.na(widths_cm))
   # Calculate SWC threshold (corrected for coarse fragments)
-  # SWC <-> VWC exists only for the matric component
-  base_SWC_cm <- rSOILWAT2::SWPtoVWC(
-    swp = crit_SWP_MPa,
+  # SWP <-> VWC exists only for the matric component
+
+  # Convert SWP to matric-VWC
+  tmp <- convert_with_swrc(
+    x = crit_SWP_MPa,
+    direction = "swp_to_vwc",
+    use_swrc_v6 = swrcp_and_usage[["use_swrc_v6"]],
+    fcoarse = rep(0, length(id_slyrs)),
     sand = soils[["sand_frac"]][id_slyrs],
-    clay = soils[["clay_frac"]][id_slyrs]
-  ) * widths_cm[id_slyrs] * (1 - soils[["gravel_content"]][id_slyrs])
+    clay = soils[["clay_frac"]][id_slyrs],
+    swrcp = swrcp_and_usage[["swrcp"]][id_slyrs, , drop = FALSE],
+    swrc_name = swrcp_and_usage[["swrc_name"]]
+  )
+
+  # Convert matric-VWC to bulk-VWC
+  base_SWC_cm <- tmp *
+    widths_cm[id_slyrs] * (1 - soils[["gravel_content"]][id_slyrs])
+
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
@@ -455,6 +475,7 @@ metric_SWA_Seasonal_wholeprofile <- function(
   zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -470,6 +491,7 @@ metric_SWA_Seasonal_wholeprofile <- function(
     group_by_month = group_by_month,
     first_month_of_year = first_month_of_year,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     used_depth_range_cm = NULL,
     crit_SWP_MPa = -3.9
   )
@@ -481,6 +503,7 @@ metric_SWA_Seasonal_top50cm <- function(
   zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -496,6 +519,7 @@ metric_SWA_Seasonal_top50cm <- function(
     group_by_month = group_by_month,
     first_month_of_year = first_month_of_year,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     used_depth_range_cm = c(0, 50),
     crit_SWP_MPa = -3.9
   )
@@ -684,7 +708,9 @@ get_NonDrySWA_Seasonal <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
   group_by_month, first_month_of_year,
-  soils, used_depth_range_cm,
+  soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
+  used_depth_range_cm,
   crit_SWP_MPa,
   zipped_runs = FALSE,
   ...
@@ -695,11 +721,23 @@ get_NonDrySWA_Seasonal <- function(
   id_slyrs <- which(!is.na(widths_cm))
   # Calculate SWC threshold (corrected for coarse fragments)
   # SWC <-> VWC exists only for the matric component
-  base_SWC_cm <- rSOILWAT2::SWPtoVWC(
-    swp = crit_SWP_MPa,
+
+  # Convert SWP to matric-VWC
+  tmp <- convert_with_swrc(
+    x = crit_SWP_MPa,
+    direction = "swp_to_vwc",
+    use_swrc_v6 = swrcp_and_usage[["use_swrc_v6"]],
+    fcoarse = rep(0, length(id_slyrs)),
     sand = soils[["sand_frac"]][id_slyrs],
-    clay = soils[["clay_frac"]][id_slyrs]
-  ) * widths_cm[id_slyrs] * (1 - soils[["gravel_content"]][id_slyrs])
+    clay = soils[["clay_frac"]][id_slyrs],
+    swrcp = swrcp_and_usage[["swrcp"]][id_slyrs, , drop = FALSE],
+    swrc_name = swrcp_and_usage[["swrc_name"]]
+  )
+
+  # Convert matric-VWC to bulk-VWC
+  base_SWC_cm <- tmp *
+    widths_cm[id_slyrs] * (1 - soils[["gravel_content"]][id_slyrs])
+
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
@@ -728,6 +766,7 @@ metric_NonDrySWA_Seasonal_wholeprofile <- function(
   out = "ts_years",
   group_by_month, first_month_of_year,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -743,6 +782,7 @@ metric_NonDrySWA_Seasonal_wholeprofile <- function(
     group_by_month = group_by_month,
     first_month_of_year = first_month_of_year,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     used_depth_range_cm = NULL,
     crit_SWP_MPa = -3.9
   )
@@ -755,6 +795,7 @@ metric_NonDrySWA_Seasonal_top50cm <- function(
   zipped_runs = FALSE,
   group_by_month, first_month_of_year,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -770,6 +811,7 @@ metric_NonDrySWA_Seasonal_top50cm <- function(
     group_by_month = group_by_month,
     first_month_of_year = first_month_of_year,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     used_depth_range_cm = c(0, 50),
     crit_SWP_MPa = -3.9
   )
