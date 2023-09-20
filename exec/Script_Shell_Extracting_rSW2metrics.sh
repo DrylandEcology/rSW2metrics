@@ -33,6 +33,8 @@ Rscript Script_to_Extract_Metric.R -o=DrySoilDays_Seasonal_top50cm -fun=metric_D
 Rscript Script_to_Extract_Metric.R -o=DrySoilDays_Seasonal_wholeprofile -fun=metric_DrySoilDays_Seasonal_wholeprofile ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DSIat0to100cm15bar_annual -fun=metric_DSIat0to100cm15bar ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=DSIat0to100cm30bar_annual -fun=metric_DSIat0to100cm30bar ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=EcologicalDroughtMetrics2023_annual -fun=metric_EcologicalDroughtMetrics2023_annual ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=EcologicalDroughtMetrics2023_annualClim -fun=metric_EcologicalDroughtMetrics2023_annualClim ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=ET_annual -fun=metric_ET_annual ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=ET_monthly -fun=metric_ET_monthly ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Evaporation_Seasonal -fun=metric_Evaporation_Seasonal ${mode} ${parallel} ${prjoptions}
