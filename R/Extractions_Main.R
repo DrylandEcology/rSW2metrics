@@ -365,14 +365,14 @@ extract_metrics <- function(args) {
     is_soils_input &&
     all(file.exists(fname_prepared_soildata))
 
-  if (is_soils_input && !has_prepared_soils) {
-    if (!prjpars[["has_rSOILWAT2_inputs"]]) {
-      stop(
-        shQuote(args[["fun_name"]]), " requires soils as input; ",
-        "however, neither pre-extracted soil data nor simulation inputs ",
-        "are available."
-      )
-    }
+  if (
+    is_soils_input && !has_prepared_soils && !prjpars[["has_rSOILWAT2_inputs"]]
+  ) {
+    stop(
+      shQuote(args[["fun_name"]]), " requires soils as input; ",
+      "however, neither pre-extracted soil data nor simulation inputs ",
+      "are available."
+    )
   }
 
   do_collect_inputs <- is_fun_collecting_inputs(args[["fun_name"]])

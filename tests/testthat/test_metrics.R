@@ -341,6 +341,7 @@ test_that("Check metrics", {
 
       } else {
         time_metrics[k1] <- system.time(
+          # nolint start: implicit_assignment_linter.
           res <- foo_metrics(
             fun = fun_metrics[k1],
             fun_args = fun_args,
@@ -348,6 +349,7 @@ test_that("Check metrics", {
             is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
             N_sites = N_sites_used
           )
+          # nolint end: implicit_assignment_linter.
         )[["elapsed"]]
       }
 
@@ -395,9 +397,12 @@ test_that("Check metrics", {
         # Avoid exceptions
         tmp <- any(vapply(
           "seasonality",
-          function(x) grepl(x, fun_metrics[k1], ignore.case = TRUE),
+          FUN = grepl,
+          x = fun_metrics[k1],
+          ignore.case = TRUE,
           FUN.VALUE = NA
         ))
+
         if (!tmp) {
           for (ts_suba in names(list_subannual_timesteps())) {
             expect_false(

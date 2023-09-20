@@ -13,7 +13,9 @@ test_that("Check command-line options", {
 
 
   #--- Check that all works if must-have options are present
+  # nolint start: implicit_assignment_linter.
   expect_silent(tmp <- process_arguments(args_must_have))
+  # nolint end: implicit_assignment_linter.
   expect_true(check_extraction_arguments(tmp))
 
 
