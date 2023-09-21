@@ -2178,15 +2178,16 @@ get_RR2022predictors_annual <- function(
 #' means, standard deviations, or coefficients of variation of
 #' annual values.
 #'
-#' @references Chambers, JC, Brown, JL, Bradford, JB, Board, DI, Campbell, SB,
-#' Clause, KJ, Hanberry, B, Schlaepfer, DR, & Urza, AK (2023)
+#' @references Chambers et al. (2023)
 #' New indicators of ecological resilience and invasion resistance to support
 #' prioritization and management in the sagebrush biome, United States.
 #' Frontiers in Ecology and Evolution, 10, 1–17.
 #' \url{https://doi.org/10.3389/fevo.2022.1009268}
 #'
+#' @seealso [RR2022predictors_annualClim()] and
+#' [metric_RR2022predictors_annual()]
 #'
-#' @noRd
+#' @name RR2022predictors_annual
 #' @md
 metric_RR2022predictors_annual <- function(
   path,
@@ -2250,16 +2251,18 @@ metric_RR2022predictors_annual <- function(
 #'
 #' @section Notes:
 #'   * Argument `fun_aggs_across_yrs` is ignored.
-#'   * Values are `NA` if any year is requested but un-simulated.
+#'   * Values are `NA` if any year is requested but was not simulated.
 #'
-#' @references Chambers, JC, Brown, JL, Bradford, JB, Board, DI, Campbell, SB,
-#' Clause, KJ, Hanberry, B, Schlaepfer, DR, & Urza, AK (2023)
+#' @references Chambers et al. (2023)
 #' New indicators of ecological resilience and invasion resistance to support
 #' prioritization and management in the sagebrush biome, United States.
 #' Frontiers in Ecology and Evolution, 10, 1–17.
 #' \url{https://doi.org/10.3389/fevo.2022.1009268}
 #'
-#' @noRd
+#' @seealso [RR2022predictors_annual()] and
+#' [metric_RR2022predictors_annualClim()]
+#'
+#' @name RR2022predictors_annualClim
 #' @md
 metric_RR2022predictors_annualClim <- function(
   path,
@@ -2793,11 +2796,13 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 
 #' Annual time series of ecological drought metrics
 #'
-#' @references Chenoweth, DA, Schlaepfer, DR, Chambers, JC, Brown, JL, Urza, AK,
-#' Hanberry, B, Board, D, Crist, M, & Bradford, JB (2023)
+#' @references Chenoweth et al. (2023)
 #' Ecologically relevant moisture and temperature metrics for assessing
 #' dryland ecosystem dynamics.
 #' Ecohydrology, 16(3), e2509. \url{https://doi.org/10.1002/eco.2509}
+#'
+#' @seealso [EcologicalDroughtMetrics2023_annualClim()] and
+#' [metric_EcologicalDroughtMetrics2023_annual()]
 #'
 #' @section Details:
 #' The following functions produce all metrics used by Chenoweth et al.:
@@ -2826,7 +2831,62 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 #'       * `metric_SWAat0to100cm39bar()`
 #'       * `metric_TDDat5C()`
 #'
-#' @noRd
+#' @return A return object where `group` contains the following
+#' annual variables:
+#'
+# nolint start: line_length_linter
+#'    * Aridity index `[mm / mm]`: `"AI"`
+#'      (where `AI = PPT / PET`)
+#'    * Potential evapotranspiration amount `[mm]`: `"PET"`
+#'    * Mean daily air temperature `[C]`: `"Tmean"`
+#'    * Minimum daily air temperature `[C]`: `"Tmin"`
+#'    * Maximum daily air temperature `[C]`: `"Tmax"`
+#'    * Precipitation amount `[mm]`: `"PPT"`
+#'    * Seasonal timing of precipitation `[-]`: `"PPTsst"`
+#'      (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
+#'    * Total growing degree days `[C x day]`: `"TDD"`
+#'    * Seasonal variability of total growing degree days `[C x day / C x day]`: `"TDDssv"`
+#'      (where `TDDssv = mean(monthly TDD) / sd(monthly TDD)`)
+#'    * Warm season length `[day]`: `"GrowingSeasonDuration_(mean)|(cv)"`
+#'      (where `GrowingSeasonDuration` is the longest spell of days with a positive `TDD`)
+#'
+#'    * Evapotranspiration amount `[mm]`: `"ET"`
+#'    * Climatic water deficit amount `[mm]`: `"CWD"`
+#'      (where `CWD = PPT - ET`)
+#'    * 10-day extreme climatic water deficit `[mm]`: `"CWDextreme010d"`
+#'      (where `CWDextreme10d` is the largest daily `CWD` averaged over 10-day periods)
+#'    * Seasonal variability of climatic water deficit `[mm / mm]`: `"CWDssv"`
+#'      (where `CWDssv = mean(monthly CWD) / sd(monthly CWD)`)
+#'    * Seasonal timing of climatic water deficit `[-]`: `"CWDsst_"`
+#'      (where `CWDsst = cor(monthly CWD, monthly Tmean)`)
+#'
+#'    * Dry-degree days (0-100 cm, <-3 MPa) `[C x day]`: `"DDD"`
+#'    * Dry-degree days of longest spell `[C x day]`: `"DDDmaxSpell"`
+#'    * Wet-degree days (0-100 cm, any >-1.5 MPa) `[C x day]`: `"WDD"`
+#'    * Seasonal timing of wet-degree days `[-]`: `"WDDsst"`
+#'      (where `WDDsst = cor(monthly WDD, monthly Tmean)`)
+#'
+#'    * Mean spell length of dry soils (0-100 cm, <-1.5 MPa) `[day]`: `"DSI"`
+#'    * Number of dry soils intervals `[#]`: `"nDSI"`
+#'
+#'    * First fall frost (<-5 C) `[day of year]`: `"FrostFallFirst"`
+#'    * Last spring frost (<-5 C) `[day of year]`: `"FrostSpringLast"`
+#'
+#'    * Fall recruitment onset `[day of year]`: `"RecruitmentFallOnset"`
+#'    * Fall recruitment duration `[day]`: `"RecruitmentFallDuration"`
+#'    * Fall recruitment wet-degree days `[C x day]`: `"RecruitmentFallWDD"`
+#'    * Spring recruitment onset `[day of year]`: `"RecruitmentSpringOnset"`
+#'    * Spring recruitment duration `[day]`: `"RecruitmentSpringDuration_"`
+#'    * Spring recruitment wet-degree days `[C x day]`: `"RecruitmentSpringWDD"`
+#'
+#'    * Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`: `"SWA"`
+#'    * Seasonal variability of available soil moisture `[mm / mm]`: `"SWAssv"`
+#'      (where `SWAssv = mean(monthly SWA) / sd(monthly CWD)`)
+#'    * Seasonal timing of available soil moisture `[-]`: `"SWAsst"`
+#'      (where `SWAsst = cor(monthly SWA, monthly Tmean)`)
+# nolint end: line_length_linter
+#'
+#' @name EcologicalDroughtMetrics2023_annual
 #' @md
 metric_EcologicalDroughtMetrics2023_annual <- function(
   path,
@@ -2866,6 +2926,9 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 #' annual values of metrics used by Chenoweth et al.
 #' (see `metric_EcologicalDroughtMetrics2023_annual()`).
 #'
+#' @seealso [EcologicalDroughtMetrics2023_annual()] and
+#' [metric_EcologicalDroughtMetrics2023_annualClim()]
+#'
 #' @return A return object where `group` contains the following climatologies of
 #' annual variables summarized across years by means `mean`,
 #' standard deviations `sd`, coefficients of variation `cv`, or
@@ -2874,7 +2937,7 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 # nolint start: line_length_linter
 #'    * Aridity index `[mm / mm]`: `"AI_(mean)|(cv)"`
 #'      (where `AI = PPT / PET`)
-#'    * Potential evapotranspiration `[mm]`: `"PET_(mean)|(cv)"`
+#'    * Potential evapotranspiration amount `[mm]`: `"PET_(mean)|(cv)"`
 #'    * Mean daily air temperature `[C]`: `"Tmean_(mean)|(sd)"`
 #'    * Minimum daily air temperature `[C]`: `"Tmin_(mean)|(sd)"`
 #'    * Maximum daily air temperature `[C]`: `"Tmax_(mean)|(sd)"`
@@ -2887,8 +2950,8 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Warm season length `[day]`: `"GrowingSeasonDuration_(mean)|(cv)"`
 #'      (where `GrowingSeasonDuration` is the longest spell of days with a positive `TDD`)
 #'
-#'    * Evapotranspiration `[mm]`: `"ET_(mean)|(cv)"`
-#'    * Climatic water deficit `[mm]`: `"CWD_(mean)|(cv)"`
+#'    * Evapotranspiration amount `[mm]`: `"ET_(mean)|(cv)"`
+#'    * Climatic water deficit amount `[mm]`: `"CWD_(mean)|(cv)"`
 #'      (where `CWD = PPT - ET`)
 #'    * 10-day extreme climatic water deficit `[mm]`: `"CWDextreme010d_(mean)|(cv)"`
 #'      (where `CWDextreme10d` is the largest daily `CWD` averaged over 10-day periods)
@@ -2930,15 +2993,14 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 #'
 #' @section Notes:
 #'   * Argument `fun_aggs_across_yrs` is ignored.
-#'   * Values are `NA` if any year is requested but un-simulated.
+#'   * Values are `NA` if any year is requested but was not simulated.
 #'
-#' @references Chenoweth, DA, Schlaepfer, DR, Chambers, JC, Brown, JL, Urza, AK,
-#' Hanberry, B, Board, D, Crist, M, & Bradford, JB (2023)
+#' @references Chenoweth et al. (2023)
 #' Ecologically relevant moisture and temperature metrics for assessing
 #' dryland ecosystem dynamics.
 #' Ecohydrology, 16(3), e2509. \url{https://doi.org/10.1002/eco.2509}
 #'
-#' @noRd
+#' @name EcologicalDroughtMetrics2023_annualClim
 #' @md
 metric_EcologicalDroughtMetrics2023_annualClim <- function(
   path,

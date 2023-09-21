@@ -13,9 +13,13 @@
 
 #------------------------------------
 #------ Jargon
-climatology
+biome
 climatologies
+climatology
+dryland
 ecohydrological
+ecohydrology
+et
 evapotranspiration
 matric
 MERCHANTABILITY
@@ -26,22 +30,25 @@ volumetric
 
 #------------------------------------
 #------ Abbreviations
+al
 DOI
-USGS
 MJ
+MPa
 ORCID
+USGS
 
 
 #------------------------------------
 #------ Names
 appveyor
-SOILWAT
-Wickham
+Chenoweth
 codecov
 github
+roxygen
 rSFSW
 rSOILWAT
 rSW
-roxygen
+SOILWAT
 testthat
 travis
+Wickham
