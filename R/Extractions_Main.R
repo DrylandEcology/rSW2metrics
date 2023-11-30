@@ -96,36 +96,39 @@ process_arguments <- function(x) {
 
 
   # file name for the output (without extension)
-  id <- args[, 1] %in% "-o"
-  if (any(id)) {
+  id <- which(args[, 1] == "-o")
+  if (length(id) == 1L) {
     res[["tag_filename"]] <- as.character(args[id, 2])
   } else {
-    stop("Output filename (option `-o`) is missing.")
+    stop("Output filename (option `-o`) is missing (or repeated).")
   }
 
   # function name to calculate the values (e.g. "get_CorTP_annual")
-  id <- args[, 1] %in% "-fun"
-  if (any(id)) {
+  id <- which(args[, 1] == "-fun")
+  if (length(id) == 1L) {
     res[["fun_name"]] <- as.character(args[id, 2])
   } else {
-    stop("Function name (option `-fun`) is missing.")
+    stop("Function name (option `-fun`) is missing (or repeated).")
   }
 
 
   # file name for the project parameters
-  id <- args[, 1] %in% "-fparam"
-  if (any(id)) {
+  id <- which(args[, 1] == "-fparam")
+  if (length(id) == 1L) {
     res[["filename_params"]] <- as.character(args[id, 2])
   } else {
-    stop("Name of file with project parameters (option `-fparam`) is missing.")
+    stop(
+      "Name of file with project parameters (option `-fparam`) is missing",
+      " (or repeated)."
+    )
   }
 
 
   # test/production mode
   #   FALSE/"full"/NA/no flag = full dataset
   #   TRUE/"test" = test mode (subset of runs)
-  id <- args[, 1] %in% "-mode"
-  if (any(id)) {
+  id <- which(args[, 1] == "-mode")
+  if (length(id) == 1L) {
     res[["do_full"]] <-
       !("test" %in% args[id, 2]) && !isTRUE(as.logical(args[id, 2])) ||
       is.na(args[id, 2])
@@ -134,16 +137,16 @@ process_arguments <- function(x) {
   }
 
   # Number of test runs if `do_full`
-  id <- args[, 1] %in% "-ntests"
-  if (any(id)) {
+  id <- which(args[, 1] == "-ntests")
+  if (length(id) == 1L) {
     res[["ntests"]] <- as.integer(args[id, 2])
   } else {
     res[["ntests"]] <- 100L
   }
 
   # Sequence of runs
-  id <- args[, 1] %in% "-runids"
-  if (any(id)) {
+  id <- which(args[, 1] == "-runids")
+  if (length(id) == 1L) {
     tmp <- strsplit(args[id, 2], split = ":", fixed = TRUE)
     tmp <- as.integer(tmp[[1]])
     if (length(tmp) != 2 || anyNA(tmp) || any(tmp < 1)) {
@@ -159,16 +162,16 @@ process_arguments <- function(x) {
   }
 
   # Size of parallel cluster
-  id <- args[, 1] %in% "-ncores"
-  if (any(id)) {
+  id <- which(args[, 1] == "-ncores")
+  if (length(id) == 1L) {
     res[["ncores"]] <- as.integer(args[id, 2])
   } else {
     res[["ncores"]] <- 1L
   }
 
   # Log activity on cluster?
-  id <- args[, 1] %in% "-cllog"
-  if (any(id)) {
+  id <- which(args[, 1] == "-cllog")
+  if (length(id) == 1L) {
     res[["cl_log"]] <-
       is.na(args[id, 2]) || isTRUE(as.logical(args[id, 2]))
   } else {
@@ -183,8 +186,8 @@ process_arguments <- function(x) {
 
   # Check whether to add aggregations across years to output (if `is_out_ts`)
   # as produced by `fun_aggs_across_yrs()`
-  id <- args[, 1] %in% "-add_aggs_across_yrs"
-  if (any(id)) {
+  id <- which(args[, 1] == "-add_aggs_across_yrs")
+  if (length(id) == 1L) {
     res[["add_aggs_across_yrs"]] <-
       is.na(args[id, 2]) || isTRUE(as.logical(args[id, 2]))
   } else {
@@ -365,14 +368,14 @@ extract_metrics <- function(args) {
     is_soils_input &&
     all(file.exists(fname_prepared_soildata))
 
-  if (is_soils_input && !has_prepared_soils) {
-    if (!prjpars[["has_rSOILWAT2_inputs"]]) {
-      stop(
-        shQuote(args[["fun_name"]]), " requires soils as input; ",
-        "however, neither pre-extracted soil data nor simulation inputs ",
-        "are available."
-      )
-    }
+  if (
+    is_soils_input && !has_prepared_soils && !prjpars[["has_rSOILWAT2_inputs"]]
+  ) {
+    stop(
+      shQuote(args[["fun_name"]]), " requires soils as input; ",
+      "however, neither pre-extracted soil data nor simulation inputs ",
+      "are available."
+    )
   }
 
   do_collect_inputs <- is_fun_collecting_inputs(args[["fun_name"]])

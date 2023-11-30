@@ -288,7 +288,13 @@ metric_SW2toTable_daily <- function(
 
         tmp_soiltemp <- cbind(tmp_sf, tmp_sl)
 
-      } else if (!rSOILWAT2::check_version(sim_data, "5.3.0")) {
+      } else if (rSOILWAT2::check_version(sim_data, "5.3.0")) {
+        stop(
+          "Cannot process soil temperature values correctly; ",
+          "please upgrade 'rSOILWAT2' to v5.3.1 or later."
+        )
+
+      } else {
         #--- average temperature at depth of each soil layer
         tmp_sl <- slot(
           slot(sim_data, "SOILTEMP"),
@@ -305,12 +311,6 @@ metric_SW2toTable_daily <- function(
         tmp_soiltemp <- cbind(
           Sim_SurfaceTemp_C = tmp_sf,
           tmp_sl
-        )
-
-      } else {
-        stop(
-          "Cannot process soil temperature values correctly; ",
-          "please upgrade 'rSOILWAT2' to v5.3.1 or later."
         )
       }
 
