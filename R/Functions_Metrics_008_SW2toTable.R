@@ -71,7 +71,9 @@ metric_SW2toTable_daily <- function(
     fname_out <- file.path(
       dir_out_SW2toTable,
       paste0(
-        name_sw2_run, "_sc", id_scen_used[k1], ".", format_share_SW2toTable
+        sub(".zip$", "", name_sw2_run),
+        "_sc", id_scen_used[k1],
+        ".", format_share_SW2toTable
       )
     )
 
