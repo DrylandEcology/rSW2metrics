@@ -138,7 +138,7 @@ aggs_across_years <- function(
     list_years <- lapply(seq_along(id_scens), function(x) list_years)
 
   } else {
-    list_years <- lapply(list_years, function(x) list(x))
+    list_years <- lapply(list_years, list)
   }
 
   stopifnot(length(id_scens) == length(list_years))

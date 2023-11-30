@@ -69,7 +69,8 @@ rd_alias_metrics <- function() {
   exclude_metrics <- "metric_SW2toTable_daily"
   ids_remove <- unique(unlist(lapply(
     exclude_metrics,
-    function(x) grep(x, basename(tmp))
+    FUN = grep,
+    x = basename(tmp)
   )))
   tmp <- tmp[-ids_remove]
 

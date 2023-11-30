@@ -18,7 +18,7 @@ check_all_output_available_of_run <- function(
 
     fsizes <- vapply(
       files,
-      function(f) file.size(f),
+      FUN = file.size,
       FUN.VALUE = NA_real_,
       USE.NAMES = FALSE
     )
@@ -98,7 +98,7 @@ prepare_soils_for_site <- function(
 
     stopifnot(
       vapply(idss, is.finite, FUN.VALUE = NA),
-      vapply(idss, length, FUN.VALUE = NA_integer_) == 1L
+      lengths(idss) == 1L
     )
 
     # Prepare soil variable values
@@ -183,7 +183,9 @@ calc_soillayer_weights <- function(
   x[ids] <- NA
 
   if (!is.null(n_slyrs_has)) {
-    if (isTRUE((tmp <- max(which(!is.na(x)))) > n_slyrs_has)) {
+    tmp <- max(which(!is.na(x)))
+
+    if (isTRUE(tmp > n_slyrs_has)) {
       stop(
         "Deeper soil layers requested than actually simulated:",
         "\n  * position of deepest requested soil layers = ", tmp,
@@ -302,11 +304,11 @@ determine_used_soillayers <- function(
   if (
     !is.null(n_slyrs_has) &&
     length(x) > 0 &&
-    isTRUE((tmp <- max(x)) > n_slyrs_has)
+    isTRUE(max(x) > n_slyrs_has)
   ) {
     stop(
       "Deeper soil layers requested than actually simulated:",
-      "\n  * position of deepest requested soil layers = ", tmp,
+      "\n  * position of deepest requested soil layers = ", max(x),
       "\n  * simulated number of soil layers = ", n_slyrs_has
     )
   }

@@ -71,7 +71,9 @@ metric_SW2toTable_daily <- function(
     fname_out <- file.path(
       dir_out_SW2toTable,
       paste0(
-        name_sw2_run, "_sc", id_scen_used[k1], ".", format_share_SW2toTable
+        sub(".zip$", "", name_sw2_run),
+        "_sc", id_scen_used[k1],
+        ".", format_share_SW2toTable
       )
     )
 
@@ -127,13 +129,15 @@ metric_SW2toTable_daily <- function(
     #--- Prepare moisture data
     # VWC
     tmp_vwc <- slot(slot(sim_data, var_vwc), "Day")
+    has_vwc <- nrow(tmp_vwc) > 0
 
     # SWC (SOILWAT2 units, i.e., centimeters)
     tmp_swc <- slot(slot(sim_data, var_swc), "Day")
+    has_swc <- nrow(tmp_swc) > 0
 
-    sim_sim <- if (nrow(tmp_vwc) > 0) {
+    sim_sim <- if (has_vwc) {
       tmp_vwc
-    } else if (nrow(tmp_swc) > 0) {
+    } else if (has_swc) {
       tmp_swc
     } else {
       stop("Neither ", var_vwc, " nor ", var_swc, " was stored as output.")
@@ -157,8 +161,8 @@ metric_SW2toTable_daily <- function(
     ))
     # nolint end
 
-    sim_vwc <- tmp_vwc[, 2 + ids_cols, drop = FALSE]
-    sim_swc <- tmp_swc[, 2 + ids_cols, drop = FALSE]
+    sim_vwc <- if (has_vwc) tmp_vwc[, 2 + ids_cols, drop = FALSE]
+    sim_swc <- if (has_swc) tmp_swc[, 2 + ids_cols, drop = FALSE]
 
 
     #--- * meteo ------
@@ -284,7 +288,13 @@ metric_SW2toTable_daily <- function(
 
         tmp_soiltemp <- cbind(tmp_sf, tmp_sl)
 
-      } else if (!rSOILWAT2::check_version(sim_data, "5.3.0")) {
+      } else if (rSOILWAT2::check_version(sim_data, "5.3.0")) {
+        stop(
+          "Cannot process soil temperature values correctly; ",
+          "please upgrade 'rSOILWAT2' to v5.3.1 or later."
+        )
+
+      } else {
         #--- average temperature at depth of each soil layer
         tmp_sl <- slot(
           slot(sim_data, "SOILTEMP"),
@@ -302,12 +312,6 @@ metric_SW2toTable_daily <- function(
           Sim_SurfaceTemp_C = tmp_sf,
           tmp_sl
         )
-
-      } else {
-        stop(
-          "Cannot process soil temperature values correctly; ",
-          "please upgrade 'rSOILWAT2' to v5.3.1 or later."
-        )
       }
 
       #--- combine temperature at surface and at soil layers
@@ -317,9 +321,9 @@ metric_SW2toTable_daily <- function(
 
     #--- * VWC ------
     if (any(c("all", "VWC") %in% outputs_SW2toTable)) {
-      tmp <- if (nrow(sim_vwc) > 0) {
+      tmp_vwc <- if (has_vwc) {
         sim_vwc
-      } else if (nrow(sim_swc) > 0) {
+      } else if (has_swc) {
         # calc VWC (bulk) as SWC / width, see `rSOILWAT2::get_soilmoisture()`
         sweep(
           sim_swc,
@@ -328,9 +332,9 @@ metric_SW2toTable_daily <- function(
           FUN = "/"
         )
       }
-      colnames(tmp) <- paste0("Sim_VWC_", soil_widths_str[ids_cols])
+      colnames(tmp_vwc) <- paste0("Sim_VWC_", soil_widths_str[ids_cols])
 
-      data_sim[["VWC"]] <- tmp
+      data_sim[["VWC"]] <- tmp_vwc
     }
 
 
@@ -352,9 +356,21 @@ metric_SW2toTable_daily <- function(
 
     #--- * SWAat30bar ------
     if (any(c("all", "SWAat30bar") %in% outputs_SW2toTable)) {
+      tmp_swc <- if (has_swc) {
+        sim_swc
+      } else if (has_vwc) {
+        # calc SWC as VWC (bulk) * width, see `rSOILWAT2::get_soilmoisture()`
+        sweep(
+          sim_vwc,
+          MARGIN = 2,
+          STATS = widths_cm[ids_cols],
+          FUN = "*"
+        )
+      }
+
       tmp <- calc_SWA_mm(
         sim_swc_daily = list(
-          values = list(swc = sim_swc)
+          values = list(swc = tmp_swc)
         ),
         soils = mtrcs_soils,
         used_depth_range_cm = NULL,
