@@ -61,7 +61,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
     )
   }
 
-  if (out %in% "ts_years") {
+  if (identical(out, "ts_years")) {
     tmp_is_list <- inherits(fun_args[["list_years_scen_used"]], "list")
     tmp_is_numeric <- vapply(
       fun_args[["list_years_scen_used"]],
@@ -77,7 +77,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
       )
     }
 
-  } else if (out %in% "across_years") {
+  } else if (identical(out, "across_years")) {
     tmp_is_list <- inherits(fun_args[["list_years_scen_used"]], "list")
     tmp_is_list2 <- vapply(
       fun_args[["list_years_scen_used"]],
@@ -108,7 +108,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
       )
     }
 
-  } else if (out %in% "raw") {
+  } else if (identical(out, "raw")) {
   }
 
   if (!missing(req_soil_vars)) {

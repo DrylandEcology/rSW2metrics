@@ -330,16 +330,7 @@ test_that("Check metrics", {
 
 
       #--- Call aggregation function for rSOILWAT2 input/output for each site
-      if (!do_timing) {
-        res <- foo_metrics(
-          fun = fun_metrics[k1],
-          fun_args = fun_args,
-          run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
-          is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
-          N_sites = N_sites_used
-        )
-
-      } else {
+      if (do_timing) {
         time_metrics[k1] <- system.time(
           # nolint start: implicit_assignment_linter.
           res <- foo_metrics(
@@ -351,6 +342,15 @@ test_that("Check metrics", {
           )
           # nolint end: implicit_assignment_linter.
         )[["elapsed"]]
+
+      } else {
+        res <- foo_metrics(
+          fun = fun_metrics[k1],
+          fun_args = fun_args,
+          run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
+          is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
+          N_sites = N_sites_used
+        )
       }
 
 
