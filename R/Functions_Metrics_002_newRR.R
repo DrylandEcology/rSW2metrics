@@ -2734,7 +2734,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       DSI = vapply(tmp_dsi_daily, mean, FUN.VALUE = NA_real_),
 
       # Number of dry soils intervals `[#]`
-      nDSI = vapply(tmp_dsi_daily, length, FUN.VALUE = NA_integer_),
+      nDSI = lengths(tmp_dsi_daily),
 
       # First fall frost (<-5 C) `[day of year]`
       FrostFallFirst = as.vector(tmp_frost_doys[, "FirstFrost"]),
