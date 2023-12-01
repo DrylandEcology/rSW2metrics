@@ -356,7 +356,7 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
     fun_across_time = function(x) {
       nsl <- ncol(x)
       if (!is.null(nsl) && nsl > 1) {
-        apply(x, MARGIN = 2, FUN = mean)
+        colMeans(x)
       } else {
         mean(x)
       }

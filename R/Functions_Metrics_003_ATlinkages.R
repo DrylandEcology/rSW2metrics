@@ -900,7 +900,7 @@ metric_TEPET_daily <- function(
       zipped_runs = zipped_runs
     )
 
-    t_daily <- 10 * apply(sim_data[["day"]][["values"]][["t"]], 1, sum)
+    t_daily <- 10 * rowSums(sim_data[["day"]][["values"]][["t"]])
 
     res[[k1]] <- rbind(
       format_values_to_matrix(

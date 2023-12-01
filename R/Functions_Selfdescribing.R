@@ -66,7 +66,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
     )
   }
 
-  if (out %in% "ts_years") {
+  if (identical(out, "ts_years")) {
     tmp_is_list <- inherits(fun_args[["list_years_scen_used"]], "list")
     tmp_is_numeric <- vapply(
       fun_args[["list_years_scen_used"]],
@@ -82,7 +82,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
       )
     }
 
-  } else if (out %in% "across_years") {
+  } else if (identical(out, "across_years")) {
     tmp_is_list <- inherits(fun_args[["list_years_scen_used"]], "list")
     tmp_is_list2 <- vapply(
       fun_args[["list_years_scen_used"]],
@@ -90,10 +90,12 @@ check_metric_arguments <- function(out, req_soil_vars) {
       what = "list",
       FUN.VALUE = NA
     )
-    tmp_is_numeric <- unlist(lapply(
-      fun_args[["list_years_scen_used"]],
-      function(x) vapply(x, is.numeric, FUN.VALUE = NA)
-    ))
+
+    tmp_is_numeric <- vapply(
+      unlist(fun_args[["list_years_scen_used"]], recursive = FALSE),
+      is.numeric,
+      FUN.VALUE = NA
+    )
 
     if (!(isTRUE(tmp_is_list) && all(tmp_is_list2) && all(tmp_is_numeric))) {
       stop(
@@ -111,12 +113,14 @@ check_metric_arguments <- function(out, req_soil_vars) {
       )
     }
 
-  } else if (out %in% "raw") {
+  } else if (identical(out, "raw")) {
   }
 
   if (!missing(req_soil_vars)) {
     if ("soils" %in% names(fun_args)) {
-      if (any(tmp <- !(req_soil_vars %in% names(list_soil_variables())))) {
+      tmp <- !(req_soil_vars %in% names(list_soil_variables()))
+
+      if (any(tmp)) {
         stop(
           "Requested soil variable(s) ",
           toString(shQuote(req_soil_vars[tmp])),
@@ -212,7 +216,8 @@ identify_submetric_timesteps <- function(submetrics) {
     function(mm) {
       tmp <- vapply(
         tag_timesteps2,
-        function(val) grepl(val, mm),
+        FUN = grepl,
+        x = mm,
         FUN.VALUE = NA
       )
       res <- names(tag_timesteps2)[tmp]

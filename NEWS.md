@@ -1,4 +1,10 @@
 # rSW2metrics v0.3.0-9000
+* `metric_FrostDaysAtNeg5C()` returns now `NAs` instead of `+/-Inf` for years
+  without a frost event.
+* New metrics functions to extract `"EcologicalDroughtMetrics2023"`, i.e.,
+    * `metric_EcologicalDroughtMetrics2023_annual()` returns annual time series
+    * `metric_EcologicalDroughtMetrics2023_annualClim()` returns climatologies
+      (summaries across years).
 * `rSW2metrics` can now utilize new functionality for
   soil water retention curves `SWRC` introduced with `rSOILWAT2` `v6.0.0` while
   continuing to support earlier versions

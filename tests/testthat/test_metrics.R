@@ -12,6 +12,10 @@ test_that("Test data availability", {
 create_new_reference_output <- FALSE
 
 # NA = detect currently installed version
+#   * basis rSOILWAT2 v5.0.4
+#   * rSOILWAT2 versions leading to significant differences in metrics
+#     (last patch for each minor version):
+#     v5.1.3, v5.2.0, v6.0.x
 used_rSOILWAT2_version <- NA
 
 
@@ -328,18 +332,9 @@ test_that("Check metrics", {
 
 
       #--- Call aggregation function for rSOILWAT2 input/output for each site
-      if (!do_timing) {
-        res <- foo_metrics(
-          fun = fun_metrics[k1],
-          fun_args = fun_args,
-          run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
-          is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
-          is_swrc_input = has_fun_swrc_as_arg(fun_metrics[k1]),
-          N_sites = N_sites_used
-        )
-
-      } else {
+      if (do_timing) {
         time_metrics[k1] <- system.time(
+          # nolint start: implicit_assignment_linter.
           res <- foo_metrics(
             fun = fun_metrics[k1],
             fun_args = fun_args,
@@ -348,7 +343,18 @@ test_that("Check metrics", {
             is_swrc_input = has_fun_swrc_as_arg(fun_metrics[k1]),
             N_sites = N_sites_used
           )
+          # nolint end: implicit_assignment_linter.
         )[["elapsed"]]
+
+      } else {
+        res <- foo_metrics(
+          fun = fun_metrics[k1],
+          fun_args = fun_args,
+          run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
+          is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
+          is_swrc_input = has_fun_swrc_as_arg(fun_metrics[k1]),
+          N_sites = N_sites_used
+        )
       }
 
 
@@ -395,9 +401,12 @@ test_that("Check metrics", {
         # Avoid exceptions
         tmp <- any(vapply(
           "seasonality",
-          function(x) grepl(x, fun_metrics[k1], ignore.case = TRUE),
+          FUN = grepl,
+          x = fun_metrics[k1],
+          ignore.case = TRUE,
           FUN.VALUE = NA
         ))
+
         if (!tmp) {
           for (ts_suba in names(list_subannual_timesteps())) {
             expect_false(
@@ -523,12 +532,45 @@ test_that("Check metrics", {
 
 
         if (do_test) {
+          #--- Check character columns: "site", "group"
+          var_str <- c("site", "group")
+
           expect_equal(
-            output[ids, ],
-            expected = ref_output,
+            output[ids, var_str, drop = FALSE],
+            expected = ref_output[, var_str, drop = FALSE],
             label = fun_metrics[k1],
             tolerance = sqrt(.Machine[["double.eps"]])
           )
+
+
+          #--- Check (numeric) results (but by "group" instead of year)
+          var_res <- colnames(output)[!(colnames(output) %in% var_str)]
+
+          res_output_by_group <- as.data.frame(
+            t(output[ids, var_res, drop = FALSE])
+          )
+          colnames(res_output_by_group) <- output[["group"]]
+
+          has_var_res <- setequal(
+            var_res,
+            colnames(ref_output)[!(colnames(ref_output) %in% var_str)]
+          )
+
+          expect_true(has_var_res)
+
+          if (has_var_res) {
+            ref_output_by_group <- as.data.frame(
+              t(ref_output[, var_res, drop = FALSE])
+            )
+            colnames(ref_output_by_group) <- ref_output[["group"]]
+
+            expect_equal(
+              res_output_by_group,
+              expected = ref_output_by_group,
+              label = fun_metrics[k1],
+              tolerance = sqrt(.Machine[["double.eps"]])
+            )
+          }
         }
       }
 

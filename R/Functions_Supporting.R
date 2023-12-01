@@ -18,7 +18,7 @@ check_all_output_available_of_run <- function(
 
     fsizes <- vapply(
       files,
-      function(f) file.size(f),
+      FUN = file.size,
       FUN.VALUE = NA_real_,
       USE.NAMES = FALSE
     )
@@ -112,7 +112,7 @@ prepare_soils_for_site <- function(
 
     stopifnot(
       vapply(idss, is.finite, FUN.VALUE = NA),
-      vapply(idss, length, FUN.VALUE = NA_integer_) == 1L
+      lengths(idss) == 1L
     )
 
     # Prepare soil variable values
@@ -230,7 +230,9 @@ calc_soillayer_weights <- function(
   x[ids] <- NA
 
   if (!is.null(n_slyrs_has)) {
-    if (isTRUE((tmp <- max(which(!is.na(x)))) > n_slyrs_has)) {
+    tmp <- max(which(!is.na(x)))
+
+    if (isTRUE(tmp > n_slyrs_has)) {
       stop(
         "Deeper soil layers requested than actually simulated:",
         "\n  * position of deepest requested soil layers = ", tmp,
@@ -349,11 +351,11 @@ determine_used_soillayers <- function(
   if (
     !is.null(n_slyrs_has) &&
     length(x) > 0 &&
-    isTRUE((tmp <- max(x)) > n_slyrs_has)
+    isTRUE(max(x) > n_slyrs_has)
   ) {
     stop(
       "Deeper soil layers requested than actually simulated:",
-      "\n  * position of deepest requested soil layers = ", tmp,
+      "\n  * position of deepest requested soil layers = ", max(x),
       "\n  * simulated number of soil layers = ", n_slyrs_has
     )
   }
@@ -499,6 +501,130 @@ get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
 
 #------ NEWRR DEVELOPMENT ERA ------
 
+
+# Correlation between x and y by year
+# Seasonal timing (if y is monthly temperature)
+calc_CorXY_byYear <- function(x, y, ts_year) {
+  as.vector(by(
+    data = cbind(x, y),
+    INDICES = ts_year,
+    FUN = function(x) cor(x[, 1], x[, 2])
+  ))
+}
+
+# Amount of variation among seasons
+calc_seasonal_variability <- function(x, ts_year) {
+  tapply(
+    X = x,
+    INDEX = ts_year,
+    FUN = function(x) sd(x) / mean(x)
+  )
+}
+
+
+# Calculate the extreme of a summary function applied over a rolling N-day
+# window
+calc_extreme_funNday <- function(
+  x,
+  ts_year,
+  n_days = 1L,
+  fun_time = mean,
+  fun_extreme = max
+) {
+  stopifnot(requireNamespace("zoo", quietly = TRUE))
+
+  tapply(
+    X = zoo::rollapply(
+      data = x,
+      width = n_days,
+      FUN = fun_time,
+      fill = NA,
+      partial = TRUE,
+      align = "center"
+    ),
+    INDEX = ts_year,
+    FUN = fun_extreme
+  )
+}
+
+#' Determine if a value meets a condition
+#' @return Logical vector
+#' @noRd
+calc_condition <- function(x, condition = list(op = `>`, limit = 0)) {
+  do.call(
+    what = condition[["op"]],
+    args = list(x, condition[["limit"]])
+  )
+}
+
+
+#' @return A list with an element (for each unique value of `ts_years`)
+#' that contains an integer vector.
+#'
+#' @noRd
+calc_durations_consecutive_periods <- function(x_periods, ts_years) {
+  tapply(
+    X = x_periods,
+    INDEX = ts_years,
+    FUN = function(x) {
+      tmp <- rle(x)
+      if (anyNA(tmp[["values"]])) {
+        # Propagate NAs
+        NA_integer_
+      } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
+        # Select duration of spells when
+        # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
+        tmp[["lengths"]][tmp[["values"]]]
+      } else {
+        # No days when `x_periods` is TRUE
+        0L
+      }
+    },
+    simplify = FALSE
+  )
+}
+
+
+#' @return A numeric vector with one value for each unique value of `ts_years`.
+#'
+#' @noRd
+calc_extreme_value_consecutive_periods <- function(
+  x,
+  x_periods,
+  ts_years,
+  fun_time = sum,
+  fun_extreme = max
+) {
+  vapply(
+    X = by(
+      data = cbind(x_periods, x),
+      INDICES = ts_years,
+      FUN = function(x) {
+        tmp <- rle(x[, 1])
+        if (anyNA(tmp[["values"]])) {
+          # Propagate NAs
+          NA_real_
+        } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
+          # Create index of days for each spell when
+          # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
+          ips <- seq_along(tmp[["lengths"]])
+          ids <- rep(ips, tmp[["lengths"]])
+          ids[ids %in% ips[tmp[["values"]] != 1]] <- NA
+
+          as.numeric(tapply(X = x[, 2], INDEX = ids, FUN = fun_time))
+
+        } else {
+          # No days when `x_periods` is TRUE
+          0
+        }
+      }
+    ),
+    FUN = fun_extreme,
+    FUN.VALUE = NA_real_
+  )
+}
+
+
 calc_new_yearly_aggregations <- function(
   x_daily,
   temp_monthly,
@@ -573,10 +699,9 @@ calc_new_yearly_aggregations <- function(
     )
 
     if ("seasonal_variability" %in% output) {
-      res[, "seasonal_variability"] <- tapply(
-        X = x_monthly[["x"]],
-        INDEX = x_monthly[["Year"]],
-        FUN = function(x) sd(x) / mean(x)
+      res[, "seasonal_variability"] <- calc_seasonal_variability(
+        x = x_monthly[["x"]],
+        ts_year = x_monthly[["Year"]]
       )
     }
 
@@ -587,11 +712,11 @@ calc_new_yearly_aggregations <- function(
         x_monthly[["Year"]] == temp_monthly[["time"]][, "Year"]
       )
 
-      res[, "seasonality"] <- as.vector(by(
-        data = cbind(x_monthly[["x"]], temp_monthly[["values"]][[1]]),
-        INDICES = x_monthly[["Year"]],
-        FUN = function(x) cor(x[, 1], x[, 2])
-      ))
+      res[, "seasonality"] <- calc_CorXY_byYear(
+        x = x_monthly[["x"]],
+        y = temp_monthly[["values"]][[1]],
+        ts_year = x_monthly[["Year"]]
+      )
     }
   }
 
@@ -605,42 +730,30 @@ calc_new_yearly_aggregations <- function(
   }
 
   if (
-    "extreme_mean005day" %in% output &&
-    requireNamespace("zoo", quietly = TRUE)
+    "extreme_mean005day" %in% output
   ) {
     stopifnot(!missing(fun_extreme), !is.null(fun_extreme))
 
-    res[, "extreme_mean005day"] <- tapply(
-      X = zoo::rollapply(
-        data = x_daily[["values"]][[1]],
-        width = 5,
-        FUN = mean,
-        fill = NA,
-        partial = TRUE,
-        align = "center"
-      ),
-      INDEX = x_daily[["time"]][, "Year"],
-      FUN = fun_extreme
+    res[, "extreme_mean005day"] <- calc_extreme_funNday(
+      x = x_daily[["values"]][[1L]],
+      ts_year = x_daily[["time"]][, "Year"],
+      n_days = 5L,
+      fun_time = mean,
+      fun_extreme = fun_extreme
     )
   }
 
   if (
-    "extreme_mean010day" %in% output &&
-    requireNamespace("zoo", quietly = TRUE)
+    "extreme_mean010day" %in% output
   ) {
     stopifnot(!missing(fun_extreme), !is.null(fun_extreme))
 
-    res[, "extreme_mean010day"] <- tapply(
-      X = zoo::rollapply(
-        data = x_daily[["values"]][[1]],
-        width = 10,
-        FUN = mean,
-        fill = NA,
-        partial = TRUE,
-        align = "center"
-      ),
-      INDEX = x_daily[["time"]][, "Year"],
-      FUN = fun_extreme
+    res[, "extreme_mean010day"] <- calc_extreme_funNday(
+      x = x_daily[["values"]][[1L]],
+      ts_year = x_daily[["time"]][, "Year"],
+      n_days = 10L,
+      fun_time = mean,
+      fun_extreme = fun_extreme
     )
   }
 
@@ -657,12 +770,9 @@ calc_new_yearly_aggregations <- function(
   if (any(var_periods %in% output)) {
     stopifnot(!missing(periods), !is.null(periods))
 
-    x_periods <- do.call(
-      what = periods[["op"]],
-      args = list(
-        x_daily[["values"]][[1]],
-        periods[["limit"]]
-      )
+    x_periods <- calc_condition(
+      x = x_daily[["values"]][[1L]],
+      condition = periods
     )
 
 
@@ -672,54 +782,21 @@ calc_new_yearly_aggregations <- function(
         !missing(fun_extreme), !is.null(fun_extreme)
       )
 
-      res[, "extreme_value_consecutive_periods"] <- vapply(
-        X = by(
-          data = cbind(x_periods, x_daily[["values"]][[1]]),
-          INDICES = x_daily[["time"]][, "Year"],
-          FUN = function(x) {
-            tmp <- rle(x[, 1])
-            if (anyNA(tmp[["values"]])) {
-              # Propagate NAs
-              NA
-            } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
-              # Create index of days for each spell when
-              # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
-              ips <- seq_along(tmp[["lengths"]])
-              ids <- rep(ips, tmp[["lengths"]])
-              ids[ids %in% ips[tmp[["values"]] != 1]] <- NA
-
-              tapply(X = x[, 2], INDEX = ids, FUN = fun_time)
-
-            } else {
-              # No days when `x_periods` is TRUE
-              0
-            }
-          }
-        ),
-        FUN = fun_extreme,
-        FUN.VALUE = NA_real_
-      )
+      res[, "extreme_value_consecutive_periods"] <-
+        calc_extreme_value_consecutive_periods(
+          x = x_daily[["values"]][[1L]],
+          x_periods = x_periods,
+          ts_years = x_daily[["time"]][, "Year"],
+          fun_time = fun_time,
+          fun_extreme = fun_extreme
+        )
     }
 
 
     if (any(var_periods %in% output)) {
-      x_consecutive_periods_days <- tapply(
-        X = x_periods,
-        INDEX = x_daily[["time"]][, "Year"],
-        FUN = function(x) {
-          tmp <- rle(x)
-          if (anyNA(tmp[["values"]])) {
-            # Propagate NAs
-            NA
-          } else if (any(tmp[["values"]] == 1, na.rm = TRUE)) {
-            # Select duration of spells when
-            # `x_periods` is TRUE (i.e., `tmp[["values"]] == 1`)
-            tmp[["lengths"]][tmp[["values"]]]
-          } else {
-            # No days when `x_periods` is TRUE
-            0
-          }
-        }
+      x_consecutive_periods_days <- calc_durations_consecutive_periods(
+        x_periods = x_periods,
+        ts_years = x_daily[["time"]][, "Year"]
       )
 
       if ("mean_duration_consecutive_periods_days" %in% output) {

@@ -80,7 +80,7 @@ test_that("Value formatter", {
               xlabels <- NULL
 
             } else if (labeltype == "labels") {
-              xlabels <- if (xtype %in% "vector") {
+              xlabels <- if (identical(xtype, "vector")) {
                 ns_vars[[1]]
               } else if (xtype %in% c("list_of_vector1", "list_of_vectorV")) {
                 names(x) <- NULL
