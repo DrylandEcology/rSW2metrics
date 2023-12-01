@@ -62,33 +62,45 @@ rSW2_glovars <- new.env()
 #' @exportPattern "^metric_[^\\.]"
 
 
-rd_alias_metrics <- function() {
+md_aliases_of_metrics <- function() {
   tmp <- list_all_metrics()
 
-  # Remove `metric_SW2toTable_daily()` because it has it's own documentation
-  exclude_metrics <- "metric_SW2toTable_daily"
+  # Remove metrics that have their own dedicated documentation
+  exclude_metrics <- c(
+    "metric_SW2toTable_daily",
+    "EcologicalDroughtMetrics2023_annual",
+    "EcologicalDroughtMetrics2023_annualClim",
+    "RR2022predictors_annual",
+    "RR2022predictors_annualClim"
+  )
+
   ids_remove <- unique(unlist(lapply(
     exclude_metrics,
     FUN = grep,
     x = basename(tmp)
   )))
-  tmp <- tmp[-ids_remove]
+
+  if (length(ids_remove) > 0L) {
+    tmp <- tmp[-ids_remove]
+  }
 
   paste("@aliases", paste(tmp, collapse = " "))
 }
 
-rd_section_listing_metrics <- function() {
+rd_section_list_metrics <- function() {
   paste(
     "\\section{List of currently available metrics:}{\n",
     "\\itemize{\n",
     paste(
       "  \\item", # nolint: nonportable_path_linter.
-      paste0("\\var{", list_all_metrics(), "}"),
+      paste0("\\code{\\link{", list_all_metrics(), "}}"),
       collapse = "\n"
     ),
     "\n}}"
   )
 }
+
+
 
 #' End-user functions that calculate a specific `metric`
 #'
@@ -171,9 +183,10 @@ rd_section_listing_metrics <- function() {
 #' a different type of output, i.e., spreadsheets of the most important
 #' daily `SOILWAT2` variables, see [`SW2toTable`].
 #'
-#' @evalRd rd_section_listing_metrics()
+#' @evalRd rd_section_list_metrics()
 #'
-#' @eval rd_alias_metrics()
+#' @eval md_aliases_of_metrics()
+#'
 #' @name metrics
 NULL
 

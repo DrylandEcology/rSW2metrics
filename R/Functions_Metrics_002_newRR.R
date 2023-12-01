@@ -2178,14 +2178,16 @@ get_RR2022predictors_annual <- function(
 #' means, standard deviations, or coefficients of variation of
 #' annual values.
 #'
+#' @inheritParams metrics
+#'
 #' @references Chambers et al. (2023)
 #' New indicators of ecological resilience and invasion resistance to support
 #' prioritization and management in the sagebrush biome, United States.
 #' Frontiers in Ecology and Evolution, 10, 1–17.
 #' \url{https://doi.org/10.3389/fevo.2022.1009268}
 #'
-#' @seealso [RR2022predictors_annualClim()] and
-#' [metric_RR2022predictors_annual()]
+#' @seealso [RR2022predictors_annualClim()];
+#' see [metrics] for a complete list of available metric functions.
 #'
 #' @name RR2022predictors_annual
 #' @md
@@ -2226,6 +2228,8 @@ metric_RR2022predictors_annual <- function(
 #' means, standard deviations, or coefficients of variation of
 #' annual values (see `metric_RR2022predictors_annual()`).
 #'
+#' @inheritParams metrics
+#'
 #' @return A return object where `group` contains the following annual
 #' variables:
 #'    * `"Tmean_mean"`
@@ -2259,8 +2263,8 @@ metric_RR2022predictors_annual <- function(
 #' Frontiers in Ecology and Evolution, 10, 1–17.
 #' \url{https://doi.org/10.3389/fevo.2022.1009268}
 #'
-#' @seealso [RR2022predictors_annual()] and
-#' [metric_RR2022predictors_annualClim()]
+#' @seealso [RR2022predictors_annual()];
+#' see [metrics] for a complete list of available metric functions.
 #'
 #' @name RR2022predictors_annualClim
 #' @md
@@ -2796,13 +2800,15 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 
 #' Annual time series of ecological drought metrics
 #'
+#' @inheritParams metrics
+#'
 #' @references Chenoweth et al. (2023)
 #' Ecologically relevant moisture and temperature metrics for assessing
 #' dryland ecosystem dynamics.
 #' Ecohydrology, 16(3), e2509. \url{https://doi.org/10.1002/eco.2509}
 #'
-#' @seealso [EcologicalDroughtMetrics2023_annualClim()] and
-#' [metric_EcologicalDroughtMetrics2023_annual()]
+#' @seealso [EcologicalDroughtMetrics2023_annualClim()];
+#' see [metrics] for a complete list of available metric functions.
 #'
 #' @section Details:
 #' The following functions produce all metrics used by Chenoweth et al.:
@@ -2926,8 +2932,10 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 #' annual values of metrics used by Chenoweth et al.
 #' (see `metric_EcologicalDroughtMetrics2023_annual()`).
 #'
-#' @seealso [EcologicalDroughtMetrics2023_annual()] and
-#' [metric_EcologicalDroughtMetrics2023_annualClim()]
+#' @inheritParams metrics
+#'
+#' @seealso [EcologicalDroughtMetrics2023_annual()];
+#' see [metrics] for a complete list of available metric functions.
 #'
 #' @return A return object where `group` contains the following climatologies of
 #' annual variables summarized across years by means `mean`,

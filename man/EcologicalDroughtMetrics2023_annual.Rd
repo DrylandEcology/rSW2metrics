@@ -16,6 +16,45 @@ metric_EcologicalDroughtMetrics2023_annual(
   ...
 )
 }
+\arguments{
+\item{path}{A character string. The path to the simulation project folder
+that contains the individual folder of each simulated site.}
+
+\item{name_sw2_run}{A character string. The name of the folder
+(or zip archive, see \code{zipped_runs}) of the simulated site
+for which metrics are to be calculated.
+\pkg{rSOILWAT2} input and output is organized following conventions of
+\pkg{rSFSW2}, i.e., inputs for each scenario are stored in a list object
+named \var{\dQuote{swRunScenariosData}} which is stored
+on disk as a file \var{\dQuote{sw_input.RData}};
+and output data is stored for each scenario separately in an object
+named \var{\dQuote{runDataSC}}
+in a file \var{\dQuote{sw_output_scX.RData}} where
+\code{X} is the number of the scenario.}
+
+\item{id_scen_used}{An integer vector. The numbers of scenarios for which
+metrics are to be calculated.}
+
+\item{list_years_scen_used}{A list of integer vectors.
+Each scenario in \code{id_scen_used} must have a corresponding vector of
+calendar years (for which the metrics) will be calculated.}
+
+\item{out}{A character string. Signaling whether the functions returns
+a time series of yearly values or an aggregate (e.g., mean) across years.
+One of \var{\dQuote{ts_years}} or \var{\dQuote{across_years}}.}
+
+\item{zipped_runs}{A logical value. Describes whether \code{name_sw2_run}
+is a zip archive or a regular folder.}
+
+\item{soils}{A named list of numeric vectors. The presence of the
+argument \code{soils} indicates that the function in question requires
+soil information as inputs.
+The named elements include \var{\dQuote{depth_cm}},
+\var{\dQuote{sand_frac}}, and \var{\dQuote{clay_frac}} and
+contain the respective values for each soil layer at the site.}
+
+\item{...}{Additional arguments}
+}
 \value{
 A return object where \code{group} contains the following
 annual variables:
@@ -116,6 +155,6 @@ dryland ecosystem dynamics.
 Ecohydrology, 16(3), e2509. \url{https://doi.org/10.1002/eco.2509}
 }
 \seealso{
-\code{\link[=EcologicalDroughtMetrics2023_annualClim]{EcologicalDroughtMetrics2023_annualClim()}} and
-\code{\link[=metric_EcologicalDroughtMetrics2023_annual]{metric_EcologicalDroughtMetrics2023_annual()}}
+\code{\link[=EcologicalDroughtMetrics2023_annualClim]{EcologicalDroughtMetrics2023_annualClim()}};
+see \link{metrics} for a complete list of available metric functions.
 }
