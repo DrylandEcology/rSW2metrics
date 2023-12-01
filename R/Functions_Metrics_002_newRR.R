@@ -2422,6 +2422,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   ...
 ) {
   res <- list()
@@ -2580,6 +2581,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       # required content of sim_data: list(time, values = swc)
       sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
+      swrcp_and_usage = swrcp_and_usage,
       SWP_limit_MPa = -3.9,
       used_depth_range_cm = c(0, 100),
       method = "across_profile"
@@ -2918,6 +2920,7 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   out <- match.arg(out)
@@ -2935,6 +2938,7 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
     out = out,
     zipped_runs = zipped_runs,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     ...
   )
 }
@@ -3034,6 +3038,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
   out = "across_years",
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -3056,6 +3061,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           out = "ts_years",
           zipped_runs = zipped_runs,
           soils = soils,
+          swrcp_and_usage = swrcp_and_usage,
           ...
         )[[1L]]
 

@@ -13,6 +13,7 @@ metric_EcologicalDroughtMetrics2023_annual(
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 )
 }
@@ -49,6 +50,10 @@ is a zip archive or a regular folder.}
 \item{soils}{A named list with soil parameters \code{"depth_cm"},
 \code{"sand_frac"}, \code{"clay_frac"}, and \code{"gravel_content"}
 as numeric vectors with values for each soil layer.}
+
+\item{swrcp_and_usage}{A named list with usage of and, if suitable,
+parameters of soil water retention curve;
+e.g., the output of \code{\link[=load_swrcp_and_usage]{load_swrcp_and_usage()}}.}
 
 \item{...}{Additional arguments}
 }
