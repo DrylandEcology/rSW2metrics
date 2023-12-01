@@ -280,7 +280,7 @@ calc_transp_peaks_v1 <- function(
   }
 
   # Create data.frame formatted as if returned by `aggregate`
-  structure(
+  structure( # nolint: undesirable_function_linter.
     list(ts_years, peaks),
     class = "data.frame",
     .Names = c("Year", "x"),
@@ -365,7 +365,7 @@ calc_transp_peaks_v2 <- function(
   colnames(peaks) <- names(tmp)
 
   # Create data.frame formatted as if returned by `aggregate`
-  structure(
+  structure( # nolint: undesirable_function_linter.
     list(ts_years, peaks),
     class = "data.frame",
     .Names = c("Year", "x"),

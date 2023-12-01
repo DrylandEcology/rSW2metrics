@@ -854,22 +854,9 @@ calc_DSI <- function(
     sm_periods = list(op = `<`, limit = SWP_limit_MPa)
   )
 
-  tapply(
-    X = dry_daily[["values"]][[1]],
-    INDEX = dry_daily[["time"]][, "Year"],
-    FUN = function(x) {
-      if (anyNA(x)) {
-        # propagate NAs
-        NA
-      } else {
-        tmp <- rle(x)
-        if (any(tmp[["values"]] == 1)) {
-          tmp[["lengths"]][tmp[["values"]]]
-        } else {
-          0
-        }
-      }
-    }
+  calc_durations_consecutive_periods(
+    x_periods = dry_daily[["values"]][[1]],
+    ts_years = dry_daily[["time"]][, "Year"]
   )
 }
 
@@ -1018,16 +1005,18 @@ calc_frost_doy <- function(
   # Mid-year: summer solstice + 1 month
   # North: June solstice (Jun 20-22 = 171-173)
   # South: December solstice (Dec 20-23 = 354-357)
-  doy_mid <- 196 # July 15 (in non-leap year)
+  doy_mid <- 196L # July 15 (in non-leap year)
 
   res <- as.matrix(aggregate(
     x = is_frost,
     by = list(Year = sim_tmin_daily[["time"]][, "Year"]),
     function(x) {
       tmp <- which(x)
+      is_last <- tmp <= doy_mid
+      is_first <- tmp > doy_mid
       c(
-        last = max(tmp[tmp <= doy_mid]),
-        first = min(tmp[tmp > doy_mid])
+        last = if (any(is_last)) max(tmp[is_last]) else NA_integer_,
+        first = if (any(is_first)) min(tmp[is_first]) else NA_integer_
       )
     }
   ))
@@ -1076,26 +1065,8 @@ metric_FrostDaysAtNeg5C <- function(
   res
 }
 
-
-# Amount of variation among seasons
-calc_seasonal_variability <- function(x, ts_year) {
-  tapply(
-    X = x,
-    INDEX = ts_year,
-    FUN = function(x) sd(x) / mean(x)
-  )
-}
-
 # Correlation between x and y by year
 # Seasonal timing (if y is monthly temperature)
-calc_CorXY_byYear <- function(x, y, ts_year) {
-  as.vector(by(
-    data = cbind(x, y),
-    INDICES = ts_year,
-    FUN = function(x) cor(x[, 1], x[, 2])
-  ))
-}
-
 metric_CorTempPPT <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
@@ -1720,7 +1691,7 @@ get_Tmean_monthly <- function(
   if (out == "ts_years" && !isTRUE(is.list(list_years_scen_used[[1]]))) {
     # Code below expects lists of lists of year vectors
     # as provided by default if out is "across_years" --> convert
-    list_years_scen_used <- lapply(list_years_scen_used, function(x) list(x))
+    list_years_scen_used <- lapply(list_years_scen_used, list)
   }
 
   for (k1 in seq_along(id_scen_used)) {
@@ -1926,6 +1897,7 @@ metric_SMTRs <- function(
 }
 
 
+calc_AI <- function(ppt, pet) ppt / pet
 
 #' Annual AI = aridity index [mm/mm] = PPT/PET
 #'
@@ -1965,9 +1937,10 @@ metric_AI <- function(
     )
 
     res[[k1]] <- matrix(
-      data =
-        sim_data[["yr"]][["values"]][["ppt"]] /
-        sim_data[["yr"]][["values"]][["pet"]],
+      data = calc_AI(
+        ppt = sim_data[["yr"]][["values"]][["ppt"]],
+        pet = sim_data[["yr"]][["values"]][["pet"]]
+      ),
       nrow = 1,
       dimnames = list("AI", NULL)
     )
@@ -2205,9 +2178,18 @@ get_RR2022predictors_annual <- function(
 #' means, standard deviations, or coefficients of variation of
 #' annual values.
 #'
-#' @references JC Chambers et al. (in prep)
+#' @inheritParams metrics
 #'
-#' @noRd
+#' @references Chambers et al. (2023)
+#' New indicators of ecological resilience and invasion resistance to support
+#' prioritization and management in the sagebrush biome, United States.
+#' Frontiers in Ecology and Evolution, 10, 1–17.
+#' \url{https://doi.org/10.3389/fevo.2022.1009268}
+#'
+#' @seealso [RR2022predictors_annualClim()];
+#' see [metrics] for a complete list of available metric functions.
+#'
+#' @name RR2022predictors_annual
 #' @md
 metric_RR2022predictors_annual <- function(
   path,
@@ -2246,6 +2228,8 @@ metric_RR2022predictors_annual <- function(
 #' means, standard deviations, or coefficients of variation of
 #' annual values (see `metric_RR2022predictors_annual()`).
 #'
+#' @inheritParams metrics
+#'
 #' @return A return object where `group` contains the following annual
 #' variables:
 #'    * `"Tmean_mean"`
@@ -2271,11 +2255,18 @@ metric_RR2022predictors_annual <- function(
 #'
 #' @section Notes:
 #'   * Argument `fun_aggs_across_yrs` is ignored.
-#'   * Values are `NA` if any year is requested but un-simulated.
+#'   * Values are `NA` if any year is requested but was not simulated.
 #'
-#' @references JC Chambers et al. (in prep)
+#' @references Chambers et al. (2023)
+#' New indicators of ecological resilience and invasion resistance to support
+#' prioritization and management in the sagebrush biome, United States.
+#' Frontiers in Ecology and Evolution, 10, 1–17.
+#' \url{https://doi.org/10.3389/fevo.2022.1009268}
 #'
-#' @noRd
+#' @seealso [RR2022predictors_annual()];
+#' see [metrics] for a complete list of available metric functions.
+#'
+#' @name RR2022predictors_annualClim
 #' @md
 metric_RR2022predictors_annualClim <- function(
   path,
@@ -2405,9 +2396,419 @@ metric_RR2022predictors_annualClim <- function(
 
 
 
+
+
+get_EcologicalDroughtMetrics2023_annual <- function(
+  path,
+  name_sw2_run,
+  id_scen_used,
+  list_years_scen_used,
+  out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
+  soils,
+  ...
+) {
+  res <- list()
+
+  out <- match.arg(out)
+
+  for (k1 in seq_along(id_scen_used)) {
+    sim_data <- collect_sw2_sim_data(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      output_sets = list(
+        swp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SWPMATRIC",
+          sw2_vars = c(swp = "Lyr"),
+          varnames_are_fixed = FALSE
+        ),
+        swc_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SWCBULK",
+          sw2_vars = c(swc = "Lyr"),
+          varnames_are_fixed = FALSE
+        ),
+        temp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        ),
+        swe_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SNOWPACK",
+          sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
+          varnames_are_fixed = TRUE
+        ),
+        day = list(
+          sw2_tp = "Day",
+          sw2_outs = c("TEMP", "PET", "AET"),
+          sw2_vars = c(
+            tmin = "min_C",
+            pet = "pet_cm",
+            et = "evapotr_cm"
+          ),
+          varnames_are_fixed = TRUE
+        ),
+        mon = list(
+          sw2_tp = "Month",
+          sw2_outs = c("PRECIP", "TEMP", "PET", "AET"),
+          sw2_vars = c(
+            ppt = "ppt",
+            tmean = "avg_C",
+            pet = "pet_cm",
+            et = "evapotr_cm"
+          ),
+          varnames_are_fixed = TRUE
+        ),
+        yr = list(
+          sw2_tp = "Year",
+          sw2_outs = c(
+            "PRECIP",
+            "TEMP", "TEMP", "TEMP",
+            "PET", "AET"
+          ),
+          sw2_vars = c(
+            ppt = "ppt",
+            tmean = "avg_C", tmin = "min_C", tmax = "max_C",
+            pet = "pet_cm", et = "evapotr_cm"
+          ),
+          varnames_are_fixed = TRUE
+        )
+      ),
+      zipped_runs = zipped_runs
+    )
+
+
+    #--- Intermediate variables
+    tmp_cwd_monthly <- calc_CWD_mm(
+      pet_cm = sim_data[["mon"]][["values"]][["pet"]],
+      et_cm = sim_data[["mon"]][["values"]][["et"]]
+    )
+
+    # TDDat5C
+    tmp_tdd_daily <- calc_MDD_daily(
+      # nolint start: commented_code_linter
+      # required content of sim_data: list(
+      #   swp_daily = list(time, values = swp),
+      #   temp_daily = list(values = tmean),
+      #   swe_daily = list(values = swe)
+      # )
+      # nolint end: commented_code_linter
+      sim_data = sim_data,
+      soils = soils,
+      used_depth_range_cm = NULL,
+      t_periods = list(op = `>`, limit = 5),
+      sm_periods = list(op = `>`, limit = -Inf)
+    )
+
+    # DDDat5C0to100cm30bar
+    tmp_ddd_daily <- calc_MDD_daily(
+      sim_data = sim_data,
+      soils = soils,
+      used_depth_range_cm = c(0, 100),
+      t_periods = list(op = `>`, limit = 5),
+      sm_periods = list(op = `<`, limit = -3)
+    )
+
+    # DSIat0to100cm15bar
+    tmp_dsi_daily <- calc_DSI(
+      swp_daily_negbar = sim_data[["swp_daily"]][["values"]][["swp"]],
+      time_daily = sim_data[["swp_daily"]][["time"]],
+      soils = soils,
+      used_depth_range_cm = c(0, 100),
+      SWP_limit_MPa = -1.5
+    )
+
+    # WDDat5C0to100cm15bar
+    tmp_wdd_daily <- calc_MDD_daily(
+      sim_data = sim_data,
+      soils = soils,
+      used_depth_range_cm = c(0, 100),
+      t_periods = list(op = `>`, limit = 5),
+      sm_periods = list(op = `>`, limit = -1.5)
+    )
+
+    # Frost
+    tmp_frost_doys <- calc_frost_doy(
+      # required content of sim_data: list(values = tmin, time = Year)
+      sim_tmin_daily = sim_data[["day"]],
+      Temp_limit_C = -5
+    )
+
+    # Recruitment (metric_RecruitmentIndex_v5)
+    tmp_recruit <- calc_RecruitmentIndex_v3(
+      sim_data = sim_data, # passed to `calc_MDD_daily()`
+      soils = soils,
+      out = "ts_years",
+      hemisphere_NS = "N",
+      recruitment_depth_range_cm = c(10, 20),
+      Temp_limit_C = 5,
+      Wet_SWP_limit_MPa = -1.5,
+      Dry_SWP_limit_MPa = -3,
+      init_WDD = 15,
+      init_days = 3,
+      init_depth_range_cm = c(0, 10),
+      stop_DDD = 15,
+      stop_days_DDD = 3,
+      stop_depth_range_cm = c(0, 20),
+      stop_TDD = 0,
+      stop_days_TDD = 3
+    )
+
+    # SWA
+    tmp_swa_daily <- calc_SWA_mm(
+      # required content of sim_data: list(time, values = swc)
+      sim_swc_daily = sim_data[["swc_daily"]],
+      soils = soils,
+      SWP_limit_MPa = -3.9,
+      used_depth_range_cm = c(0, 100),
+      method = "across_profile"
+    )
+
+    tmp_swa_monthly <- as.vector(
+      tapply(
+        X = tmp_swa_daily[["values"]][[1L]],
+        INDEX = list(
+          Month = tmp_swa_daily[["time"]][, "Month"],
+          Year = tmp_swa_daily[["time"]][, "Year"]
+        ),
+        FUN = mean
+      )
+    )
+
+
+    #--- Annual time series of ecological drought metrics
+    res[[k1]] <- rbind(
+      # Aridity index `[mm / mm]` (where `AI = PPT / PET`)
+      AI = calc_AI(
+        ppt = sim_data[["yr"]][["values"]][["ppt"]],
+        pet = sim_data[["yr"]][["values"]][["pet"]]
+      ),
+
+      # Potential evapotranspiration `[mm]`
+      PET = 10 * sim_data[["yr"]][["values"]][["pet"]],
+
+      # Mean daily air temperature `[C]`
+      Tmean = sim_data[["yr"]][["values"]][["tmean"]],
+
+      # Minimum daily air temperature `[C]`
+      Tmin = sim_data[["yr"]][["values"]][["tmin"]],
+
+      # Maximum daily air temperature `[C]`
+      Tmax = sim_data[["yr"]][["values"]][["tmax"]],
+
+      # Precipitation amount `[mm]`
+      PPT = 10 * sim_data[["yr"]][["values"]][["ppt"]],
+
+      # Seasonal timing of precipitation `[-]`
+      # (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
+      PPTsst = calc_CorXY_byYear(
+        x = sim_data[["mon"]][["values"]][["ppt"]],
+        # correlate against Tmean unlike `metric_CorTempPPT()` which uses Tmin
+        y = sim_data[["mon"]][["values"]][["tmean"]],
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
+      # Total growing degree days `[C x day]`
+      TDD = tapply(
+        X = tmp_tdd_daily[["values"]][["mdd"]],
+        INDEX = tmp_tdd_daily[["time"]][, "Year"],
+        FUN = sum
+      ),
+
+      # Seasonal variability of total growing degree days `[C x day]`
+      # (where `TDDssv = mean(monthly TDD) / sd(monthly TDD)`)
+      TDDssv = calc_seasonal_variability(
+        x = as.vector(
+          tapply(
+            X = tmp_tdd_daily[["values"]][["mdd"]],
+            INDEX = list(
+              Month = tmp_tdd_daily[["time"]][, "Month"],
+              Year = tmp_tdd_daily[["time"]][, "Year"]
+            ),
+            FUN = mean
+          )
+        ),
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
+      # Warm season length `[day]`
+      # (where `GrowingSeasonDuration` is the longest spell of days
+      # with a positive `TDD`)
+      GrowingSeasonDuration = vapply(
+        X = calc_durations_consecutive_periods(
+          x_periods = calc_condition(
+            x = tmp_tdd_daily[["values"]][["mdd"]],
+            condition = list(op = `>`, limit = 0)
+          ),
+          ts_years = tmp_tdd_daily[["time"]][, "Year"]
+        ),
+        FUN = max,
+        FUN.VALUE = NA_integer_
+      ),
+
+      # (Actual) evapotranspiration [`mm`]
+      ET = 10 * sim_data[["yr"]][["values"]][["et"]],
+
+      # Climatic water deficit `[mm]` (where `CWD = PPT - ET`)
+      CWD = calc_CWD_mm(
+        pet_cm = sim_data[["yr"]][["values"]][["pet"]],
+        et_cm = sim_data[["yr"]][["values"]][["et"]]
+      ),
+
+      # 10-day extreme climatic water deficit `[mm]`
+      # (where `CWDextreme10d` is the largest daily `CWD`
+      # averaged over 10-day periods)
+      CWDextreme010d = calc_extreme_funNday(
+        x = calc_CWD_mm(
+          pet_cm = sim_data[["day"]][["values"]][["pet"]],
+          et_cm = sim_data[["day"]][["values"]][["et"]]
+        ),
+        ts_year = sim_data[["day"]][["time"]][, "Year"],
+        n_days = 10L,
+        fun_time = mean,
+        fun_extreme = max
+      ),
+
+      # Seasonal variability of climatic water deficit `[mm / mm]`
+      # (where `CWDssv = mean(monthly CWD) / sd(monthly CWD)`)
+      CWDssv = calc_seasonal_variability(
+        x = tmp_cwd_monthly,
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
+      # Seasonal timing of climatic water deficit `[-]`
+      # (where `CWDsst = cor(monthly CWD, monthly Tmean)`)
+      CWDsst = calc_CorXY_byYear(
+        x = tmp_cwd_monthly,
+        # correlate against Tmean as does `metric_CWD()`
+        y = sim_data[["mon"]][["values"]][["tmean"]],
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
+      # Dry-degree days (0-100 cm, <-3 MPa) `[C x day]`
+      DDD = tapply(
+        X = tmp_ddd_daily[["values"]][["mdd"]],
+        INDEX = tmp_ddd_daily[["time"]][, "Year"],
+        FUN = sum
+      ),
+
+      # Dry-degree days of longest spell `[C x day]`
+      DDDmaxSpell = calc_extreme_value_consecutive_periods(
+        x = tmp_ddd_daily[["values"]][["mdd"]],
+        x_periods = calc_condition(
+          x = tmp_ddd_daily[["values"]][["mdd"]],
+          condition = list(op = `>`, limit = 0)
+        ),
+        ts_years = tmp_ddd_daily[["time"]][, "Year"],
+        fun_time = sum,
+        fun_extreme = max
+      ),
+
+      # Wet-degree days (0-100 cm, any >-1.5 MPa) `[C x day]`
+      WDD = tapply(
+        X = tmp_wdd_daily[["values"]][["mdd"]],
+        INDEX = tmp_wdd_daily[["time"]][, "Year"],
+        FUN = sum
+      ),
+
+      # Seasonal timing of wet-degree days `[-]`
+      # (where `WDDsst = cor(monthly WDD, monthly Tmean)`)
+      WDDsst = calc_CorXY_byYear(
+        x = as.vector(
+          tapply(
+            X = tmp_wdd_daily[["values"]][["mdd"]],
+            INDEX = list(
+              Month = tmp_wdd_daily[["time"]][, "Month"],
+              Year = tmp_wdd_daily[["time"]][, "Year"]
+            ),
+            FUN = sum
+          )
+        ),
+        # correlate against Tmean as does `metric_WDDat5C0to100cm15bar()`
+        y = sim_data[["mon"]][["values"]][["tmean"]],
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
+      # Mean spell length of dry soils (0-100 cm, <-1.5 MPa) `[day]`
+      DSI = vapply(tmp_dsi_daily, mean, FUN.VALUE = NA_real_),
+
+      # Number of dry soils intervals `[#]`
+      nDSI = lengths(tmp_dsi_daily),
+
+      # First fall frost (<-5 C) `[day of year]`
+      FrostFallFirst = as.vector(tmp_frost_doys[, "FirstFrost"]),
+
+      # Last spring frost (<-5 C) `[day of year]`
+      FrostSpringLast = as.vector(tmp_frost_doys[, "LastFrost"]),
+
+      # Fall recruitment onset `[day of year]`
+      RecruitmentFallOnset = as.vector(tmp_recruit[, "FallRecruitment_DOY"]),
+
+      # Fall recruitment duration `[day]`
+      RecruitmentFallDuration =
+        as.vector(tmp_recruit[, "FallRecruitment_DurationDays"]),
+
+      # Fall recruitment wet-degree days `[C x day]`
+      RecruitmentFallWDD = as.vector(tmp_recruit[, "FallRecruitment_maxWDD"]),
+
+      # Spring recruitment onset `[day of year]`
+      RecruitmentSpringOnset =
+        as.vector(tmp_recruit[, "SpringRecruitment_DOY"]),
+
+      # Spring recruitment duration `[day]`
+      RecruitmentSpringDuration =
+        as.vector(tmp_recruit[, "SpringRecruitment_DurationDays"]),
+
+      # Spring recruitment wet-degree days `[C x day]`
+      RecruitmentSpringWDD =
+        as.vector(tmp_recruit[, "SpringRecruitment_maxWDD"]),
+
+      # Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`
+      SWA = tapply(
+        X = tmp_swa_daily[["values"]][[1L]],
+        INDEX = tmp_swa_daily[["time"]][, "Year"],
+        FUN = mean
+      ),
+
+      # Seasonal variability of available soil moisture `[mm / mm]`
+      # (where `SWAssv = mean(monthly SWA) / sd(monthly CWD)`)
+      SWAssv = calc_seasonal_variability(
+        x = tmp_swa_monthly,
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      ),
+
+      # Seasonal timing of available soil moisture `[-]`
+      # (where `SWAsst = cor(monthly SWA, monthly Tmean)`)
+      SWAsst = calc_CorXY_byYear(
+        x = tmp_swa_monthly,
+        # correlate against Tmean as does `get_SWA()`
+        y = sim_data[["mon"]][["values"]][["tmean"]],
+        ts_year = sim_data[["mon"]][["time"]][, "Year"]
+      )
+    )
+  }
+
+  res
+}
+
+
+
 #' Annual time series of ecological drought metrics
 #'
-#' @references Chenoweth et al. (in revision)
+#' @inheritParams metrics
+#'
+#' @references Chenoweth et al. (2023)
+#' Ecologically relevant moisture and temperature metrics for assessing
+#' dryland ecosystem dynamics.
+#' Ecohydrology, 16(3), e2509. \url{https://doi.org/10.1002/eco.2509}
+#'
+#' @seealso [EcologicalDroughtMetrics2023_annualClim()];
+#' see [metrics] for a complete list of available metric functions.
 #'
 #' @section Details:
 #' The following functions produce all metrics used by Chenoweth et al.:
@@ -2436,5 +2837,436 @@ metric_RR2022predictors_annualClim <- function(
 #'       * `metric_SWAat0to100cm39bar()`
 #'       * `metric_TDDat5C()`
 #'
-#' @noRd
-NULL
+#' @return A return object where `group` contains the following
+#' annual variables:
+#'
+# nolint start: line_length_linter
+#'    * Aridity index `[mm / mm]`: `"AI"`
+#'      (where `AI = PPT / PET`)
+#'    * Potential evapotranspiration amount `[mm]`: `"PET"`
+#'    * Mean daily air temperature `[C]`: `"Tmean"`
+#'    * Minimum daily air temperature `[C]`: `"Tmin"`
+#'    * Maximum daily air temperature `[C]`: `"Tmax"`
+#'    * Precipitation amount `[mm]`: `"PPT"`
+#'    * Seasonal timing of precipitation `[-]`: `"PPTsst"`
+#'      (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
+#'    * Total growing degree days `[C x day]`: `"TDD"`
+#'    * Seasonal variability of total growing degree days `[C x day / C x day]`: `"TDDssv"`
+#'      (where `TDDssv = mean(monthly TDD) / sd(monthly TDD)`)
+#'    * Warm season length `[day]`: `"GrowingSeasonDuration_(mean)|(cv)"`
+#'      (where `GrowingSeasonDuration` is the longest spell of days with a positive `TDD`)
+#'
+#'    * Evapotranspiration amount `[mm]`: `"ET"`
+#'    * Climatic water deficit amount `[mm]`: `"CWD"`
+#'      (where `CWD = PPT - ET`)
+#'    * 10-day extreme climatic water deficit `[mm]`: `"CWDextreme010d"`
+#'      (where `CWDextreme10d` is the largest daily `CWD` averaged over 10-day periods)
+#'    * Seasonal variability of climatic water deficit `[mm / mm]`: `"CWDssv"`
+#'      (where `CWDssv = mean(monthly CWD) / sd(monthly CWD)`)
+#'    * Seasonal timing of climatic water deficit `[-]`: `"CWDsst_"`
+#'      (where `CWDsst = cor(monthly CWD, monthly Tmean)`)
+#'
+#'    * Dry-degree days (0-100 cm, <-3 MPa) `[C x day]`: `"DDD"`
+#'    * Dry-degree days of longest spell `[C x day]`: `"DDDmaxSpell"`
+#'    * Wet-degree days (0-100 cm, any >-1.5 MPa) `[C x day]`: `"WDD"`
+#'    * Seasonal timing of wet-degree days `[-]`: `"WDDsst"`
+#'      (where `WDDsst = cor(monthly WDD, monthly Tmean)`)
+#'
+#'    * Mean spell length of dry soils (0-100 cm, <-1.5 MPa) `[day]`: `"DSI"`
+#'    * Number of dry soils intervals `[#]`: `"nDSI"`
+#'
+#'    * First fall frost (<-5 C) `[day of year]`: `"FrostFallFirst"`
+#'    * Last spring frost (<-5 C) `[day of year]`: `"FrostSpringLast"`
+#'
+#'    * Fall recruitment onset `[day of year]`: `"RecruitmentFallOnset"`
+#'    * Fall recruitment duration `[day]`: `"RecruitmentFallDuration"`
+#'    * Fall recruitment wet-degree days `[C x day]`: `"RecruitmentFallWDD"`
+#'    * Spring recruitment onset `[day of year]`: `"RecruitmentSpringOnset"`
+#'    * Spring recruitment duration `[day]`: `"RecruitmentSpringDuration_"`
+#'    * Spring recruitment wet-degree days `[C x day]`: `"RecruitmentSpringWDD"`
+#'
+#'    * Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`: `"SWA"`
+#'    * Seasonal variability of available soil moisture `[mm / mm]`: `"SWAssv"`
+#'      (where `SWAssv = mean(monthly SWA) / sd(monthly CWD)`)
+#'    * Seasonal timing of available soil moisture `[-]`: `"SWAsst"`
+#'      (where `SWAsst = cor(monthly SWA, monthly Tmean)`)
+# nolint end: line_length_linter
+#'
+#' @name EcologicalDroughtMetrics2023_annual
+#' @md
+metric_EcologicalDroughtMetrics2023_annual <- function(
+  path,
+  name_sw2_run,
+  id_scen_used,
+  list_years_scen_used,
+  out = c("ts_years", "raw"),
+  zipped_runs = FALSE,
+  soils,
+  ...
+) {
+  out <- match.arg(out)
+
+  stopifnot(check_metric_arguments(
+    out = out,
+    req_soil_vars = "depth_cm"
+  ))
+
+  get_EcologicalDroughtMetrics2023_annual(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    id_scen_used = id_scen_used,
+    list_years_scen_used = list_years_scen_used,
+    out = out,
+    zipped_runs = zipped_runs,
+    soils = soils,
+    ...
+  )
+}
+
+
+
+
+#' Climatologies of annual time series of ecological drought metrics
+#'
+#' Long-term means, standard deviations, or coefficients of variation of
+#' annual values of metrics used by Chenoweth et al.
+#' (see `metric_EcologicalDroughtMetrics2023_annual()`).
+#'
+#' @inheritParams metrics
+#'
+#' @seealso [EcologicalDroughtMetrics2023_annual()];
+#' see [metrics] for a complete list of available metric functions.
+#'
+#' @return A return object where `group` contains the following climatologies of
+#' annual variables summarized across years by means `mean`,
+#' standard deviations `sd`, coefficients of variation `cv`, or
+#' frequency of occurrence `frq`:
+#'
+# nolint start: line_length_linter
+#'    * Aridity index `[mm / mm]`: `"AI_(mean)|(cv)"`
+#'      (where `AI = PPT / PET`)
+#'    * Potential evapotranspiration amount `[mm]`: `"PET_(mean)|(cv)"`
+#'    * Mean daily air temperature `[C]`: `"Tmean_(mean)|(sd)"`
+#'    * Minimum daily air temperature `[C]`: `"Tmin_(mean)|(sd)"`
+#'    * Maximum daily air temperature `[C]`: `"Tmax_(mean)|(sd)"`
+#'    * Precipitation amount `[mm]`: `"PPT_(mean)|(cv)"`
+#'    * Seasonal timing of precipitation `[-]`: `"PPTsst_(mean)|(sd)"`
+#'      (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
+#'    * Total growing degree days `[C x day]`: `"TDD_(mean)|(cv)"`
+#'    * Seasonal variability of total growing degree days `[C x day / C x day]`: `"TDDssv_(mean)|(cv)"`
+#'      (where `TDDssv = mean(monthly TDD) / sd(monthly TDD)`)
+#'    * Warm season length `[day]`: `"GrowingSeasonDuration_(mean)|(cv)"`
+#'      (where `GrowingSeasonDuration` is the longest spell of days with a positive `TDD`)
+#'
+#'    * Evapotranspiration amount `[mm]`: `"ET_(mean)|(cv)"`
+#'    * Climatic water deficit amount `[mm]`: `"CWD_(mean)|(cv)"`
+#'      (where `CWD = PPT - ET`)
+#'    * 10-day extreme climatic water deficit `[mm]`: `"CWDextreme010d_(mean)|(cv)"`
+#'      (where `CWDextreme10d` is the largest daily `CWD` averaged over 10-day periods)
+#'    * Seasonal variability of climatic water deficit `[mm / mm]`: `"CWDssv_(mean)|(cv)"`
+#'      (where `CWDssv = mean(monthly CWD) / sd(monthly CWD)`)
+#'    * Seasonal timing of climatic water deficit `[-]`: `"CWDsst_(mean)|(sd)"`
+#'      (where `CWDsst = cor(monthly CWD, monthly Tmean)`)
+#'
+#'    * Dry-degree days (0-100 cm, <-3 MPa) `[C x day]`: `"DDD_(mean)|(cv)"`
+#'    * Dry-degree days of longest spell `[C x day]`: `"DDDmaxSpell_(mean)|(cv)"`
+#'    * Wet-degree days (0-100 cm, any >-1.5 MPa) `[C x day]`: `"WDD_(mean)|(cv)"`
+#'    * Seasonal timing of wet-degree days `[-]`: `"WDDsst_(mean)|(cv)"`
+#'      (where `WDDsst = cor(monthly WDD, monthly Tmean)`)
+#'
+#'    * Mean spell length of dry soils (0-100 cm, <-1.5 MPa) `[day]`: `"DSI_(mean)|(cv)"`
+#'    * Number of dry soils intervals `[#]`: `"nDSI_(mean)|(cv)"`
+#'
+#'    * First fall frost (<-5 C) `[day of year]`: `"FrostFallFirst_(mean)|(sd)"`
+#'      Also, frequency of years with fall frost events `[# / #]`: `"FrostFall_frq"`
+#'    * Last spring frost (<-5 C) `[day of year]`: `"FrostSpringLast_(mean)|(sd)"`
+#'      Also, frequency of years with spring frost events `[# / #]`: `"FrostSpring_frq"`
+#'    * Fall recruitment onset `[day of year]`: `"RecruitmentFallOnset_(mean)|(sd)"`
+#'      Also, frequency of years with fall recruitment `[# / #]`: `"RecruitmentFall_frq"`
+#'
+#'    * Fall recruitment duration `[day]`: `"RecruitmentFallDuration_(mean)|(cv)"`
+#'    * Fall recruitment wet-degree days `[C x day]`: `"RecruitmentFallWDD_(mean)|(cv)"`
+#'    * Spring recruitment onset `[day of year]`: `"RecruitmentSpringOnset_(mean)|(sd)"`
+#'      Also, frequency of years with spring recruitment `[# / #]`: `"RecruitmentSpring_frq"`
+#'    * Spring recruitment duration `[day]`: `"RecruitmentSpringDuration_(mean)|(cv)"`
+#'    * Spring recruitment wet-degree days `[C x day]`: `"RecruitmentSpringWDD_(mean)|(cv)"`
+#'
+#'    * Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`: `"SWA_(mean)|(cv)"`
+#'    * Seasonal variability of available soil moisture `[mm / mm]`: `"SWAssv_(mean)|(cv)"`
+#'      (where `SWAssv = mean(monthly SWA) / sd(monthly CWD)`)
+#'    * Seasonal timing of available soil moisture `[-]`: `"SWAsst_(mean)|(sd)"`
+#'      (where `SWAsst = cor(monthly SWA, monthly Tmean)`)
+# nolint end: line_length_linter
+#'
+#'
+#' @section Notes:
+#'   * Argument `fun_aggs_across_yrs` is ignored.
+#'   * Values are `NA` if any year is requested but was not simulated.
+#'
+#' @references Chenoweth et al. (2023)
+#' Ecologically relevant moisture and temperature metrics for assessing
+#' dryland ecosystem dynamics.
+#' Ecohydrology, 16(3), e2509. \url{https://doi.org/10.1002/eco.2509}
+#'
+#' @name EcologicalDroughtMetrics2023_annualClim
+#' @md
+metric_EcologicalDroughtMetrics2023_annualClim <- function(
+  path,
+  name_sw2_run,
+  id_scen_used,
+  list_years_scen_used,
+  out = "across_years",
+  zipped_runs = FALSE,
+  soils,
+  ...
+) {
+  stopifnot(check_metric_arguments(
+    out = match.arg(out),
+    req_soil_vars = "depth_cm"
+  ))
+
+
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    tmp <- lapply(
+      list_years_scen_used[[k1]],
+      function(yrs) {
+        tmpx <- get_EcologicalDroughtMetrics2023_annual(
+          path = path,
+          name_sw2_run = name_sw2_run,
+          id_scen_used = id_scen_used[k1],
+          list_years_scen_used = list(yrs),
+          out = "ts_years",
+          zipped_runs = zipped_runs,
+          soils = soils,
+          ...
+        )[[1L]]
+
+
+        #--- Calculate EcologicalDroughtMetrics2023
+        # Long-term means, standard deviations, coefficients of variation, or
+        # frequency of values across annual values
+        as.matrix(c(
+          #--- Climate
+          # Aridity index `[mm / mm]` (where `AI = PPT / PET`)
+          AI_mean = mean(tmpx["AI", , drop = TRUE]),
+          AI_cv = cv(tmpx["AI", , drop = TRUE]),
+
+          # Potential evapotranspiration `[mm]`
+          PET_mean = mean(tmpx["PET", , drop = TRUE]),
+          PET_cv = cv(tmpx["PET", , drop = TRUE]),
+
+          # Mean daily air temperature `[C]`
+          Tmean_mean = mean(tmpx["Tmean", , drop = TRUE]),
+          Tmean_sd = sd(tmpx["Tmean", , drop = TRUE]),
+
+          # Minimum daily air temperature `[C]`
+          Tmin_mean = mean(tmpx["Tmin", , drop = TRUE]),
+          Tmin_sd = sd(tmpx["Tmin", , drop = TRUE]),
+
+          # Maximum daily air temperature `[C]`
+          Tmax_mean = mean(tmpx["Tmax", , drop = TRUE]),
+          Tmax_sd = sd(tmpx["Tmax", , drop = TRUE]),
+
+          # Precipitation amount `[mm]`
+          PPT_mean = mean(tmpx["PPT", , drop = TRUE]),
+          PPT_cv = cv(tmpx["PPT", , drop = TRUE]),
+
+          # Seasonal timing of precipitation `[-]`
+          # (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
+          PPTsst_mean = mean(tmpx["PPTsst", , drop = TRUE]),
+          PPTsst_sd = sd(tmpx["PPTsst", , drop = TRUE]),
+
+          # Total growing degree days `[C x day]`
+          TDD_mean = mean(tmpx["TDD", , drop = TRUE]),
+          TDD_cv = cv(tmpx["TDD", , drop = TRUE]),
+
+          # Seasonal variability of growing degree days `[C x day / C x day]`
+          # (where `TDDssv = mean(monthly TDD) / sd(monthly TDD)`)
+          TDDssv_mean = mean(tmpx["TDDssv", , drop = TRUE]),
+          TDDssv_cv = cv(tmpx["TDDssv", , drop = TRUE]),
+
+          # Warm season length `[day]`
+          # (where `GrowingSeasonDuration` is the longest spell of days
+          # with a positive `TDD`)
+          GrowingSeasonDuration_mean =
+            mean(tmpx["GrowingSeasonDuration", , drop = TRUE]),
+          GrowingSeasonDuration_cv =
+            cv(tmpx["GrowingSeasonDuration", , drop = TRUE]),
+
+
+          #--- Climatic water deficit
+          # Evapotranspiration `[mm]`: `"ET_(mean)|(cv)"`
+          ET_mean = mean(tmpx["ET", , drop = TRUE]),
+          ET_cv = cv(tmpx["ET", , drop = TRUE]),
+
+          # Climatic water deficit `[mm]` (where `CWD = PPT - ET`)
+          CWD_mean = mean(tmpx["CWD", , drop = TRUE]),
+          CWD_cv = cv(tmpx["CWD", , drop = TRUE]),
+
+          # 10-day extreme climatic water deficit `[mm]`
+          # (where `CWDextreme10d` is the largest daily `CWD`
+          # averaged over 10-day periods)
+          CWDextreme010d_mean = mean(tmpx["CWDextreme010d", , drop = TRUE]),
+          CWDextreme010d_cv = cv(tmpx["CWDextreme010d", , drop = TRUE]),
+
+          # Seasonal variability of climatic water deficit `[mm / mm]`
+          # (where `CWDssv = mean(monthly CWD) / sd(monthly CWD)`)
+          CWDssv_mean = mean(tmpx["CWDssv", , drop = TRUE]),
+          CWDssv_cv = cv(tmpx["CWDssv", , drop = TRUE]),
+
+          # Seasonal timing of climatic water deficit `[-]`
+          # (where `CWDsst = cor(monthly CWD, monthly Tmean)`)
+          CWDsst_mean = mean(tmpx["CWDsst", , drop = TRUE]),
+          CWDsst_sd = sd(tmpx["CWDsst", , drop = TRUE]),
+
+
+          #--- Dry-degree days
+          # Dry-degree days (0-100 cm, <-3 MPa) `[C x day]`
+          DDD_mean = mean(tmpx["DDD", , drop = TRUE]),
+          DDD_cv = cv(tmpx["DDD", , drop = TRUE]),
+
+          # Dry-degree days of longest spell `[C x day]`
+          DDDmaxSpell_mean = mean(tmpx["DDDmaxSpell", , drop = TRUE]),
+          DDDmaxSpell_cv = cv(tmpx["DDDmaxSpell", , drop = TRUE]),
+
+          # Wet-degree days (0-100 cm, any >-1.5 MPa) `[C x day]`
+          WDD_mean = mean(tmpx["WDD", , drop = TRUE]),
+          WDD_cv = cv(tmpx["WDD", , drop = TRUE]),
+
+          # Seasonal timing of wet-degree days `[-]`
+          # (where `WDDsst = cor(monthly WDD, monthly Tmean)`)
+          WDDsst_mean = mean(tmpx["WDDsst", , drop = TRUE]),
+          WDDsst_cv = cv(tmpx["WDDsst", , drop = TRUE]),
+
+
+          #--- Dry soils intervals
+          # Mean spell length of dry soils (0-100 cm, <-1.5 MPa) `[day]`
+          DSI_mean = mean(tmpx["DSI", , drop = TRUE]),
+          DSI_cv = cv(tmpx["DSI", , drop = TRUE]),
+
+          # Number of dry soils intervals `[#]`
+          nDSI_mean = mean(tmpx["nDSI", , drop = TRUE]),
+          nDSI_cv = cv(tmpx["nDSI", , drop = TRUE]),
+
+
+          #--- Frost
+          # First fall frost (<-5 C) `[day of year]`
+          # Also, frequency of years with fall frost events `[# / #]`
+          FrostFall_frq = frq(tmpx["FrostFallFirst", , drop = TRUE]),
+          FrostFallFirst_mean = mean(
+            tmpx["FrostFallFirst", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          FrostFallFirst_sd = sd(
+            tmpx["FrostFallFirst", , drop = TRUE],
+            na.rm = TRUE
+          ),
+
+          # Last spring frost (<-5 C) `[day of year]`
+          # Also, frequency of years with spring frost events `[# / #]`
+          FrostSpring_frq = frq(tmpx["FrostSpringLast", , drop = TRUE]),
+          FrostSpringLast_mean = mean(
+            tmpx["FrostSpringLast", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          FrostSpringLast_sd = sd(
+            tmpx["FrostSpringLast", , drop = TRUE],
+            na.rm = TRUE
+          ),
+
+
+          #--- Recruitment index
+          # Fall recruitment onset `[day of year]`
+          # Also, frequency of years with fall recruitment `[# / #]`
+          RecruitmentFall_frq = frq(
+            tmpx["RecruitmentFallOnset", , drop = TRUE]
+          ),
+          RecruitmentFallOnset_mean = mean(
+            tmpx["RecruitmentFallOnset", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          RecruitmentFallOnset_sd = sd(
+            tmpx["RecruitmentFallOnset", , drop = TRUE],
+            na.rm = TRUE
+          ),
+
+          # Fall recruitment duration `[day]`
+          RecruitmentFallDuration_mean = mean(
+            tmpx["RecruitmentFallDuration", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          RecruitmentFallDuration_cv = cv(
+            tmpx["RecruitmentFallDuration", , drop = TRUE],
+            na.rm = TRUE
+          ),
+
+          # Fall recruitment wet-degree days `[C x day]`
+          RecruitmentFallWDD_mean = mean(
+            tmpx["RecruitmentFallWDD", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          RecruitmentFallWDD_cv = cv(
+            tmpx["RecruitmentFallWDD", , drop = TRUE],
+            na.rm = TRUE
+          ),
+
+          # Spring recruitment onset `[day of year]`
+          # Also, frequency of years with spring recruitment `[# / #]`
+          RecruitmentSpring_frq = frq(
+            tmpx["RecruitmentSpringOnset", , drop = TRUE]
+          ),
+          RecruitmentSpringOnset_mean = mean(
+            tmpx["RecruitmentSpringOnset", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          RecruitmentSpringOnset_sd = sd(
+            tmpx["RecruitmentSpringOnset", , drop = TRUE],
+            na.rm = TRUE
+          ),
+
+          # Spring recruitment duration `[day]`
+          RecruitmentSpringDuration_mean = mean(
+            tmpx["RecruitmentSpringDuration", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          RecruitmentSpringDuration_cv = cv(
+            tmpx["RecruitmentSpringDuration", , drop = TRUE],
+            na.rm = TRUE
+          ),
+
+          # Spring recruitment wet-degree days `[C x day]`
+          RecruitmentSpringWDD_mean = mean(
+            tmpx["RecruitmentSpringWDD", , drop = TRUE],
+            na.rm = TRUE
+          ),
+          RecruitmentSpringWDD_cv = cv(
+            tmpx["RecruitmentSpringWDD", , drop = TRUE],
+            na.rm = TRUE
+          ),
+
+
+          #--- Available soil moisture
+          # Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`
+          SWA_mean = mean(tmpx["SWA", , drop = TRUE]),
+          SWA_cv = cv(tmpx["SWA", , drop = TRUE]),
+
+          # Seasonal variability of available soil moisture `[mm / mm]`
+          # (where `SWAssv = mean(monthly SWA) / sd(monthly CWD)`)
+          SWAssv_mean = mean(tmpx["SWAssv", , drop = TRUE]),
+          SWAssv_cv = cv(tmpx["SWAssv", , drop = TRUE]),
+
+          # Seasonal timing of available soil moisture `[-]`
+          # (where `SWAsst = cor(monthly SWA, monthly Tmean)`)
+          SWAsst_mean = mean(tmpx["SWAsst", , drop = TRUE]),
+          SWAsst_sd = sd(tmpx["SWAsst", , drop = TRUE])
+        ))
+      }
+    )
+
+    res[[k1]] <- do.call(cbind, tmp)
+  }
+
+  res
+}
