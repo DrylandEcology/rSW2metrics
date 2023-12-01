@@ -230,7 +230,9 @@ aggs_across_years <- function(
 
 #' Coefficient of variation
 #' @noRd
-cv <- function(x, ...) {
+cv <- function(x, na.rm = FALSE, ...) {
+  if (na.rm) x <- x[is.finite(x)]
+
   mx <- mean(x)
   if (isTRUE(abs(mx) > sqrt(.Machine[["double.eps"]]))) {
     sd(x) / mx
@@ -248,6 +250,12 @@ sen_slope <- function(x, ...) {
   } else {
     NA
   }
+}
+
+#' Frequency of non-missing values
+#' @noRd
+frq <- function(x, ...) {
+  mean(!is.na(x))
 }
 
 
