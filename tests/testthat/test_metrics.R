@@ -25,6 +25,7 @@ foo_metrics <- function(
   fun_args,
   run_rSFSW2_names,
   is_soils_input,
+  is_swrc_input,
   N_sites
 ) {
   lapply(
@@ -35,7 +36,8 @@ foo_metrics <- function(
         fun_args = fun_args,
         name_sw2_run = run_rSFSW2_names[s],
         is_soils_input = is_soils_input,
-        soil_variables = list_soil_variables()
+        soil_variables = list_soil_variables(),
+        is_swrc_input = is_swrc_input
       ))
       format_metric_1sim(x = tmp, id = s)
     }
@@ -338,6 +340,7 @@ test_that("Check metrics", {
             fun_args = fun_args,
             run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
             is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
+            is_swrc_input = has_fun_swrc_as_arg(fun_metrics[k1]),
             N_sites = N_sites_used
           )
           # nolint end: implicit_assignment_linter.
@@ -349,6 +352,7 @@ test_that("Check metrics", {
           fun_args = fun_args,
           run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
           is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
+          is_swrc_input = has_fun_swrc_as_arg(fun_metrics[k1]),
           N_sites = N_sites_used
         )
       }

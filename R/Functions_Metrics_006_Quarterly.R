@@ -80,6 +80,7 @@ get_SWA_multilayer_quarterly <- function(
   zipped_runs = FALSE,
   include_year = FALSE,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   list_used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
   ...
@@ -117,6 +118,7 @@ get_SWA_multilayer_quarterly <- function(
         calc_SWA_mm(
           sim_swc_daily = sim_data[["swc_daily"]],
           soils = soils,
+          swrcp_and_usage = swrcp_and_usage,
           SWP_limit_MPa = SWP_limit_MPa,
           used_depth_range_cm = range,
           method = "across_profile"
@@ -164,6 +166,7 @@ metric_SWAat0to020to100cm39bar_quarterly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   soils,
+  swrcp_and_usage,
   include_year = FALSE,
   zipped_runs = FALSE,
   ...
@@ -193,6 +196,7 @@ metric_SWAat0to020to100cm39bar_quarterly <- function(
     list_years_scen_used = list_years_scen_used,
     zipped_runs = zipped_runs,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     list_used_depth_range_cm = list_used_depth_range_cm,
     SWP_limit_MPa = SWP_limit_MPa,
     include_year = include_year

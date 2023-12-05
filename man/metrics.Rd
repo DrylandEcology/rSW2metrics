@@ -130,12 +130,13 @@ calendar years (for which the metrics) will be calculated.}
 a time series of yearly values or an aggregate (e.g., mean) across years.
 One of \var{\dQuote{ts_years}} or \var{\dQuote{across_years}}.}
 
-\item{soils}{A named list of numeric vectors. The presence of the
-argument \code{soils} indicates that the function in question requires
-soil information as inputs.
-The named elements include \var{\dQuote{depth_cm}},
-\var{\dQuote{sand_frac}}, and \var{\dQuote{clay_frac}} and
-contain the respective values for each soil layer at the site.}
+\item{soils}{A named list with soil parameters \code{"depth_cm"},
+\code{"sand_frac"}, \code{"clay_frac"}, and \code{"gravel_content"}
+as numeric vectors with values for each soil layer.}
+
+\item{swrcp_and_usage}{A named list with usage of and, if suitable,
+parameters of soil water retention curve;
+e.g., the output of \code{\link[=load_swrcp_and_usage]{load_swrcp_and_usage()}}.}
 
 \item{...}{Additional arguments}
 }
@@ -184,6 +185,11 @@ time step that is specified in the name of the metric function. The default
 time step is annual (which may be omitted from the name of the function);
 sub-annual time steps include (case-insensitive):
 \code{Seasonal} (1 to 12 seasons per year); \code{quarterly}; \code{monthly}; and \code{daily}.
+
+
+The presence of arguments \code{soils} and \code{swrcp_and_usage} indicates that
+the metric function requires as input soil properties or information on the
+soil water retention curve respectively.
 }
 
 \section{Notes}{

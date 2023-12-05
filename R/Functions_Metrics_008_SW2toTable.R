@@ -123,6 +123,10 @@ metric_SW2toTable_daily <- function(
         clay_frac = soils[, "clay_frac"],
         gravel_content = soils[, "gravel_content"]
       )
+
+      mtrcs_swrcp_and_usage <- load_swrcp_and_usage(
+        sim_input[["swRunScenariosData"]][[id_scen_used[k1]]]
+      )
     }
 
 
@@ -373,6 +377,7 @@ metric_SW2toTable_daily <- function(
           values = list(swc = tmp_swc)
         ),
         soils = mtrcs_soils,
+        swrcp_and_usage = mtrcs_swrcp_and_usage,
         used_depth_range_cm = NULL,
         SWP_limit_MPa = -3,
         method = "by_layer"

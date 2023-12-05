@@ -13,6 +13,7 @@ metric_EcologicalDroughtMetrics2023_annualClim(
   out = "across_years",
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 )
 }
@@ -46,12 +47,13 @@ One of \var{\dQuote{ts_years}} or \var{\dQuote{across_years}}.}
 \item{zipped_runs}{A logical value. Describes whether \code{name_sw2_run}
 is a zip archive or a regular folder.}
 
-\item{soils}{A named list of numeric vectors. The presence of the
-argument \code{soils} indicates that the function in question requires
-soil information as inputs.
-The named elements include \var{\dQuote{depth_cm}},
-\var{\dQuote{sand_frac}}, and \var{\dQuote{clay_frac}} and
-contain the respective values for each soil layer at the site.}
+\item{soils}{A named list with soil parameters \code{"depth_cm"},
+\code{"sand_frac"}, \code{"clay_frac"}, and \code{"gravel_content"}
+as numeric vectors with values for each soil layer.}
+
+\item{swrcp_and_usage}{A named list with usage of and, if suitable,
+parameters of soil water retention curve;
+e.g., the output of \code{\link[=load_swrcp_and_usage]{load_swrcp_and_usage()}}.}
 
 \item{...}{Additional arguments}
 }

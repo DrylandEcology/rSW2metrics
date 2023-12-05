@@ -638,12 +638,10 @@ metric_DDDat5C0to100cm30bar <- function(
 #' For day t, soil layer i, soil layer width `w[i]`, and
 #' `cfrag[i]` = fraction of coarse fragments.
 #'
+#' @inheritParams metrics
 #' @param sim_swc_daily A named list with a "time" element and a
 #'    "values" element containing daily \var{"swc"} for each soil layer
 #'    in units of centimeters.
-#' @param soils A named list with soil parameters \var{"depth_cm"},
-#'   \var{"sand_frac"},\var{"clay_frac"}, and \var{"gravel_content"}
-#'   as numeric vectors with values for each soil layer.
 #' @param used_depth_range_cm A numeric vector of length two.
 #' @param SWP_limit_MPa A numeric value.
 #' @param method A character string.
@@ -658,6 +656,7 @@ metric_DDDat5C0to100cm30bar <- function(
 calc_SWA_mm <- function(
   sim_swc_daily,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
   method = c("across_profile", "by_layer")
@@ -678,11 +677,20 @@ calc_SWA_mm <- function(
     # Calculate SWC threshold (corrected for coarse fragments)
     # SWC <-> VWC exists only for the matric component
     base_SWC_mm <- if (is.finite(SWP_limit_MPa)) {
-      rSOILWAT2::SWPtoVWC(
-        swp = SWP_limit_MPa,
+      # Convert SWP to matric-VWC
+      tmp <- convert_with_swrc(
+        x = SWP_limit_MPa,
+        direction = "swp_to_vwc",
+        use_swrc_v6 = swrcp_and_usage[["use_swrc_v6"]],
+        fcoarse = rep(0, length(id_slyrs)),
         sand = soils[["sand_frac"]][id_slyrs],
-        clay = soils[["clay_frac"]][id_slyrs]
-      ) * 10 * widths_cm * (1 - soils[["gravel_content"]][id_slyrs])
+        clay = soils[["clay_frac"]][id_slyrs],
+        swrcp = swrcp_and_usage[["swrcp"]][id_slyrs, , drop = FALSE],
+        swrc_name = swrcp_and_usage[["swrc_name"]]
+      )
+
+      # Convert matric-VWC to bulk-VWC
+      tmp * 10 * widths_cm * (1 - soils[["gravel_content"]][id_slyrs])
 
     } else {
       rep(0, length(id_slyrs))
@@ -725,6 +733,7 @@ get_SWA <- function(
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
   ...
@@ -759,6 +768,7 @@ get_SWA <- function(
     swa_daily <- calc_SWA_mm(
       sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
+      swrcp_and_usage = swrcp_and_usage,
       SWP_limit_MPa = SWP_limit_MPa,
       used_depth_range_cm = used_depth_range_cm,
       method = "across_profile"
@@ -785,7 +795,9 @@ metric_SWAat0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
-  soils, ...
+  soils,
+  swrcp_and_usage,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -802,6 +814,7 @@ metric_SWAat0to100cm30bar <- function(
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     SWP_limit_MPa = -3,
     used_depth_range_cm = c(0, 100),
     ...
@@ -812,7 +825,9 @@ metric_SWAat0to100cm39bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
-  soils, ...
+  soils,
+  swrcp_and_usage,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -829,6 +844,7 @@ metric_SWAat0to100cm39bar <- function(
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     SWP_limit_MPa = -3.9,
     used_depth_range_cm = c(0, 100),
     ...
@@ -2406,6 +2422,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   ...
 ) {
   res <- list()
@@ -2564,6 +2581,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       # required content of sim_data: list(time, values = swc)
       sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
+      swrcp_and_usage = swrcp_and_usage,
       SWP_limit_MPa = -3.9,
       used_depth_range_cm = c(0, 100),
       method = "across_profile"
@@ -2902,6 +2920,7 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   out <- match.arg(out)
@@ -2919,6 +2938,7 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
     out = out,
     zipped_runs = zipped_runs,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     ...
   )
 }
@@ -3018,6 +3038,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
   out = "across_years",
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -3040,6 +3061,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           out = "ts_years",
           zipped_runs = zipped_runs,
           soils = soils,
+          swrcp_and_usage = swrcp_and_usage,
           ...
         )[[1L]]
 
