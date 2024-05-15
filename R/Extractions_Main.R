@@ -554,12 +554,10 @@ extract_metrics <- function(args) {
   }
 
 
-  if (is_swrc_input) {
-    if (has_prepared_swrc) {
-      #TODO: SWRC
-      swrcp_and_usage <- NULL
-      stop("swrcp_and_usage with 'has_prepared_swrc' is not implemented yet")
-    }
+  if (is_swrc_input && has_prepared_swrc) {
+    #TODO: SWRC
+    swrcp_and_usage <- NULL
+    stop("swrcp_and_usage with 'has_prepared_swrc' is not implemented yet")
   }
 
 
