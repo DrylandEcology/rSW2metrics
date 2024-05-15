@@ -2,8 +2,8 @@
 % Please edit documentation in R/rSW2metrics-package.R
 \docType{package}
 \name{rSW2metrics}
-\alias{rSW2metrics}
 \alias{rSW2metrics-package}
+\alias{rSW2metrics}
 \title{Package \pkg{rSW2metrics}: Collection of functions to calculate
 ecohydrological metrics from output created by
 \pkg{rSOILWAT2} or \pkg{rSFSW2} simulation experiments.}
