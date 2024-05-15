@@ -155,16 +155,33 @@ prepare_soils_for_site <- function(
       names(soil_variables)
     }
 
-    tmp <- get_soillayers_variable(
-      path = path,
-      name_sw2_run = name_sw2_run,
-      id_scen = 1,
-      zipped_runs = zipped_runs,
-      sw2_soil_var = nsv,
-      get_swrcp_and_usage = req_swrc
+    tmp <- try(
+      get_soillayers_variable(
+        path = path,
+        name_sw2_run = name_sw2_run,
+        id_scen = 1,
+        zipped_runs = zipped_runs,
+        sw2_soil_var = nsv,
+        get_swrcp_and_usage = req_swrc
+      ),
+      silent = TRUE
     )
 
-    if (req_soils) {
+    if (
+      all(
+        inherits(tmp, "try-error"),
+        is.null(used_soil),
+        any(req_soils, req_swrc)
+      )
+    ) {
+      stop(
+        "Failed to read soil data from rSOILWAT2 input object ",
+        "for run ", shQuote(name_sw2_run), " with message: ",
+        shQuote(tmp)
+      )
+    }
+
+    if (req_soils && !inherits(tmp, "try-error")) {
       used_soil <- list(
         depth_cm = if ("depth_cm" %in% nsv) tmp[["soils"]]["depth_cm", ],
         sand_frac = if ("sand_frac" %in% nsv) tmp[["soils"]]["sand_frac", ],
@@ -176,7 +193,11 @@ prepare_soils_for_site <- function(
     }
 
     if (req_swrc) {
-      used_swrc <- tmp[["swrcp_and_usage"]]
+      used_swrc <- if (!inherits(tmp, "try-error")) {
+        tmp[["swrcp_and_usage"]]
+      } else if (!is.null(used_soil)) {
+        load_swrcp_and_usage(used_soil)
+      }
     }
   }
 
@@ -1654,25 +1675,54 @@ collect_sw2_sim_data <- function(
 #' of `rSOILWAT2` and of the version of `rSOILWAT2` that was used
 #' to create the simulation input object `sw_in`.
 #'
-#' @param sw_in A `rSOILWAT2` input object of class `"swInputData"`.
+#' @param x A `rSOILWAT2` input object of class `"swInputData"` or
+#' a data frame (see notes).
+#' @param vars A named character vector. Column names of `x` that are required
+#' to estimate parameters of `SWRC` (only used if `x` is a data frame).
 #'
 #' @return A named list including
 #'   * `"use_swrc_v6"`, a logical vector that is `TRUE`
 #'     if the installed version of the `rSOILWAT2` package is version `>= 6.0.0`
-#'     and if the the simulation input object `sw_in` was created by `rSOILWAT2`
+#'     and if the the simulation input object `x` was created by `rSOILWAT2`
 #'     version `>= 6.0.0` (or if it can be updated to such a version);
 #'   * `"swrc_name"`, the name of the soil water retention curve selected in
-#'     `sw_in` (only used if `"use_swrc_v6"`), see [rSOILWAT2::swrc_names()];
+#'     `x` (only used if `"use_swrc_v6"`), see [rSOILWAT2::swrc_names()];
 #'   * `"swrcp"`, a matrix with parameters of the selected soil water retention
 #'     curve (only used if `"use_swrc_v6"`), see [`rSOILWAT2::SWRCs`].
 #'
+#' @section Notes:
+#' If `x` is a data frame, then rows represent soil layers and
+#' columns represent soil properties.
+#' Column names are provided via argument `vars`.
+#' `SWRC` is assumed to be `"Campbell1974"` and
+#' the utilized `PTF` is `"Cosby1984AndOthers"`.
+#'
 #' @seealso [convert_with_swrc()]
-load_swrcp_and_usage <- function(sw_in) {
+#'
+#' @examples
+#' res1 <- load_swrcp_and_usage(rSOILWAT2::sw_exampleData)
+#' res2 <- load_swrcp_and_usage(
+#'   rSOILWAT2::swSoils_Layers(rSOILWAT2::sw_exampleData)
+#' )
+#' all.equal(res1, res2)
+#'
+#' @export
+load_swrcp_and_usage <- function(
+  x,
+  vars = c(
+    depth_cm = "depth_cm",
+    `bulkDensity_g/cm^3` = NA_character_,
+    gravel_content = "gravel_content",
+    sand_frac = "sand_frac",
+    clay_frac = "clay_frac"
+  )
+) {
 
   use_sw2_v6 <- getNamespaceVersion("rSOILWAT2") >= as.numeric_version("6.0.0")
+  is_swInputData <- inherits(x, "swInputData")
   has_swrc <- isTRUE(
     try(
-      rSOILWAT2::get_version(sw_in) >= as.numeric_version("6.0.0"),
+      rSOILWAT2::get_version(x) >= as.numeric_version("6.0.0"),
       silent = TRUE
     )
   )
@@ -1685,19 +1735,29 @@ load_swrcp_and_usage <- function(sw_in) {
   }
 
   if (use_sw2_v6 && !has_swrc) {
-    sw_in <- rSOILWAT2::sw_upgrade(sw_in, verbose = FALSE)
+    x <- rSOILWAT2::sw_upgrade(x, verbose = FALSE)
     has_swrc <- TRUE
   }
 
   use_swrc_v6 <- use_sw2_v6 && has_swrc
 
   if (use_swrc_v6) {
-    swrc_flags <- rSOILWAT2::swSite_SWRCflags(sw_in)
+    if (is_swInputData) {
+      swrc_flags <- rSOILWAT2::swSite_SWRCflags(x)
 
-    swrcp <- if (rSOILWAT2::swSite_hasSWRCp(sw_in)) {
-      rSOILWAT2::swSoils_SWRCp(sw_in)
+      swrcp <- if (rSOILWAT2::swSite_hasSWRCp(x)) {
+        rSOILWAT2::swSoils_SWRCp(x)
+      } else {
+        NA
+      }
     } else {
-      NA
+      # x is a data frame; use default SWRC/PTF
+      swrc_flags <- c(
+        swrc_name = "Campbell1974",
+        ptf_name = "Cosby1984AndOthers"
+      )
+
+      swrcp <- NA
     }
 
     if (anyNA(swrcp)) {
@@ -1708,7 +1768,24 @@ load_swrcp_and_usage <- function(sw_in) {
       )
 
       if (has_active_ptf) {
-        soils <- rSOILWAT2::swSoils_Layers(sw_in)
+        soils <- if (is_swInputData) {
+          rSOILWAT2::swSoils_Layers(x)
+
+        } else {
+          tmp <- as.data.frame(x, row.names = NULL)
+          ids <- match(colnames(tmp), table = vars, nomatch = 0L)
+          colnames(tmp)[ids > 0L] <- names(vars)[ids]
+          vadd <- setdiff(names(vars), colnames(tmp))
+          if (length(vadd) > 0L) {
+            tmp2 <- array(
+              dim = c(nrow(tmp), length(vadd)),
+              dimnames = list(NULL, vadd)
+            )
+            cbind(tmp, tmp2)
+          } else {
+            tmp
+          }
+        }
 
         swrcp <- rSOILWAT2::ptf_estimate(
           sand = soils[, "sand_frac"],
