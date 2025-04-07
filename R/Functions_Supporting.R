@@ -138,7 +138,7 @@ prepare_soils_for_site <- function(
   if (req_swrc && has_swrc) {
     #--- SWRC are pre-extracted: subset `swrcp_and_usage` to current site/run
     #TODO: SWRC
-    stop("pre-extracted swrcp_and_usage is not implemented yet")
+    stop("pre-extracted swrcp_and_usage is not implemented yet", call. = FALSE)
   }
 
 
@@ -177,7 +177,8 @@ prepare_soils_for_site <- function(
       stop(
         "Failed to read soil data from rSOILWAT2 input object ",
         "for run ", shQuote(name_sw2_run), " with message: ",
-        shQuote(tmp)
+        shQuote(tmp),
+        call. = FALSE
       )
     }
 
@@ -257,7 +258,8 @@ calc_soillayer_weights <- function(
       stop(
         "Deeper soil layers requested than actually simulated:",
         "\n  * position of deepest requested soil layers = ", tmp,
-        "\n  * simulated number of soil layers = ", n_slyrs_has
+        "\n  * simulated number of soil layers = ", n_slyrs_has,
+        call. = FALSE
       )
     }
 
@@ -324,7 +326,11 @@ check_soillayer_availability <- function(
         toString(sim_soil_depths_cm)
       )
 
-      if (match.arg(type) == "error") stop(msg) else warning(msg)
+      if (match.arg(type) == "error") {
+        stop(msg, call. = FALSE)
+      }
+
+      warning(msg, call. = FALSE)
     }
   }
 
@@ -377,7 +383,8 @@ determine_used_soillayers <- function(
     stop(
       "Deeper soil layers requested than actually simulated:",
       "\n  * position of deepest requested soil layers = ", max(x),
-      "\n  * simulated number of soil layers = ", n_slyrs_has
+      "\n  * simulated number of soil layers = ", n_slyrs_has,
+      call. = FALSE
     )
   }
 
@@ -395,17 +402,17 @@ groupid_by_days <- function(
   first_month_of_year = 1L
 ) {
   days <- seq(
-    from = ISOdate(start_year, 1, 1, tz = "UTC"),
-    to = ISOdate(end_year, 12, 31, tz = "UTC"),
+    from = ISOdate(start_year, 1L, 1L, tz = "UTC"),
+    to = ISOdate(end_year, 12L, 31L, tz = "UTC"),
     by = "1 day"
   )
-  months <- as.POSIXlt(days)$mon + 1 # nolint: extraction_operator_linter.
-  rlels <- rle(months)[["lengths"]]
+  seqMonths <- as.POSIXlt(days)$mon + 1L
+  rlels <- rle(seqMonths)[["lengths"]]
 
   list(
     groupid = rep(rep_len(group_by_month, length(rlels)), times = rlels),
-    ids_adj_yrs = if (first_month_of_year > 1) {
-      months >= first_month_of_year
+    ids_adj_yrs = if (first_month_of_year > 1L) {
+      seqMonths >= first_month_of_year
     }
   )
 }
@@ -1255,7 +1262,7 @@ format_values_to_matrix <- function(
   ns_row <- apply(
     expand.grid(tmp[lengths(tmp) > 0]),
     MARGIN = 1,
-    FUN = function(x) paste0(rev(x), collapse = "_")
+    FUN = function(x) paste(rev(x), collapse = "_")
   )
 
 
@@ -1389,6 +1396,7 @@ determine_sw2_sim_time <- function(
   }
 
 
+  # nolint start: if_switch_linter.
   if (sw2_tp == "Year") {
     x_time <- create_sw2simtime(n = length(years_used))
 
@@ -1420,11 +1428,9 @@ determine_sw2_sim_time <- function(
 
     x_time <- create_sw2simtime(n = length(req_ts_days))
 
-    # nolint start: extraction_operator_linter.
-    x_time[, "Year"] <- 1900 + req_ts_days$year
-    x_time[, "Month"] <- 1 + req_ts_days$mon
-    x_time[, "Day"] <- 1 + req_ts_days$yday
-    # nolint end
+    x_time[, "Year"] <- 1900L + req_ts_days$year
+    x_time[, "Month"] <- 1L + req_ts_days$mon
+    x_time[, "Day"] <- 1L + req_ts_days$yday
 
 
     # Apparently, SW2 output can be generated with incorrect leap/nonleap-years;
@@ -1444,10 +1450,8 @@ determine_sw2_sim_time <- function(
       x_time2 <- create_sw2simtime(n = nrow(xt))
       x_time2[, "Year"] <- xt[, "Year"]
       x_time2[, "Day"] <- xt[, "Day"]
-      # nolint start: extraction_operator_linter.
-      x_time2[, "Month"] <- sim_ts_days$mon + 1
-      # nolint end
-      x_time2[is.na(sim_ts_days), "Month"] <- 12
+      x_time2[, "Month"] <- sim_ts_days$mon + 1L
+      x_time2[is.na(sim_ts_days), "Month"] <- 12L
 
       # Add requested but not simulated years from `x_time`
       if (has_req_yrs) {
@@ -1472,6 +1476,7 @@ determine_sw2_sim_time <- function(
         paste0(x_time[, "Year"], "-", x_time[, "Day"]) %in% tmp_sim_seq
     }
   }
+  # nolint end: if_switch_linter.
 
 
   if (has_req_yrs) {
@@ -1538,7 +1543,7 @@ collect_sw2_sim_data <- function(
   for (k in seq_len(n_sets)) {
     out <- output_sets[[k]]
     stopifnot(
-      length(out[["sw2_tp"]]) == 1,
+      length(out[["sw2_tp"]]) == 1L,
       out[["sw2_tp"]] %in% c("Day", "Month", "Year"),
       length(out[["sw2_outs"]]) %in% c(1L, length(out[["sw2_vars"]])),
       length(out[["varnames_are_fixed"]]) %in% c(1L, length(out[["sw2_vars"]]))
@@ -1556,7 +1561,7 @@ collect_sw2_sim_data <- function(
 
   #--- Extract variables
   res <- vector(mode = "list", length = n_sets)
-  if (length(names(output_sets)) > 0) {
+  if (length(names(output_sets)) > 0L) {
     names(res) <- names(output_sets)
   }
 
@@ -1584,23 +1589,26 @@ collect_sw2_sim_data <- function(
 
       } else {
         tmp <- grep(out[["sw2_vars"]][k2], colnames(x[[k2]]), value = TRUE)
-        if (length(tmp) > 0) {
+        if (length(tmp) > 0L) {
           x_vals[[k2]] <- x[[k2]][, tmp, drop = fixed[k2]]
           colnames(x_vals[[k2]]) <- tmp
         } else {
-          x_vals[[k2]] <- try(stop("variables not found"), silent = TRUE)
+          x_vals[[k2]] <- try(
+            stop("variables not found", call. = FALSE),
+            silent = TRUE
+          )
         }
       }
 
       if (inherits(x_vals[[k2]], "try-error")) {
         if (fail) {
-          stop(x_vals[[k2]])
-        } else {
-          x_vals[[k2]] <- array(
-            dim = c(nrow(x[[k2]]), 1),
-            dimnames = list(NULL, out[["sw2_vars"]][k2])
-          )
+          stop(x_vals[[k2]], call. = FALSE)
         }
+
+        x_vals[[k2]] <- array(
+          dim = c(nrow(x[[k2]]), 1L),
+          dimnames = list(NULL, out[["sw2_vars"]][k2])
+        )
       }
     }
 
@@ -1609,7 +1617,7 @@ collect_sw2_sim_data <- function(
       out[["sw2_vars"]]
     } else {
       tmp <- nv
-      ids <- nchar(nv) == 0
+      ids <- !nzchar(nv)
       if (any(ids)) tmp[ids] <- out[["sw2_vars"]][ids]
       tmp
     }
@@ -1620,7 +1628,7 @@ collect_sw2_sim_data <- function(
     # argument `req_years` doesn't work correctly
     # (see https://github.com/r-lib/memoise/issues/19)
     x_time <- determine_sw2_sim_time(
-      xt = x[[1]],
+      xt = x[[1L]],
       req_years = if (missing(years)) NULL else years,
       sw2_tp = out[["sw2_tp"]]
     )
@@ -1629,9 +1637,9 @@ collect_sw2_sim_data <- function(
 
 
     #--- Add entries for requested but not simulated time steps "nosim"
-    if (n_nosim > 0) {
+    if (n_nosim > 0L) {
       n_sim <- nrow(x_time) - n_nosim
-      ids <- if (isTRUE(x_time[1, "mode"] == "nosim")) {
+      ids <- if (isTRUE(x_time[1L, "mode"] == "nosim")) {
         # "nosim" occurs before "sim_keep"
         c(rep(NA, n_nosim), seq_len(n_sim))
       } else {
@@ -1648,7 +1656,7 @@ collect_sw2_sim_data <- function(
 
     #--- Removes entries for un-requested but simulated time steps "sim_discard"
     ids <- which(x_time[, "mode"] == "sim_discard")
-    if (length(ids) > 0) {
+    if (length(ids) > 0L) {
       x_time <- x_time[-ids, , drop = FALSE]
       x_vals <- lapply(
         x_vals,
@@ -1730,7 +1738,8 @@ load_swrcp_and_usage <- function(
   if (!use_sw2_v6 && has_swrc) {
     stop(
       "Available 'rSOILWAT2' is older than v6.0.0",
-      " and cannot handle 'sw_in' which is v6.0.0 or later."
+      " and cannot handle 'sw_in' which is v6.0.0 or later.",
+      call. = FALSE
     )
   }
 
@@ -1767,45 +1776,45 @@ load_swrcp_and_usage <- function(
         )
       )
 
-      if (has_active_ptf) {
-        soils <- if (is_swInputData) {
-          rSOILWAT2::swSoils_Layers(x)
-
-        } else {
-          tmp <- as.data.frame(x, row.names = NULL)
-          ids <- match(colnames(tmp), table = vars, nomatch = 0L)
-          colnames(tmp)[ids > 0L] <- names(vars)[ids]
-          vadd <- setdiff(names(vars), colnames(tmp))
-          if (length(vadd) > 0L) {
-            tmp2 <- array(
-              dim = c(nrow(tmp), length(vadd)),
-              dimnames = list(NULL, vadd)
-            )
-            cbind(tmp, tmp2)
-          } else {
-            tmp
-          }
-        }
-
-        swrcp <- rSOILWAT2::ptf_estimate(
-          sand = soils[, "sand_frac"],
-          clay = soils[, "clay_frac"],
-          fcoarse = soils[, "gravel_content"],
-          # nolint start: nonportable_path_linter.
-          bdensity = soils[, "bulkDensity_g/cm^3"],
-          # nolint end: nonportable_path_linter.
-          swrc_name = swrc_flags[["swrc_name"]],
-          ptf_name = swrc_flags[["ptf_name"]],
-          fail = TRUE
-        )
-
-      } else {
+      if (!has_active_ptf) {
         stop(
           "Missing SWRC parameters and ",
           "requested PTF ", shQuote(swrc_flags[["ptf_name"]]),
-          " is not available."
+          " is not available.",
+          call. = FALSE
         )
       }
+
+      soils <- if (is_swInputData) {
+        rSOILWAT2::swSoils_Layers(x)
+
+      } else {
+        tmp <- as.data.frame(x, row.names = NULL)
+        ids <- match(colnames(tmp), table = vars, nomatch = 0L)
+        colnames(tmp)[ids > 0L] <- names(vars)[ids]
+        vadd <- setdiff(names(vars), colnames(tmp))
+        if (length(vadd) > 0L) {
+          tmp2 <- array(
+            dim = c(nrow(tmp), length(vadd)),
+            dimnames = list(NULL, vadd)
+          )
+          cbind(tmp, tmp2)
+        } else {
+          tmp
+        }
+      }
+
+      swrcp <- rSOILWAT2::ptf_estimate(
+        sand = soils[, "sand_frac"],
+        clay = soils[, "clay_frac"],
+        fcoarse = soils[, "gravel_content"],
+        # nolint start: nonportable_path_linter.
+        bdensity = soils[, "bulkDensity_g/cm^3"],
+        # nolint end: nonportable_path_linter.
+        swrc_name = swrc_flags[["swrc_name"]],
+        ptf_name = swrc_flags[["ptf_name"]],
+        fail = TRUE
+      )
     }
 
   } else {

@@ -121,7 +121,7 @@ aggs_across_years <- function(
   )
 
   if (length(cn_vars) == 0) {
-    stop("No suitable columns with the format 'scX_YYYY'.")
+    stop("No suitable columns with the format 'scX_YYYY'.", call. = FALSE)
   }
 
   # If no id_scens provided, then apply list_years to each available id_scen
@@ -167,7 +167,8 @@ aggs_across_years <- function(
   if (any(rn_aggs %in% colnames(x))) {
     warning(
       "Argument 'x' contains (some) requested across-year aggregated columns: ",
-      toString(shQuote(rn_aggs[rn_aggs %in% colnames(x)]))
+      toString(shQuote(rn_aggs[rn_aggs %in% colnames(x)])),
+      call. = FALSE
     )
   }
 

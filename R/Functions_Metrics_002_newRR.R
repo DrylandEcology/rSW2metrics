@@ -22,7 +22,7 @@ get_rh <- function(path, name_sw2_run, id_scen, years, zipped_runs = FALSE) {
   )
 
   # Provide correct name and initialize
-  res[["values"]][[1]][] <- NA # nolint: extraction_operator_linter.
+  res[["values"]][[1L]][] <- NA
   names(res[["values"]]) <- "rh"
 
   # Extract RH (from inputs)
@@ -64,7 +64,10 @@ get_vpd <- function(
   stopifnot(requireNamespace("rSW2data"))
 
   if (!missing(years)) {
-    warning("'years' is not implemented but provided as argument!")
+    warning(
+      "'years' is not implemented but provided as argument!",
+      call. = FALSE
+    )
   }
 
   temp_min <- get_values_from_sw2(
@@ -218,10 +221,12 @@ calc_wetdry <- function(
     sm <- matrix(
       data = if (is_op_lt) {
         if (sm_periods[["limit"]] == Inf) !tmp else tmp
+      } else if (sm_periods[["limit"]] == Inf) {
+        tmp
       } else {
-        if (sm_periods[["limit"]] == Inf) tmp else !tmp
+        !tmp
       },
-      ncol = 1
+      ncol = 1L
     )
   }
 
@@ -229,10 +234,10 @@ calc_wetdry <- function(
     time = time_daily,
     values = if (is_op_lt) {
       # wet: op = `>` --> wet(profile) = any(wet[i])
-      list(apply(sm, 1, any))
+      list(apply(sm, 1L, any))
     } else {
       # dry: op = `<` --> dry(profile) = all(dry[i])
-      list(apply(sm, 1, all))
+      list(apply(sm, 1L, all))
     }
   )
 }

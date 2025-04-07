@@ -248,7 +248,7 @@ get_VWC_Seasonal <- function(
 
   widths_cm <- calc_soillayer_weights(soils[["depth_cm"]], used_depth_range_cm)
 
-  warning("`get_VWC_Seasonal()` returns matric-VWC!")
+  warning("`get_VWC_Seasonal()` returns matric-VWC!", call. = FALSE)
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
@@ -338,14 +338,17 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
     )
   )
 
-  warning("`metric_SWP_SoilLayers_MeanMonthly()` uses matric-VWC!")
+  warning(
+    "`metric_SWP_SoilLayers_MeanMonthly()` uses matric-VWC!",
+    call. = FALSE
+  )
 
   vwc <- calc_multivariate_from_sw2(
     path, name_sw2_run,
     zipped_runs = zipped_runs,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
-    group_by_month = seq_len(12),
+    group_by_month = seq_len(12L),
     group_label = "mon",
     first_month_of_year = 1L,
     req_ts = FALSE,
@@ -354,8 +357,8 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
     sw2_vars = "Lyr",
     varnames_are_fixed = FALSE,
     fun_across_time = function(x) {
-      nsl <- ncol(x)
-      if (!is.null(nsl) && nsl > 1) {
+      nSoilLayers <- ncol(x)
+      if (!is.null(nSoilLayers) && nSoilLayers > 1L) {
         colMeans(x)
       } else {
         mean(x)

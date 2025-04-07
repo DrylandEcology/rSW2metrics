@@ -242,19 +242,15 @@ calc_RecruitmentIndex_v3 <- function(
 
         if (tmp[[1]] > res[k1, "SpringRecruitment_maxWDD"]) {
           res[k1, "SpringRecruitment_maxWDD"] <- tmp[[1]]
-          # nolint start: extraction_operator_linter.
           res[k1, "SpringRecruitment_DOY"] <-
             as.POSIXlt(jan0 + lims[[1]])$yday + 1
-          # nolint end
           res[k1, "SpringRecruitment_DurationDays"] <- length(ids1)
         }
 
         if (tmp[[2]] > res[k1, "FallRecruitment_maxWDD"]) {
           res[k1, "FallRecruitment_maxWDD"] <- tmp[[2]]
-          # nolint start: extraction_operator_linter.
           res[k1, "FallRecruitment_DOY"] <-
             as.POSIXlt(jan0 + id_mid_yr)$yday + 1
-          # nolint end
           res[k1, "FallRecruitment_DurationDays"] <- length(ids2)
         }
 
@@ -267,24 +263,18 @@ calc_RecruitmentIndex_v3 <- function(
           if (tmp > res[k1, "SpringRecruitment_maxWDD"]) {
             # Current spring period is larger than previous ones -> replace
             res[k1, "SpringRecruitment_maxWDD"] <- tmp
-            # nolint start: extraction_operator_linter.
             res[k1, "SpringRecruitment_DOY"] <-
-              as.POSIXlt(jan0 + lims[[1]])$yday + 1
-            # nolint end
+              as.POSIXlt(jan0 + lims[[1L]])$yday + 1L
             res[k1, "SpringRecruitment_DurationDays"] <- length(ids)
           }
 
-        } else {
+        } else if (tmp > res[k1, "FallRecruitment_maxWDD"]) {
           # Current period is completely after mid-year date
-          if (tmp > res[k1, "FallRecruitment_maxWDD"]) {
-            # Current fall period is larger than previous ones -> replace
-            res[k1, "FallRecruitment_maxWDD"] <- tmp
-            # nolint start: extraction_operator_linter.
-            res[k1, "FallRecruitment_DOY"] <-
-              as.POSIXlt(jan0 + lims[[1]])$yday + 1
-            # nolint end
-            res[k1, "FallRecruitment_DurationDays"] <- length(ids)
-          }
+          # Current fall period is larger than previous ones -> replace
+          res[k1, "FallRecruitment_maxWDD"] <- tmp
+          res[k1, "FallRecruitment_DOY"] <-
+            as.POSIXlt(jan0 + lims[[1L]])$yday + 1L
+          res[k1, "FallRecruitment_DurationDays"] <- length(ids)
         }
       }
     }

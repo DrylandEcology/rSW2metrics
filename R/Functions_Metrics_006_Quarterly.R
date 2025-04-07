@@ -32,7 +32,7 @@ metric_Climate_quarterly <- function(
       zipped_runs = zipped_runs
     )
 
-    time <- data.frame(
+    timeQuarter <- data.frame(
       sim_data[[1]][["time"]],
       Quarter = paste0(
         "Q",
@@ -44,16 +44,16 @@ metric_Climate_quarterly <- function(
       tmean_C = tapply(
         sim_data[[1]][["values"]][["tmean-C"]],
         INDEX = list(
-          Quarter = time[, "Quarter"],
-          Year = time[, "Year"]
+          Quarter = timeQuarter[, "Quarter"],
+          Year = timeQuarter[, "Year"]
         ),
         FUN = mean
       ),
       ppt_mm = tapply(
         10 * sim_data[[1]][["values"]][["ppt-mm"]],
         INDEX = list(
-          Quarter = time[, "Quarter"],
-          Year = time[, "Year"]
+          Quarter = timeQuarter[, "Quarter"],
+          Year = timeQuarter[, "Year"]
         ),
         FUN = sum
       )

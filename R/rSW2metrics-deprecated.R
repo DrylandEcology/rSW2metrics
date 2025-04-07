@@ -85,9 +85,11 @@ calc_univariate_from_sw2 <- function(
       isTRUE(inherits(list_years_scen_used[[k]], "list"))
 
     id_periods <- if (use_all_yrs) {
-      1
+      1L
+    } else if (has_periods) {
+      which(lengths(list_years_scen_used[[k]]) > 0L)
     } else {
-      if (has_periods) which(lengths(list_years_scen_used[[k]]) > 0) else 1
+      1L
     }
 
     group_labels <- paste0(
@@ -163,12 +165,10 @@ calc_univariate_from_sw2 <- function(
           ),
           if (use_all_yrs) {
             NULL
+          } else if (has_periods) {
+            names(list_years_scen_used[[k]])[id_periods]
           } else {
-            if (has_periods) {
-              names(list_years_scen_used[[k]])[id_periods]
-            } else {
-              NULL
-            }
+            NULL
           }
         )
       )
@@ -238,9 +238,11 @@ calc_multivariate_from_sw2 <- function(
       isTRUE(inherits(list_years_scen_used[[k]], "list"))
 
     id_periods <- if (use_all_yrs) {
-      1
+      1L
+    } else if (has_periods) {
+      which(lengths(list_years_scen_used[[k]]) > 0L)
     } else {
-      if (has_periods) which(lengths(list_years_scen_used[[k]]) > 0) else 1
+      1L
     }
 
     group_labels <- paste0(
@@ -336,12 +338,10 @@ calc_multivariate_from_sw2 <- function(
           NULL,
           if (use_all_yrs) {
             NULL
+          } else if (has_periods) {
+            names(list_years_scen_used[[k]])[id_periods]
           } else {
-            if (has_periods) {
-              names(list_years_scen_used[[k]])[id_periods]
-            } else {
-              NULL
-            }
+            NULL
           }
         )
       )
@@ -419,17 +419,15 @@ extract_from_sw2 <- function(
       FUN = paste0,
       collapse = "-"
     )
-    # nolint start: extraction_operator_linter.
-    x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1
-    # nolint end
+    x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1L
 
   } else if (sw2_tp == "Month") {
-    x_time[, "Month"] <- x[[1]][, "Month"]
+    x_time[, "Month"] <- x[[1L]][, "Month"]
   }
 
 
   #--- Subset to requested years
-  if (!missing(years) && length(years) > 0) {
+  if (!missing(years) && length(years) > 0L) {
     ids <- x_time[, "Year"] %in% years
     x_time <- x_time[ids, , drop = FALSE]
     x_vals <- lapply(
@@ -456,7 +454,7 @@ get_swp_weighted <- function(
   used_depth_range_cm = NULL,
   ...
 ) {
-  warning("`get_swp_weighted()` uses matric-VWC!")
+  warning("`get_swp_weighted()` uses matric-VWC!", call. = FALSE)
   .Deprecated("SWRC not implemented.")
 
   vwc <- extract_from_sw2(

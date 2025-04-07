@@ -26,8 +26,8 @@ Suggests:
     rSW2funs (>= 0.1.0),
     zoo,
     testthat (>= 3.0.0),
-    spelling,
-    lintr (>= 3.1.0),
+    spelling (>= 2.1.0),
+    lintr (>= 3.2.0),
     covr
 Remotes:
     github::DrylandEcology/rSW2utils,

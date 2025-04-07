@@ -39,11 +39,12 @@ metric_land_cover_v1 <- function(
       warning(
         "`metric_land_cover_v1(): ",
         "simulated time period ",
-        paste0(range(sim_data[["wd"]][["time"]][ids, "Year"]), collapse = "-"),
+        paste(range(sim_data[["wd"]][["time"]][ids, "Year"]), collapse = "-"),
         " does not completely include requested years ",
-        paste0(range(sim_data[["wd"]][["time"]][, "Year"]), collapse = "-"),
+        paste(range(sim_data[["wd"]][["time"]][, "Year"]), collapse = "-"),
         "; land cover (based on climate conditions) will be valid only ",
-        "for simulated subset instead of full requested time period."
+        "for simulated subset instead of full requested time period.",
+        call. = FALSE
       )
       tmp_meteo <- tmp_meteo[ids, , drop = FALSE]
     }
@@ -53,7 +54,7 @@ metric_land_cover_v1 <- function(
       do_C4vars = TRUE
     )
 
-    cov <- rSOILWAT2::estimate_PotNatVeg_composition(
+    pnvCover <- rSOILWAT2::estimate_PotNatVeg_composition(
       MAP_mm = 10 * clim[["MAP_cm"]],
       MAT_C = clim[["MAT_C"]],
       mean_monthly_ppt_mm = 10 * clim[["meanMonthlyPPTcm"]],
@@ -66,8 +67,8 @@ metric_land_cover_v1 <- function(
     )
 
     res[[k1]] <- matrix(
-      data = cov[tmp_var],
-      nrow = 5,
+      data = pnvCover[tmp_var],
+      nrow = 5L,
       ncol = length(unique(sim_data[["wd"]][["time"]][, "Year"])),
       dimnames = list(
         c(

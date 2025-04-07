@@ -2,7 +2,7 @@
 
 test_that("Value formatter", {
   #--- Define test inputs ------
-  list_nyrs <- c(1, 5)
+  list_nyrs <- c(1L, 5L)
   list_xtype <- c(
     "vector", "list_of_vector1", "list_of_vectorV", "data.frame", "matrix"
   )
@@ -10,14 +10,14 @@ test_that("Value formatter", {
   list_labeltypes <- c("xnames", "labels")
   list_timesteps <- c("yearly", "monthly", "daily")
 
-  start_year <- 2001
-  N_vars <- 2
+  start_year <- 2001L
+  N_vars <- 2L
   ns_vars <- paste0("variable", seq_len(N_vars))
 
   #--- Test and loop over argument combinations
   for (timestep in list_timesteps) {
     for (nyrs in list_nyrs) {
-      ts_years <- start_year - 1 + seq_len(nyrs)
+      ts_years <- start_year - 1L + seq_len(nyrs)
 
       if (timestep == "daily") {
         ts_daily <- as.POSIXlt(
@@ -29,13 +29,11 @@ test_that("Value formatter", {
         xyears <- switch(
           EXPR = xtime,
           ts = if (timestep == "daily") {
-            # nolint start: extraction_operator_linter.
-            as.integer(1900 + ts_daily$year)
-            # nolint end
+            as.integer(1900L + ts_daily$year)
           } else {
             rep(
               ts_years,
-              each = switch(timestep, yearly = 1, monthly = 12)
+              each = switch(timestep, yearly = 1L, monthly = 12L)
             )
           },
           clim = NA
@@ -46,15 +44,15 @@ test_that("Value formatter", {
             switch(
               EXPR = timestep,
               yearly = nyrs,
-              monthly = nyrs * 12,
+              monthly = nyrs * 12L,
               daily = length(xyears)
             )
           } else {
             switch(
               EXPR = timestep,
-              yearly = 1,
-              monthly = 12,
-              daily = 366
+              yearly = 1L,
+              monthly = 12L,
+              daily = 366L
             )
           }
 

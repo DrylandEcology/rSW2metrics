@@ -225,7 +225,7 @@ test_that("Check metrics", {
       rSOILWAT2::swCarbon_CO2ppm(sw2_in) <- data.matrix(co2_data)
 
 
-      if (sc > 1) {
+      if (sc > 1L) {
         # Climate scenarios: 2 C warming + 50% reduction in June-Aug precip
         tmp <- sc / prjpars[["N_scen"]]
         rSOILWAT2::swWeather_MonScalingParams(sw2_in)[6:8, "PPT"] <- 0.5 * tmp
@@ -295,11 +295,11 @@ test_that("Check metrics", {
           flags = "-jrTq0"
         )
 
-        if (ret == 0 && file.exists(fname_zip)) {
-          unlink(fname_run, recursive = TRUE)
-        } else {
-          stop("Zipping of simulation output failed.")
+        if (ret != 0 || !file.exists(fname_zip)) {
+          stop("Zipping of simulation output failed.", call. = FALSE)
         }
+
+        unlink(fname_run, recursive = TRUE)
       }
 
     } else {
