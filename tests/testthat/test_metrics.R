@@ -215,10 +215,26 @@ test_that("Check metrics", {
       rSOILWAT2::swMarkov_Conv(sw2_in) <- wgen_coeffs[["mkv_woy"]]
 
       # CO2 concentration scenario
-      co2_nametag <- "RCP85"
+      yearRangeCO2 <- c(
+        rSOILWAT2::swYears_StartYear(sw2_in),
+        rSOILWAT2::swYears_EndYear(sw2_in)
+      ) +
+        rSOILWAT2::swCarbon_DeltaYear(sw2_in)
+
+
+      if (getNamespaceVersion("rSOILWAT2") >= "6.4.0") {
+        co2_nametag <- "CMIP5_historical|CMIP5_RCP85"
+        yearRangeCO2 <- c(
+          min(yearRangeCO2[[1L]], sw2_in@prod@vegYear),
+          max(yearRangeCO2[[2L]], sw2_in@prod@vegYear)
+        )
+      } else {
+        co2_nametag <- "RCP85"
+      }
+
       co2_data <- rSOILWAT2::lookup_annual_CO2a(
-        start = rSOILWAT2::swYears_StartYear(sw2_in),
-        end = rSOILWAT2::swYears_EndYear(sw2_in),
+        start = yearRangeCO2[[1L]],
+        end = yearRangeCO2[[2L]],
         name_co2 = co2_nametag
       )
       rSOILWAT2::swCarbon_Scenario(sw2_in) <- co2_nametag
@@ -234,7 +250,10 @@ test_that("Check metrics", {
       }
 
       swRunScenariosData[[sc]] <- sw2_in
-      runDataSC <- rSOILWAT2::sw_exec(inputData = swRunScenariosData[[sc]])
+      runDataSC <- rSOILWAT2::sw_exec(
+        inputData = swRunScenariosData[[sc]],
+        quiet = TRUE
+      )
 
       if (is.na(used_rSOILWAT2_version)) {
         used_rSOILWAT2_version <- rSOILWAT2::get_version(runDataSC)
