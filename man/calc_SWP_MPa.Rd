@@ -24,7 +24,8 @@ daily \var{"swc"} for each soil layer in units of centimeters.}
 \code{"sand_frac"}, \code{"clay_frac"}, and \code{"gravel_content"}
 as numeric vectors with values for each soil layer.}
 
-\item{used_depth_range_cm}{A numeric vector of length two.}
+\item{used_depth_range_cm}{A numeric vector of length two (or \code{NULL}).
+The upper and lower depth limit of the zone (depth range) to consider.}
 
 \item{method}{A character string.}
 

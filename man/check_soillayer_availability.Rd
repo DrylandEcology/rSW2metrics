@@ -15,7 +15,7 @@ check_soillayer_availability(
 \item{soil_depths_cm}{A numeric vector.
 The lower depth limits of soil layers in \var{[cm]}.}
 
-\item{used_depth_range_cm}{A numeric vector of length two.
+\item{used_depth_range_cm}{A numeric vector of length two (or \code{NULL}).
 The upper and lower depth limit of the zone (depth range) to consider.}
 
 \item{strict}{A logical vector either of length one or equal to the

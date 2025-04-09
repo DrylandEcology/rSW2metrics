@@ -134,6 +134,9 @@ One of \var{\dQuote{ts_years}} or \var{\dQuote{across_years}}.}
 \code{"sand_frac"}, \code{"clay_frac"}, and \code{"gravel_content"}
 as numeric vectors with values for each soil layer.}
 
+\item{used_depth_range_cm}{A numeric vector of length two (or \code{NULL}).
+The upper and lower depth limit of the zone (depth range) to consider.}
+
 \item{swrcp_and_usage}{A named list with usage of and, if suitable,
 parameters of soil water retention curve;
 e.g., the output of \code{\link[=load_swrcp_and_usage]{load_swrcp_and_usage()}}.}

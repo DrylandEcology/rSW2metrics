@@ -214,10 +214,9 @@ prepare_soils_for_site <- function(
 
 #' Determine widths (as weights) of soil layers within a zone
 #'
+#' @inheritParams metrics
 #' @param soil_depths_cm A numeric vector.
 #'   The lower depth limits of soil layers in \var{[cm]}.
-#' @param used_depth_range_cm A numeric vector of length two.
-#'   The upper and lower depth limit of the zone (depth range) to consider.
 #' @param n_slyrs_has An integer value. The number of simulated soil layers
 #'   (optional). The code throws an error if there are fewer soil layers
 #'   than selected by \code{used_depth_range_cm} from \code{soil_depths_cm}.

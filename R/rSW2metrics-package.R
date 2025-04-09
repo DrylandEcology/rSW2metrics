@@ -136,6 +136,8 @@ rd_section_list_metrics <- function() {
 #' @param soils A named list with soil parameters `"depth_cm"`,
 #' `"sand_frac"`, `"clay_frac"`, and `"gravel_content"`
 #' as numeric vectors with values for each soil layer.
+#' @param used_depth_range_cm A numeric vector of length two (or `NULL`).
+#' The upper and lower depth limit of the zone (depth range) to consider.
 #' @param swrcp_and_usage A named list with usage of and, if suitable,
 #' parameters of soil water retention curve;
 #' e.g., the output of [load_swrcp_and_usage()].

@@ -207,10 +207,10 @@ metric_SWAat20to100cm39bar_dailyClim <- function(
 #'
 #'
 #' @inheritParams metrics
+#' @inheritParams calc_soillayer_weights
 #' @param sim_swc_daily A numeric two-dimensional object with
 #'    daily \var{"swc"} for each soil layer in units of centimeters.
 #' @param time A numeric vector. Time for each row of `sim_swc_daily`.
-#' @param used_depth_range_cm A numeric vector of length two.
 #' @param method A character string.
 #' @param out A character string.
 #' @param fun_aggs_across_yrs A function that calculates across-year
