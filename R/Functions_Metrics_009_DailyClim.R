@@ -231,6 +231,7 @@ calc_SWP_MPa <- function(
   sim_swc_daily,
   time,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   used_depth_range_cm = NULL,
   method = c("across_profile", "by_layer"),
   out = c("ts_years", "across_years"),
@@ -252,6 +253,14 @@ calc_SWP_MPa <- function(
   if (length(id_slyrs) > 0) {
     widths_cm <- widths_cm[id_slyrs]
 
+    if (swrcp_and_usage[["use_swrc_v6"]]) {
+      tmp_swrcp <- swrcp_and_usage[["swrcp"]][id_slyrs, , drop = FALSE]
+      sand_used <- NULL
+      clay_used <- NULL
+    } else {
+      tmp_swrcp <- NULL
+    }
+
     if (method == "across_profile") {
       # (i) aggregate SWC [cm] across soil layers (if requested)
       x <- rowSums(
@@ -261,8 +270,17 @@ calc_SWP_MPa <- function(
       # (ii) convert SWC [cm] to matric VWC [cm/cm] (coarse fragments!)
       x <- x / sum(widths_cm * (1 - soils[["gravel_content"]][id_slyrs]))
 
-      sand_used <- weighted.mean(soils[["sand_frac"]][id_slyrs], widths_cm)
-      clay_used <- weighted.mean(soils[["clay_frac"]][id_slyrs], widths_cm)
+      if (swrcp_and_usage[["use_swrc_v6"]]) {
+        # Note: ideally, we would re-estimate SWRCp via PTF for aggregated soils
+        # instead, we approximate SWRCp by aggregating parameters themselves
+        tmp_swrcp <- matrix(
+          apply(tmp_swrcp, MARGIN = 2L, FUN = weighted.mean, w = widths_cm),
+          nrow = 1L
+        )
+      } else {
+        sand_used <- weighted.mean(soils[["sand_frac"]][id_slyrs], widths_cm)
+        clay_used <- weighted.mean(soils[["clay_frac"]][id_slyrs], widths_cm)
+      }
 
     } else if (method == "by_layer") {
       # (ii) convert SWC [cm] to matric VWC [cm/cm] (coarse fragments!)
@@ -275,8 +293,10 @@ calc_SWP_MPa <- function(
 
       colnames(x) <- paste0("L", seq_len(ncol(x)))
 
-      sand_used <- soils[["sand_frac"]][id_slyrs]
-      clay_used <- soils[["clay_frac"]][id_slyrs]
+      if (!swrcp_and_usage[["use_swrc_v6"]]) {
+        sand_used <- soils[["sand_frac"]][id_slyrs]
+        clay_used <- soils[["clay_frac"]][id_slyrs]
+      }
     }
 
 
@@ -290,12 +310,18 @@ calc_SWP_MPa <- function(
     }
 
     # (iv) translate matric VWC to SWP [MPa]
-    values <- as.data.frame(rSOILWAT2::VWCtoSWP(
-      as.matrix(x),
-      sand = sand_used,
-      clay = clay_used
-    ))
-    # `rSOILWAT2::VWCtoSWP()` currently removes column names
+    values <- as.data.frame(
+      convert_with_swrc(
+        x = as.matrix(x),
+        direction = "vwc_to_swp",
+        use_swrc_v6 = swrcp_and_usage[["use_swrc_v6"]],
+        fcoarse = rep(0, NROW(tmp_swrcp)),
+        sand = sand_used,
+        clay = clay_used,
+        swrcp = tmp_swrcp,
+        swrc_name = swrcp_and_usage[["swrc_name"]]
+      )
+    )
     colnames(values) <- colnames(x)
 
   } else {
@@ -318,6 +344,7 @@ get_SWP_daily <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   used_depth_range_cm = NULL,
   method = "across_profile",
   out = c("ts_years", "across_years"),
@@ -360,6 +387,7 @@ get_SWP_daily <- function(
           sim_swc_daily = sim_data[["swc_daily"]][["values"]][["swc"]],
           time = sim_data[["swc_daily"]][["time"]][, "Day"],
           soils = soils,
+          swrcp_and_usage = swrcp_and_usage,
           used_depth_range_cm = used_depth_range_cm,
           method = "across_profile",
           out = out,
@@ -404,6 +432,7 @@ metric_SWPat0to020cm_dailyClim <- function(
   zipped_runs = FALSE,
   fun_aggs_across_yrs = mean,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -428,6 +457,7 @@ metric_SWPat0to020cm_dailyClim <- function(
     fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWPat0to020cm_MPa",
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     used_depth_range_cm = used_depth_range_cm
   )
 }
@@ -441,6 +471,7 @@ metric_SWPat20to100cm_dailyClim <- function(
   zipped_runs = FALSE,
   fun_aggs_across_yrs = mean,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -465,6 +496,7 @@ metric_SWPat20to100cm_dailyClim <- function(
     fun_aggs_across_yrs = fun_aggs_across_yrs,
     out_label = "SWPat20to100cm_MPa",
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     used_depth_range_cm = used_depth_range_cm
   )
 }
