@@ -221,9 +221,14 @@ test_that("Check metrics", {
       ) +
         rSOILWAT2::swCarbon_DeltaYear(sw2_in)
 
+      co2_nametag <- "CMIP5_historical|CMIP5_RCP85"
 
-      if (getNamespaceVersion("rSOILWAT2") >= numeric_version("6.4.0")) {
-        co2_nametag <- "CMIP5_historical|CMIP5_RCP85"
+      if (getNamespaceVersion("rSOILWAT2") >= "6.5.0") {
+        yearRangeCO2 <- c(
+          min(yearRangeCO2[[1L]], sw2_in@prod2@vegYear),
+          max(yearRangeCO2[[2L]], sw2_in@prod2@vegYear)
+        )
+      } else if (getNamespaceVersion("rSOILWAT2") >= "6.4.0") {
         yearRangeCO2 <- c(
           min(yearRangeCO2[[1L]], sw2_in@prod@vegYear),
           max(yearRangeCO2[[2L]], sw2_in@prod@vegYear)
