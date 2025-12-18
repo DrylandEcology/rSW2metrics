@@ -201,7 +201,7 @@ test_that("Check metrics", {
         years_sim_timeseries_by_scen[[sc]]
       }
 
-      if (getNamespaceVersion("rSOILWAT2") < as.numeric_version("6.0.0")) {
+      if (getNamespaceVersion("rSOILWAT2") < numeric_version("6.0.0")) {
         rSOILWAT2::swWeather_FirstYearHistorical(sw2_in) <- -1
       }
       rSOILWAT2::swYears_StartYear(sw2_in) <- 0
@@ -222,7 +222,7 @@ test_that("Check metrics", {
         rSOILWAT2::swCarbon_DeltaYear(sw2_in)
 
 
-      if (getNamespaceVersion("rSOILWAT2") >= "6.4.0") {
+      if (getNamespaceVersion("rSOILWAT2") >= numeric_version("6.4.0")) {
         co2_nametag <- "CMIP5_historical|CMIP5_RCP85"
         yearRangeCO2 <- c(
           min(yearRangeCO2[[1L]], sw2_in@prod@vegYear),

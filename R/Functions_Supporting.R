@@ -1725,11 +1725,11 @@ load_swrcp_and_usage <- function(
   )
 ) {
 
-  use_sw2_v6 <- getNamespaceVersion("rSOILWAT2") >= as.numeric_version("6.0.0")
+  use_sw2_v6 <- getNamespaceVersion("rSOILWAT2") >= numeric_version("6.0.0")
   is_swInputData <- inherits(x, "swInputData")
   has_swrc <- isTRUE(
     try(
-      rSOILWAT2::get_version(x) >= as.numeric_version("6.0.0"),
+      rSOILWAT2::get_version(x) >= numeric_version("6.0.0"),
       silent = TRUE
     )
   )
@@ -1864,7 +1864,7 @@ load_swrcp_and_usage <- function(
 convert_with_swrc <- function(
   x,
   direction = c("vwc_to_swp", "swp_to_vwc"),
-  use_swrc_v6 = getNamespaceVersion("rSOILWAT2") >= as.numeric_version("6.0.0"),
+  use_swrc_v6 = getNamespaceVersion("rSOILWAT2") >= numeric_version("6.0.0"),
   fcoarse = NULL,
   sand = NULL,
   clay = NULL,

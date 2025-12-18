@@ -269,7 +269,7 @@ metric_SW2toTable_daily <- function(
     #--- * soiltemperature ------
     if (any(c("all", "soiltemperature") %in% outputs_SW2toTable)) {
 
-      if (getNamespaceVersion("rSOILWAT2") >= as.numeric_version("5.3.1")) {
+      if (getNamespaceVersion("rSOILWAT2") >= numeric_version("5.3.1")) {
         tmp_st <- rSOILWAT2::get_soiltemp(
           sim_data,
           timestep = "Day",
