@@ -95,10 +95,13 @@
 \alias{metric_WetSoilDays_Seasonal_wholeprofile}
 \alias{metric_land_cover_v1}
 \alias{metric_land_cover_v2}
+\alias{metric_land_cover_v3}
 \alias{metric_veg_biomass_annual_v1}
 \alias{metric_veg_biomass_annual_v2}
+\alias{metric_veg_biomass_annual_v3}
 \alias{metric_veg_biomass_monthly_v1}
 \alias{metric_veg_biomass_monthly_v2}
+\alias{metric_veg_biomass_monthly_v3}
 \title{End-user functions that calculate a specific \code{metric}}
 \arguments{
 \item{path}{A character string. The path to the simulation project folder
@@ -302,8 +305,11 @@ daily \code{SOILWAT2} variables, see \code{\link{SW2toTable}}.
   \item \code{\link{metric_WetSoilDays_Seasonal_wholeprofile}}
   \item \code{\link{metric_land_cover_v1}}
   \item \code{\link{metric_land_cover_v2}}
+  \item \code{\link{metric_land_cover_v3}}
   \item \code{\link{metric_veg_biomass_annual_v1}}
   \item \code{\link{metric_veg_biomass_annual_v2}}
+  \item \code{\link{metric_veg_biomass_annual_v3}}
   \item \code{\link{metric_veg_biomass_monthly_v1}}
-  \item \code{\link{metric_veg_biomass_monthly_v2}} 
+  \item \code{\link{metric_veg_biomass_monthly_v2}}
+  \item \code{\link{metric_veg_biomass_monthly_v3}} 
 }}
