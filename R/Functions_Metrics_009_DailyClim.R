@@ -54,7 +54,7 @@ metric_Tmean_dailyClim <- function(
 }
 
 
-#' Across-year average daily precipitation amount [mm]
+#' Across-year average daily precipitation amount ``[mm]``
 #' @section Notes: Un-simulated but requested time steps propagate NAs.
 #' @noRd
 metric_PPT_dailyClim <- function(
@@ -110,7 +110,7 @@ metric_PPT_dailyClim <- function(
 
 
 
-#' Across-year average daily SWA amount [mm] at 0-20 cm depth above -3.9 MPa
+#' Across-year average daily SWA amount ``[mm]`` at 0-20 cm depth above -3.9 MPa
 #' @noRd
 metric_SWAat0to020cm39bar_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -150,7 +150,7 @@ metric_SWAat0to020cm39bar_dailyClim <- function(
 }
 
 
-#' Across-year average daily SWA amount [mm] at 20-100 cm depth above -3.9 MPa
+#' Across-year average daily SWA ``[mm]`` at 20-100 cm depth above -3.9 MPa
 #' @noRd
 metric_SWAat20to100cm39bar_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -396,7 +396,7 @@ get_SWP_daily <- function(
 }
 
 
-#' Across-year average daily SWP [MPa] at 0-20 cm depth
+#' Across-year average daily SWP ``[MPa]`` at 0-20 cm depth
 #' @noRd
 metric_SWPat0to020cm_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -433,7 +433,7 @@ metric_SWPat0to020cm_dailyClim <- function(
 }
 
 
-#' Across-year average daily SWP [MPa] at 20-100 cm depth
+#' Across-year average daily SWP ``[MPa]`` at 20-100 cm depth
 #' @noRd
 metric_SWPat20to100cm_dailyClim <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,

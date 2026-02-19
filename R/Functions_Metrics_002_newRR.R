@@ -109,14 +109,14 @@ get_vpd <- function(
 
 
 
-#--- CWD = climatic water deficit [mm] = PET - ET
+#--- CWD = climatic water deficit ``[mm]`` = PET - ET
 
 #' Climatic water deficit
 #'
 #' @param pet_cm A numeric vector. Potential evapotranspiration `[cm]`.
 #' @param et_cm A numeric vector. Actual evapotranspiration `[cm]`.
 #'
-#' @return Climatic water deficit `[mm]`.
+#' @return Climatic water deficit ``[mm]``.
 #'
 #' @export
 calc_CWD_mm <- function(pet_cm, et_cm) {
@@ -276,18 +276,18 @@ calc_wetdry <- function(
 #'    - `"op"`, a relational operator, e.g., `>`
 #'    - `"limit"`, a numeric value in units of `[C]`
 #' @param sm_periods A list with two named elements that identifies days on
-#' which `"swp"` (converted to `[MPa]`) satisfies the requested conditions.
+#' which `"swp"` (converted to ``[mm]``) satisfies the requested conditions.
 #' Note, that dryness (`<`, `<=`) requires all considered soil layers to be dry,
 #' whereas wetness (`>`, `>=`) requires at least one considered soil layer
 #' to be moist). For instance, `< -3 [MPa]` identifies dry-degree days
 #' with a dryness below `-3 [MPa]`
 #'    - `"op"`, a relational operator, e.g., `<`
-#'    - `"limit"`, a numeric value in units of `[MPa]`
+#'    - `"limit"`, a numeric value in units of ``[mm]``
 #' @param snow_periods A list with two named elements that identifies days on
 #' which `"swe"` satisfies the requested conditions,
-#' e.g., `<= 0 [mm]` for days without a snow pack
+#' e.g., `<= 0` ``[mm]`` for days without a snow pack
 #'    - `"op"`, a relational operator, e.g., `<=`
-#'    - `"limit"`, a numeric value in units of `[mm]`
+#'    - `"limit"`, a numeric value in units of ``[mm]``
 #'
 #' @return A list with two named elements
 #'    - `"values"`, a list with the named element `"mdd"`,
@@ -796,7 +796,7 @@ metric_DDDat5C0to100cm30bar <- function(
 #'   )
 #' )
 #'
-#' # Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`
+#' # Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``
 #' swa_daily <- calc_SWA_mm(
 #'   sim_swc_daily = sim_data[["swc_daily"]],
 #'   soils = soils,
@@ -867,7 +867,7 @@ calc_SWA_mm <- function(
     # Convert bulk-VWC to SWC
     base_SWC_mm <- ttmp * 10 * widths_cm
 
-    # Determine SWA [mm] for each soil layer as SWC - SWC_base
+    # Determine SWA ``[mm]`` for each soil layer as SWC - SWC_base
     swa_by_layer <- sweep(
       x = 10 * sim_swc_daily[["values"]][["swc"]][, id_slyrs, drop = FALSE],
       MARGIN = 2L,
@@ -1355,7 +1355,7 @@ get_SW2flux <- function(
 }
 
 #--- Annual and monthly fluxes:
-#' Evapotranspiration (ET) [mm]
+#' Evapotranspiration (ET) ``[mm]``
 #' @noRd
 metric_ET_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -1404,7 +1404,7 @@ metric_ET_monthly <- function(
 }
 
 
-#' Diffuse Recharge (DR) = Deep Drainage [mm]
+#' Diffuse Recharge (DR) = Deep Drainage ``[mm]``
 #' @noRd
 metric_DR_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -1453,7 +1453,7 @@ metric_DR_monthly <- function(
   )
 }
 
-#' Annual radiation (H) [MJ/m2]
+#' Annual radiation (H) ``[MJ/m2]``
 #' @noRd
 metric_Radiation_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -1477,7 +1477,7 @@ metric_Radiation_annual <- function(
   )
 }
 
-#' Monthly radiation (H) [MJ/m2]
+#' Monthly radiation (H) ``[MJ/m2]``
 #' @noRd
 metric_Radiation_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -1973,7 +1973,7 @@ metric_Tmean_monthlyClim <- function(
   )
 }
 
-#' Across-year average monthly precipitation amount [mm]
+#' Across-year average monthly precipitation amount ``[mm]``
 #' @section Notes: Un-simulated but requested time steps propagate NAs.
 #' @noRd
 metric_PPT_monthlyClim <- function(
@@ -2086,7 +2086,7 @@ metric_SMTRs <- function(
 
 calc_AI <- function(ppt, pet) ppt / pet
 
-#' Annual AI = aridity index [mm/mm] = PPT/PET
+#' Annual AI = aridity index ``[mm/mm]`` = PPT/PET
 #'
 #' @return A return object where `group` contains the following annual
 #' variable:
@@ -2778,7 +2778,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
         pet = sim_data[["yr"]][["values"]][["pet"]]
       ),
 
-      # Potential evapotranspiration `[mm]`
+      # Potential evapotranspiration ``[mm]``
       PET = 10 * sim_data[["yr"]][["values"]][["pet"]],
 
       # Mean daily air temperature `[C]`
@@ -2790,7 +2790,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       # Maximum daily air temperature `[C]`
       Tmax = sim_data[["yr"]][["values"]][["tmax"]],
 
-      # Precipitation amount `[mm]`
+      # Precipitation amount ``[mm]``
       PPT = 10 * sim_data[["yr"]][["values"]][["ppt"]],
 
       # Seasonal timing of precipitation `[-]`
@@ -2843,13 +2843,13 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       # (Actual) evapotranspiration [`mm`]
       ET = 10 * sim_data[["yr"]][["values"]][["et"]],
 
-      # Climatic water deficit `[mm]` (where `CWD = PPT - ET`)
+      # Climatic water deficit ``[mm]`` (where `CWD = PPT - ET`)
       CWD = calc_CWD_mm(
         pet_cm = sim_data[["yr"]][["values"]][["pet"]],
         et_cm = sim_data[["yr"]][["values"]][["et"]]
       ),
 
-      # 10-day extreme climatic water deficit `[mm]`
+      # 10-day extreme climatic water deficit ``[mm]``
       # (where `CWDextreme10d` is the largest daily `CWD`
       # averaged over 10-day periods)
       CWDextreme010d = calc_extreme_funNday(
@@ -2957,7 +2957,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       RecruitmentSpringWDD =
         as.vector(tmp_recruit[, "SpringRecruitment_maxWDD"]),
 
-      # Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`
+      # Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``
       SWA = tapply(
         X = tmp_swa_daily[["values"]][[1L]],
         INDEX = tmp_swa_daily[["time"]][, "Year"],
@@ -3032,11 +3032,11 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 # nolint start: line_length_linter
 #'    * Aridity index `[mm / mm]`: `"AI"`
 #'      (where `AI = PPT / PET`)
-#'    * Potential evapotranspiration amount `[mm]`: `"PET"`
+#'    * Potential evapotranspiration amount ``[mm]``: `"PET"`
 #'    * Mean daily air temperature `[C]`: `"Tmean"`
 #'    * Minimum daily air temperature `[C]`: `"Tmin"`
 #'    * Maximum daily air temperature `[C]`: `"Tmax"`
-#'    * Precipitation amount `[mm]`: `"PPT"`
+#'    * Precipitation amount ``[mm]``: `"PPT"`
 #'    * Seasonal timing of precipitation `[-]`: `"PPTsst"`
 #'      (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
 #'    * Total growing degree days `[C x day]`: `"TDD"`
@@ -3045,10 +3045,10 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Warm season length `[day]`: `"GrowingSeasonDuration_(mean)|(cv)"`
 #'      (where `GrowingSeasonDuration` is the longest spell of days with a positive `TDD`)
 #'
-#'    * Evapotranspiration amount `[mm]`: `"ET"`
-#'    * Climatic water deficit amount `[mm]`: `"CWD"`
+#'    * Evapotranspiration amount ``[mm]``: `"ET"`
+#'    * Climatic water deficit amount ``[mm]``: `"CWD"`
 #'      (where `CWD = PPT - ET`)
-#'    * 10-day extreme climatic water deficit `[mm]`: `"CWDextreme010d"`
+#'    * 10-day extreme climatic water deficit ``[mm]``: `"CWDextreme010d"`
 #'      (where `CWDextreme10d` is the largest daily `CWD` averaged over 10-day periods)
 #'    * Seasonal variability of climatic water deficit `[mm / mm]`: `"CWDssv"`
 #'      (where `CWDssv = mean(monthly CWD) / sd(monthly CWD)`)
@@ -3074,7 +3074,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Spring recruitment duration `[day]`: `"RecruitmentSpringDuration_"`
 #'    * Spring recruitment wet-degree days `[C x day]`: `"RecruitmentSpringWDD"`
 #'
-#'    * Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`: `"SWA"`
+#'    * Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``: `"SWA"`
 #'    * Seasonal variability of available soil moisture `[mm / mm]`: `"SWAssv"`
 #'      (where `SWAssv = mean(monthly SWA) / sd(monthly CWD)`)
 #'    * Seasonal timing of available soil moisture `[-]`: `"SWAsst"`
@@ -3136,11 +3136,11 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 # nolint start: line_length_linter
 #'    * Aridity index `[mm / mm]`: `"AI_(mean)|(cv)"`
 #'      (where `AI = PPT / PET`)
-#'    * Potential evapotranspiration amount `[mm]`: `"PET_(mean)|(cv)"`
+#'    * Potential evapotranspiration amount ``[mm]``: `"PET_(mean)|(cv)"`
 #'    * Mean daily air temperature `[C]`: `"Tmean_(mean)|(sd)"`
 #'    * Minimum daily air temperature `[C]`: `"Tmin_(mean)|(sd)"`
 #'    * Maximum daily air temperature `[C]`: `"Tmax_(mean)|(sd)"`
-#'    * Precipitation amount `[mm]`: `"PPT_(mean)|(cv)"`
+#'    * Precipitation amount ``[mm]``: `"PPT_(mean)|(cv)"`
 #'    * Seasonal timing of precipitation `[-]`: `"PPTsst_(mean)|(sd)"`
 #'      (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
 #'    * Total growing degree days `[C x day]`: `"TDD_(mean)|(cv)"`
@@ -3149,10 +3149,10 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Warm season length `[day]`: `"GrowingSeasonDuration_(mean)|(cv)"`
 #'      (where `GrowingSeasonDuration` is the longest spell of days with a positive `TDD`)
 #'
-#'    * Evapotranspiration amount `[mm]`: `"ET_(mean)|(cv)"`
-#'    * Climatic water deficit amount `[mm]`: `"CWD_(mean)|(cv)"`
+#'    * Evapotranspiration amount ``[mm]``: `"ET_(mean)|(cv)"`
+#'    * Climatic water deficit amount ``[mm]``: `"CWD_(mean)|(cv)"`
 #'      (where `CWD = PPT - ET`)
-#'    * 10-day extreme climatic water deficit `[mm]`: `"CWDextreme010d_(mean)|(cv)"`
+#'    * 10-day extreme climatic water deficit ``[mm]``: `"CWDextreme010d_(mean)|(cv)"`
 #'      (where `CWDextreme10d` is the largest daily `CWD` averaged over 10-day periods)
 #'    * Seasonal variability of climatic water deficit `[mm / mm]`: `"CWDssv_(mean)|(cv)"`
 #'      (where `CWDssv = mean(monthly CWD) / sd(monthly CWD)`)
@@ -3182,7 +3182,7 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Spring recruitment duration `[day]`: `"RecruitmentSpringDuration_(mean)|(cv)"`
 #'    * Spring recruitment wet-degree days `[C x day]`: `"RecruitmentSpringWDD_(mean)|(cv)"`
 #'
-#'    * Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`: `"SWA_(mean)|(cv)"`
+#'    * Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``: `"SWA_(mean)|(cv)"`
 #'    * Seasonal variability of available soil moisture `[mm / mm]`: `"SWAssv_(mean)|(cv)"`
 #'      (where `SWAssv = mean(monthly SWA) / sd(monthly CWD)`)
 #'    * Seasonal timing of available soil moisture `[-]`: `"SWAsst_(mean)|(sd)"`
@@ -3246,7 +3246,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           AI_mean = mean(tmpx["AI", , drop = TRUE]),
           AI_cv = cv(tmpx["AI", , drop = TRUE]),
 
-          # Potential evapotranspiration `[mm]`
+          # Potential evapotranspiration ``[mm]``
           PET_mean = mean(tmpx["PET", , drop = TRUE]),
           PET_cv = cv(tmpx["PET", , drop = TRUE]),
 
@@ -3262,7 +3262,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           Tmax_mean = mean(tmpx["Tmax", , drop = TRUE]),
           Tmax_sd = sd(tmpx["Tmax", , drop = TRUE]),
 
-          # Precipitation amount `[mm]`
+          # Precipitation amount ``[mm]``
           PPT_mean = mean(tmpx["PPT", , drop = TRUE]),
           PPT_cv = cv(tmpx["PPT", , drop = TRUE]),
 
@@ -3290,15 +3290,15 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
 
 
           #--- Climatic water deficit
-          # Evapotranspiration `[mm]`: `"ET_(mean)|(cv)"`
+          # Evapotranspiration ``[mm]``: `"ET_(mean)|(cv)"`
           ET_mean = mean(tmpx["ET", , drop = TRUE]),
           ET_cv = cv(tmpx["ET", , drop = TRUE]),
 
-          # Climatic water deficit `[mm]` (where `CWD = PPT - ET`)
+          # Climatic water deficit ``[mm]`` (where `CWD = PPT - ET`)
           CWD_mean = mean(tmpx["CWD", , drop = TRUE]),
           CWD_cv = cv(tmpx["CWD", , drop = TRUE]),
 
-          # 10-day extreme climatic water deficit `[mm]`
+          # 10-day extreme climatic water deficit ``[mm]``
           # (where `CWDextreme10d` is the largest daily `CWD`
           # averaged over 10-day periods)
           CWDextreme010d_mean = mean(tmpx["CWDextreme010d", , drop = TRUE]),
@@ -3441,7 +3441,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
 
 
           #--- Available soil moisture
-          # Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`
+          # Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``
           SWA_mean = mean(tmpx["SWA", , drop = TRUE]),
           SWA_cv = cv(tmpx["SWA", , drop = TRUE]),
 

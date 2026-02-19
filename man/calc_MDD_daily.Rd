@@ -47,19 +47,19 @@ e.g., \verb{> 5 [C]} for a base temperature of \code{5 [C]}
 }}
 
 \item{sm_periods}{A list with two named elements that identifies days on
-which \code{"swp"} (converted to \verb{[MPa]}) satisfies the requested conditions.
+which \code{"swp"} (converted to \verb{[mm]}) satisfies the requested conditions.
 Note, that dryness (\code{<}, \code{<=}) requires all considered soil layers to be dry,
 whereas wetness (\code{>}, \code{>=}) requires at least one considered soil layer
 to be moist). For instance, \verb{< -3 [MPa]} identifies dry-degree days
 with a dryness below \code{-3 [MPa]}
 \itemize{
 \item \code{"op"}, a relational operator, e.g., \code{<}
-\item \code{"limit"}, a numeric value in units of \verb{[MPa]}
+\item \code{"limit"}, a numeric value in units of \verb{[mm]}
 }}
 
 \item{snow_periods}{A list with two named elements that identifies days on
 which \code{"swe"} satisfies the requested conditions,
-e.g., \verb{<= 0 [mm]} for days without a snow pack
+e.g., \verb{<= 0} \verb{[mm]} for days without a snow pack
 \itemize{
 \item \code{"op"}, a relational operator, e.g., \code{<=}
 \item \code{"limit"}, a numeric value in units of \verb{[mm]}

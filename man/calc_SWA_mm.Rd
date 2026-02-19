@@ -120,7 +120,7 @@ sim_data <- list(
   )
 )
 
-# Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`
+# Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``
 swa_daily <- calc_SWA_mm(
   sim_swc_daily = sim_data[["swc_daily"]],
   soils = soils,

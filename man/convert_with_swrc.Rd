@@ -7,7 +7,7 @@
 convert_with_swrc(
   x,
   direction = c("vwc_to_swp", "swp_to_vwc"),
-  use_swrc_v6 = getNamespaceVersion("rSOILWAT2") >= as.numeric_version("6.0.0"),
+  use_swrc_v6 = getNamespaceVersion("rSOILWAT2") >= numeric_version("6.0.0"),
   fcoarse = NULL,
   sand = NULL,
   clay = NULL,
