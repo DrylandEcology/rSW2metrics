@@ -2,70 +2,142 @@
 % Please edit documentation in R/Functions_Metrics_002_newRR.R
 \name{calc_SWA_mm}
 \alias{calc_SWA_mm}
-\title{Calculate soil water availability \var{SWA}}
+\title{Calculate soil water availability \code{SWA}}
 \usage{
 calc_SWA_mm(
   sim_swc_daily,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
+  base_vwc = NULL,
   method = c("across_profile", "by_layer")
 )
 }
 \arguments{
-\item{sim_swc_daily}{A named list with a "time" element and a
-"values" element containing daily \var{"swc"} for each soil layer
-in units of centimeters.}
+\item{sim_swc_daily}{A named list with a \code{"time"} element and a
+\code{"values"} element containing daily \code{"swc"} for each soil layer
+in units \verb{[cm]}.}
 
-\item{soils}{A named list with soil parameters \var{"depth_cm"},
-\var{"sand_frac"},\var{"clay_frac"}, and \var{"gravel_content"}
+\item{soils}{A named list with soil parameters \code{"depth_cm"},
+\code{"sand_frac"}, \code{"clay_frac"}, and \code{"gravel_content"}
 as numeric vectors with values for each soil layer.}
 
-\item{used_depth_range_cm}{A numeric vector of length two.}
+\item{swrcp_and_usage}{A named list with usage of and, if suitable,
+parameters of soil water retention curve;
+e.g., the output of \code{\link[=load_swrcp_and_usage]{load_swrcp_and_usage()}}.}
 
-\item{SWP_limit_MPa}{A numeric value.}
+\item{used_depth_range_cm}{A numeric vector of length two (or \code{NULL}).
+The upper and lower depth limit of the zone (depth range) to consider.}
 
-\item{method}{A character string.}
+\item{SWP_limit_MPa}{A numeric value. The base (= critical) amount of
+soil water, see details.}
+
+\item{base_vwc}{A numeric vector. An alternative to \code{SWP_limit_MPa};
+the base (= critical) amount of soil water, see details.
+If \code{base_vwc} is provided, then \code{SWP_limit_MPa} and \code{swrcp_and_usage}
+are ignored.}
+
+\item{method}{A character string. See return value.}
 }
 \value{
-A list with elements "time" and "values" where values represent
+A list with elements \code{"time"} and \code{"values"} where values represent
 available soil water in units of millimeters above \code{SWP_limit_MPa}:
-if \code{method} is \var{\dQuote{across_profile}},
+\itemize{
+\item if \code{method} is \code{"across_profile"},
 then summed across \code{used_depth_range_cm},
-if \code{method} is \var{\dQuote{by_layer}},
+\item if \code{method} is \code{"by_layer"},
 then columns contain values for each soil layer within
 \code{used_depth_range_cm}.
 }
+}
 \description{
 We define available soil water \code{SWA} as the amount of soil water \code{SWC}
-that exceeds some base (= critical) amount of soil water \code{SWC_crit[i]},
+that exceeds some base (= critical) amount of soil water \eqn{SWC_{crit}[i]},
 i.e.,
-\deqn{SWA[t,i] = max{0, SWC[t,i] - SWC_crit[i]}}
+\deqn{SWA[t,i] = max\left\{0, SWC[t,i] - SWC_{crit}[i]\right\}}
 for day t and soil layer i.
 }
 \section{Details}{
 
-The base (= critical) amount of soil water \code{SWC_crit[i]} is specified via a
-critical soil water potential \code{SWP_crit}, here \code{SWP_limit_MPa}, e.g.,
-\verb{SWP_crit = -3.0 MPa}.
-The water release curve employed during the simulation run is used to
-translate \code{SWP} into volumetric water content \code{VWC}, i.e.,
-\deqn{VWC_crit[i,matric] = f(SWP_crit, SWRCp[i])}
-where \code{SWRCp} are the parameters describing the water release curve.
+The base (= critical) amount of soil water \eqn{SWC_{crit}[i]} can be
+specified either via
+(i) critical soil water potential \eqn{SWP_{crit}} and
+parameters describing the water release curve \code{SWRCp}, or
+(ii) critical volumetric water content \eqn{VWC_{crit}[i]}.
+
+Option 1: inputs \eqn{SWP_{crit}} and \code{SWRCp}.
+The water release curve (argument \code{swrcp_and_usage}) employed during
+the simulation run is used to translate \eqn{SWP_{crit}}
+(argument \code{SWP_limit_MPa}) into volumetric water content \code{VWC}, i.e.,
+\deqn{VWC_{crit}[i,matric] = f(SWP_{crit}, SWRCp[i])}
+
 However, the translation is only valid for the matric soil, i.e.,
-the component without coarse fragments.
+the component without coarse fragments. Thus, \code{SWA} in the presence of
+coarse fragments is calculated as
 
-\code{SWA} in the presence of coarse fragments is calculated as
-
-\deqn{SWA[t,i] = max{0, SWC[t,i] - w[i] * (1 - cfrag[i]) * VWC_crit[i,matric]}}
-or equivalently
-\deqn{SWA[t,i] = max{0, w[i] * (1 - cfrag[i]) * (VWC[t,i,matric] - VWC_crit[i,matric])}}
+\deqn{SWA[t,i] = max\left\{0, SWC[t,i] - w[i] * (1 - cfrag[i]) * VWC_{crit}[i,matric]\right\}}
 
 where matric volumetric water \code{VWC} is multiplied by \code{w[i] * (1 - cfrag[i])}
 to calculate the amount of water in soil layer i,
 correcting for the volume occupied by coarse fragments.
 
-For day t, soil layer i, soil layer width \code{w[i]}, and
-\code{cfrag[i]} = fraction of coarse fragments.
+for day \code{t}, soil layer \code{i}, soil layer width \code{w[i]}, and
+fraction of coarse fragments \code{cfrag[i]}.
+
+Option 2: input \eqn{VWC_{crit}[i]}.
+Alternatively, the base (= critical) amount of soil water \eqn{SWC_{crit}[i]}
+can be directly specified as critical volumetric water content
+\eqn{VWC_{crit}[i]} for each soil layer (argument \code{base_vwc}).
+
+\code{SWA} is then calculated as
+\deqn{SWA[t,i] = max\left\{0, SWC[t,i] - w[i] * VWC_{crit}[i]\right\}}
+
+for day \code{t}, soil layer \code{i}, soil layer width \code{w[i]}, and
+fraction of coarse fragments \code{cfrag[i]}.
 }
 
+\examples{
+# Prepare data (here using rSOILWAT2)
+swin <- rSOILWAT2::sw_exampleData
+tmp <- rSOILWAT2::swSoils_Layers(swin)
+soils <- list(
+  depth_cm = tmp[, "depth_cm"],
+  sand_frac = tmp[, "sand_frac"],
+  clay_frac = tmp[, "clay_frac"],
+  gravel_content = tmp[, "gravel_content"]
+)
+nSoilLayers <- length(soils[["depth_cm"]])
+swrcp_and_usage <- load_swrcp_and_usage(swin)
+
+sim <- rSOILWAT2::sw_exec(swin)
+sim_data <- list(
+  swc_daily = list(
+    time = sim@SWCBULK@Day[, c("Year", "Day")],
+    values = list(
+      swc = sim@SWCBULK@Day[, paste0("Lyr_", seq_len(nSoilLayers))]
+    )
+  )
+)
+
+# Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``
+swa_daily <- calc_SWA_mm(
+  sim_swc_daily = sim_data[["swc_daily"]],
+  soils = soils,
+  swrcp_and_usage = swrcp_and_usage,
+  SWP_limit_MPa = -3.9,
+  used_depth_range_cm = c(0, 100),
+  method = "across_profile"
+)
+
+# Alternative approach via critical volumetric moisture
+baseVWC = c(0.0904, 0.133, 0.1795, 0.1909, 0.1739, 0.1727, 0.1099, 0.1099)
+swa_daily2 <- calc_SWA_mm(
+  sim_swc_daily = sim_data[["swc_daily"]],
+  soils = soils["depth_cm"],
+  base_vwc = baseVWC,
+  used_depth_range_cm = c(0, 100),
+  method = "across_profile"
+)
+
+}

@@ -79,80 +79,92 @@ process_arguments <- function(x) {
       FUN.VALUE = rep(NA_character_, 2L)
     )
   )
-  args <- matrix(
+  arguments <- matrix(
     data = unlist(tmp),
     ncol = 2,
     byrow = TRUE
   )
 
-  tmp <- args[!(args[, 1] %in% ref_extraction_arguments()[["options"]]), 1]
+  tmp <- setdiff(arguments[, 1L], ref_extraction_arguments()[["options"]])
   if (length(tmp) > 0) {
     warning(
       "Arguments ",
       toString(shQuote(tmp)),
-      " are not implemented."
+      " are not implemented.",
+      call. = FALSE
     )
   }
 
 
   # file name for the output (without extension)
-  id <- which(args[, 1] == "-o")
-  if (length(id) == 1L) {
-    res[["tag_filename"]] <- as.character(args[id, 2])
-  } else {
-    stop("Output filename (option `-o`) is missing (or repeated).")
+  id <- which(arguments[, 1L] == "-o")
+  if (length(id) != 1L) {
+    stop(
+      "Output filename (option `-o`) is missing (or repeated).",
+      call. = FALSE
+    )
   }
+  res[["tag_filename"]] <- as.character(arguments[id, 2L])
+
 
   # function name to calculate the values (e.g. "get_CorTP_annual")
-  id <- which(args[, 1] == "-fun")
-  if (length(id) == 1L) {
-    res[["fun_name"]] <- as.character(args[id, 2])
-  } else {
-    stop("Function name (option `-fun`) is missing (or repeated).")
+  id <- which(arguments[, 1L] == "-fun")
+  if (length(id) != 1L) {
+    stop(
+      "Function name (option `-fun`) is missing (or repeated).",
+      call. = FALSE
+    )
   }
+  res[["fun_name"]] <- as.character(arguments[id, 2L])
 
 
   # file name for the project parameters
-  id <- which(args[, 1] == "-fparam")
-  if (length(id) == 1L) {
-    res[["filename_params"]] <- as.character(args[id, 2])
-  } else {
+  id <- which(arguments[, 1L] == "-fparam")
+  if (length(id) != 1L) {
     stop(
       "Name of file with project parameters (option `-fparam`) is missing",
-      " (or repeated)."
+      " (or repeated).",
+      call. = FALSE
     )
   }
+  res[["filename_params"]] <- as.character(arguments[id, 2L])
 
 
   # test/production mode
   #   FALSE/"full"/NA/no flag = full dataset
   #   TRUE/"test" = test mode (subset of runs)
-  id <- which(args[, 1] == "-mode")
+  id <- which(arguments[, 1L] == "-mode")
   if (length(id) == 1L) {
-    res[["do_full"]] <-
-      !("test" %in% args[id, 2]) && !isTRUE(as.logical(args[id, 2])) ||
-      is.na(args[id, 2])
+    res[["do_full"]] <- any(
+      !(
+        "test" %in% arguments[id, 2L]) && !isTRUE(as.logical(arguments[id, 2L])
+      ),
+      is.na(arguments[id, 2L])
+    )
   } else {
     res[["do_full"]] <- TRUE
   }
 
   # Number of test runs if `do_full`
-  id <- which(args[, 1] == "-ntests")
+  id <- which(arguments[, 1L] == "-ntests")
   if (length(id) == 1L) {
-    res[["ntests"]] <- as.integer(args[id, 2])
+    res[["ntests"]] <- as.integer(arguments[id, 2L])
   } else {
     res[["ntests"]] <- 100L
   }
 
   # Sequence of runs
-  id <- which(args[, 1] == "-runids")
+  id <- which(arguments[, 1L] == "-runids")
   if (length(id) == 1L) {
-    tmp <- strsplit(args[id, 2], split = ":", fixed = TRUE)
-    tmp <- as.integer(tmp[[1]])
-    if (length(tmp) != 2 || anyNA(tmp) || any(tmp < 1)) {
-      stop("Sequence of runs to process is misspecified (option -`runids`).")
+    tmp <- strsplit(arguments[id, 2L], split = ":", fixed = TRUE)
+    tmp <- as.integer(tmp[[1L]])
+    if (length(tmp) != 2L || anyNA(tmp) || any(tmp < 1L)) {
+      stop(
+        "Sequence of runs to process is misspecified (option -`runids`).",
+        call. = FALSE
+      )
     }
-    res[["runids"]] <- tmp[[1]]:tmp[[2]]
+    res[["runids"]] <- tmp[[1L]]:tmp[[2L]]
   } else {
     res[["runids"]] <- if (res[["do_full"]]) {
       -1L # all available runs
@@ -162,18 +174,18 @@ process_arguments <- function(x) {
   }
 
   # Size of parallel cluster
-  id <- which(args[, 1] == "-ncores")
+  id <- which(arguments[, 1L] == "-ncores")
   if (length(id) == 1L) {
-    res[["ncores"]] <- as.integer(args[id, 2])
+    res[["ncores"]] <- as.integer(arguments[id, 2L])
   } else {
     res[["ncores"]] <- 1L
   }
 
   # Log activity on cluster?
-  id <- which(args[, 1] == "-cllog")
+  id <- which(arguments[, 1L] == "-cllog")
   if (length(id) == 1L) {
     res[["cl_log"]] <-
-      is.na(args[id, 2]) || isTRUE(as.logical(args[id, 2]))
+      is.na(arguments[id, 2L]) || isTRUE(as.logical(arguments[id, 2L]))
   } else {
     res[["cl_log"]] <- FALSE
   }
@@ -186,10 +198,10 @@ process_arguments <- function(x) {
 
   # Check whether to add aggregations across years to output (if `is_out_ts`)
   # as produced by `fun_aggs_across_yrs()`
-  id <- which(args[, 1] == "-add_aggs_across_yrs")
+  id <- which(arguments[, 1L] == "-add_aggs_across_yrs")
   if (length(id) == 1L) {
     res[["add_aggs_across_yrs"]] <-
-      is.na(args[id, 2]) || isTRUE(as.logical(args[id, 2]))
+      is.na(arguments[id, 2L]) || isTRUE(as.logical(arguments[id, 2L]))
   } else {
     res[["add_aggs_across_yrs"]] <- FALSE
   }
@@ -208,7 +220,8 @@ check_extraction_arguments <- function(x) {
   if (any(hasnot_args)) {
     stop(
       "The following required extraction arguments are missing: ",
-      toString(shQuote(names(hasnot_args)[hasnot_args]))
+      toString(shQuote(names(hasnot_args)[hasnot_args])),
+      call. = FALSE
     )
   }
 
@@ -222,7 +235,8 @@ check_extraction_arguments <- function(x) {
   if (!file.exists(x[["filename_params"]])) {
     stop(
       "Project parameter file ", shQuote(x[["filename_params"]]),
-      " cannot be located."
+      " cannot be located.",
+      call. = FALSE
     )
   }
 
@@ -275,7 +289,8 @@ check_project_parameters <- function(x, args) {
   if (!exists("has_rSOILWAT2_inputs", where = x)) {
     warning(
       "Project parameter 'has_rSOILWAT2_inputs' is missing; ",
-      "using default value 'TRUE'."
+      "using default value 'TRUE'.",
+      call. = FALSE
     )
 
     x[["has_rSOILWAT2_inputs"]] <- TRUE
@@ -284,7 +299,8 @@ check_project_parameters <- function(x, args) {
   if (!exists("make_short_run_names", where = x)) {
     warning(
       "Project parameter 'make_short_run_names' is missing; ",
-      "using default value 'rSW2metrics::shorten_run_names()'."
+      "using default value 'rSW2metrics::shorten_run_names()'.",
+      call. = FALSE
     )
 
     x[["make_short_run_names"]] <- rSW2metrics::shorten_run_names
@@ -302,14 +318,16 @@ check_project_parameters <- function(x, args) {
   if (any(hasnot_params)) {
     stop(
       "The following required project parameters are missing: ",
-      toString(shQuote(names(hasnot_params)[hasnot_params]))
+      toString(shQuote(names(hasnot_params)[hasnot_params])),
+      call. = FALSE
     )
   }
 
   if (!dir.exists(x[["dir_sw2_output"]])) {
     stop(
       "Cannot locate simulation output at ",
-      shQuote(normalizePath(x[["dir_sw2_output"]], mustWork = FALSE))
+      shQuote(normalizePath(x[["dir_sw2_output"]], mustWork = FALSE)),
+      call. = FALSE
     )
   }
 
@@ -374,12 +392,19 @@ extract_metrics <- function(args) {
     stop(
       shQuote(args[["fun_name"]]), " requires soils as input; ",
       "however, neither pre-extracted soil data nor simulation inputs ",
-      "are available."
+      "are available.",
+      call. = FALSE
     )
   }
 
   do_collect_inputs <- is_fun_collecting_inputs(args[["fun_name"]])
 
+
+  #------ Soil water retention curve information
+  is_swrc_input <- has_fun_swrc_as_arg(args[["fun_name"]])
+
+  #TODO: SWRC
+  has_prepared_swrc <- FALSE # has_prepared_swrc is not implemented yet
 
 
   #------ Directories
@@ -397,12 +422,11 @@ extract_metrics <- function(args) {
   if (inherits(tmp, "try-error")) {
     stop(
       "We cannot write to the designated output directory: ",
-      shQuote(normalizePath(dirname(filename_output_test), mustWork = FALSE))
+      shQuote(normalizePath(dirname(filename_output_test), mustWork = FALSE)),
+      call. = FALSE
     )
-  } else {
-    unlink(filename_output_test)
   }
-
+  unlink(filename_output_test)
 
 
   #------ Loop through runs calling function for each run ####
@@ -414,12 +438,16 @@ extract_metrics <- function(args) {
   stopifnot(length(dir_runs_rSFSW2) > 0)
   run_rSFSW2_names <- basename(dir_runs_rSFSW2)
   zipped_runs <- endsWith(run_rSFSW2_names, ".zip")
+  ntmp <- sum(zipped_runs)
 
-  if (all(zipped_runs) || !any(zipped_runs)) {
-    zipped_runs <- all(zipped_runs)
-  } else {
-    stop("All or no output may be stored in zip archives but not mixed.")
+  if (ntmp > 0L && ntmp < length(zipped_runs)) {
+    stop(
+      "All or no output may be stored in zip archives but not mixed.",
+      call. = FALSE
+    )
   }
+
+  zipped_runs <- ntmp == length(zipped_runs)
 
 
   # (Shortened) run identifier
@@ -480,16 +508,26 @@ extract_metrics <- function(args) {
       fill = TRUE
     )
   }
+  if (is_swrc_input) {
+    cat(
+      shQuote(args[["fun_name"]]),
+      "requires soil water retention curve (SWRC) information as input:",
+      if (has_prepared_swrc) {
+        "pre-extracted SWRC data will be used."
+      } else {
+        "SWRC data will be extracted individually from simulation inputs."
+      },
+      fill = TRUE
+    )
+  }
   cat(
     shQuote(args[["fun_name"]]),
     if (do_collect_inputs) {
       "collects input data (e.g., soils)."
+    } else if (args[["is_out_ts"]]) {
+      "produces annual time-series."
     } else {
-      if (args[["is_out_ts"]]) {
-        "produces annual time-series."
-      } else {
-        "produces aggregations across years."
-      }
+      "produces aggregations across years."
     },
     fill = TRUE
   )
@@ -517,10 +555,8 @@ extract_metrics <- function(args) {
           if (any(is_run_wo_soils)) {
             stop(
               "We don't have soil data for simulation run(s): ",
-              paste0(
-                shQuote(tag_run_rSFSW2_names[is_run_wo_soils]),
-                collapse = ","
-              )
+              toString(shQuote(tag_run_rSFSW2_names[is_run_wo_soils])),
+              call. = FALSE
             )
           }
         }
@@ -530,9 +566,20 @@ extract_metrics <- function(args) {
       warning(
         "Function ", shQuote(args[["fun_name"]]), " requires soils as input; ",
         "this is most efficient if soils have been collected with function ",
-        "'collect_input_soillayers_xxx()'."
+        "'collect_input_soillayers_xxx()'.",
+        call. = FALSE
       )
     }
+  }
+
+
+  if (is_swrc_input && has_prepared_swrc) {
+    #TODO: SWRC
+    swrcp_and_usage <- NULL
+    stop(
+      "swrcp_and_usage with 'has_prepared_swrc' is not implemented yet",
+      call. = FALSE
+    )
   }
 
 
@@ -583,7 +630,8 @@ extract_metrics <- function(args) {
     if (!("dir_out_SW2toTable" %in% names(prjpars))) {
       warning(
         "Output will be written to `dir_out` ",
-        "instead of expected but absent `dir_out_SW2toTable`."
+        "instead of expected but absent `dir_out_SW2toTable`.",
+        call. = FALSE
       )
       fun_args[["dir_out_SW2toTable"]] <- prjpars[["dir_out"]]
     }
@@ -640,7 +688,9 @@ extract_metrics <- function(args) {
         name_sw2_run_soils = tag_run_rSFSW2_names[s],
         is_soils_input = is_soils_input,
         soils = if (exists("soils")) soils,
-        soil_variables = soil_variables
+        soil_variables = soil_variables,
+        is_swrc_input = is_swrc_input,
+        swrcp_and_usage = if (exists("swrcp_and_usage")) swrcp_and_usage
       )
 
       format_metric_1sim(x = res, id = s)
@@ -722,7 +772,9 @@ process_values_one_site <- function(
   name_sw2_run_soils = NULL,
   is_soils_input = FALSE,
   soils = NULL,
-  soil_variables = NULL
+  soil_variables = NULL,
+  is_swrc_input = FALSE,
+  swrcp_and_usage = NULL
 ) {
   # Add run-specific arguments
   used_args <- c(
@@ -731,15 +783,28 @@ process_values_one_site <- function(
   )
 
 
-  if (is_soils_input) {
-    used_args[["soils"]] <- prepare_soils_for_site(
+  if (is_soils_input || is_swrc_input) {
+    tmp_soils <- prepare_soils_for_site(
       path = fun_args[["path"]],
       name_sw2_run = name_sw2_run,
       name_sw2_run_soils = name_sw2_run_soils,
       zipped_runs = fun_args[["zipped_runs"]],
+      type = c(
+        if (is_soils_input) "soils",
+        if (is_swrc_input) "swrcp_and_usage"
+      ),
       soils = soils,
-      soil_variables = soil_variables
+      soil_variables = soil_variables,
+      swrcp_and_usage = swrcp_and_usage
     )
+
+    if (is_soils_input) {
+      used_args[["soils"]] <- tmp_soils[["soils"]]
+    }
+
+    if (is_swrc_input) {
+      used_args[["swrcp_and_usage"]] <- tmp_soils[["swrcp_and_usage"]]
+    }
   }
 
   # Call aggregation function for rSOILWAT2 input/output
@@ -881,6 +946,13 @@ format_metric_Nsim <- function(
 #' @examples
 #' path <- "path/to/run"
 #' runname = "name_of_sim_folder"
+#' soils_and_swrc <- rSW2metrics:::prepare_soils_for_site(
+#'   path = path,
+#'   name_sw2_run = runname,
+#'   name_sw2_run_soils = runname,
+#'   zipped_runs = FALSE,
+#'   type = c("soils", "swrcp_and_usage")
+#' )
 #' res <- rSW2metrics:::formatted_metric_1sim(
 #'   metric_foo_name = "metric_RR2022predictors_annualClim",
 #'   foo_args = list(
@@ -890,12 +962,8 @@ format_metric_Nsim <- function(
 #'     id_scen_used = 1,
 #'     list_years_scen_used = list(list(hist = 1980:2020)),
 #'     out = "across_years",
-#'     soils = rSW2metrics:::prepare_soils_for_site(
-#'       path = path,
-#'       name_sw2_run = runname,
-#'       name_sw2_run_soils = runname,
-#'       zipped_runs = FALSE
-#'     ),
+#'     soils = soils_and_swrc[["soils"]],
+#'     swrcp_and_usage = soils_and_swrc[["swrcp_and_usage"]],
 #'     fun_aggs_across_yrs = "mean"
 #'   ),
 #'   do_collect_inputs = FALSE
@@ -911,6 +979,7 @@ formatted_metric_1sim <- function(
     id_scen_used = NULL,
     list_years_scen_used = NULL,
     soils = NULL,
+    swrcp_and_usage = NULL,
     out = NULL
   ),
   do_collect_inputs = FALSE
@@ -921,6 +990,7 @@ formatted_metric_1sim <- function(
     "zipped_runs",
     "id_scen_used", "list_years_scen_used",
     "soils",
+    "swrcp_and_usage",
     "out"
   )
   has_arg_names <- req_arg_names %in% names(foo_args)
@@ -928,7 +998,8 @@ formatted_metric_1sim <- function(
   if (!all(has_arg_names)) {
     stop(
       "`foo_args` is missing the named element(s): ",
-      toString(shQuote(req_arg_names[!has_arg_names]))
+      toString(shQuote(req_arg_names[!has_arg_names])),
+      call. = FALSE
     )
   }
 

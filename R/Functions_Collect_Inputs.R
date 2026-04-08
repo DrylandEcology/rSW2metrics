@@ -5,9 +5,11 @@ get_soillayers_variable <- function(
   id_scen = 1L,
   zipped_runs = FALSE,
   Nmax_soillayers = 23L,
-  sw2_soil_var,
+  sw2_soil_var = NULL,
+  get_swrcp_and_usage = FALSE,
   ...
 ) {
+  res <- list(soils = NULL, swrcp_and_usage = NULL)
 
   Nmax_soillayers <- as.integer(Nmax_soillayers)
   Nmax_soillayers <- if (is.finite(Nmax_soillayers) && Nmax_soillayers > 0) {
@@ -23,19 +25,27 @@ get_soillayers_variable <- function(
     zipped_runs = zipped_runs
   )
 
-  tmp <- slot(
-    object = slot(sim_input[["swRunScenariosData"]][[id_scen]], "soils"),
-    name = "Layers"
-  )[, sw2_soil_var, drop = FALSE]
+  if (!is.null(sw2_soil_var)) {
+    tmp <- slot(
+      object = slot(sim_input[["swRunScenariosData"]][[id_scen]], "soils"),
+      name = "Layers"
+    )[, sw2_soil_var, drop = FALSE]
 
-  res <- matrix(
-    data = NA,
-    nrow = length(sw2_soil_var),
-    ncol = Nmax_soillayers,
-    dimnames = list(sw2_soil_var, NULL)
-  )
+    res[["soils"]] <- matrix(
+      data = NA,
+      nrow = length(sw2_soil_var),
+      ncol = Nmax_soillayers,
+      dimnames = list(sw2_soil_var, NULL)
+    )
 
-  res[, seq_len(nrow(tmp))] <- t(tmp)
+    res[["soils"]][, seq_len(nrow(tmp))] <- t(tmp)
+  }
+
+  if (isTRUE(get_swrcp_and_usage)) {
+    res[["swrcp_and_usage"]] <- load_swrcp_and_usage(
+      sim_input[["swRunScenariosData"]][[id_scen]]
+    )
+  }
 
   res
 }
@@ -60,7 +70,7 @@ collect_input_soillayers_depth <- function(
     zipped_runs = zipped_runs,
     Nmax_soillayers = Nmax_soillayers,
     sw2_soil_var = "depth_cm"
-  )
+  )[["soils"]]
 }
 
 collect_input_soillayers_gravel <- function(
@@ -78,7 +88,7 @@ collect_input_soillayers_gravel <- function(
     zipped_runs = zipped_runs,
     Nmax_soillayers = Nmax_soillayers,
     sw2_soil_var = "gravel_content"
-  )
+  )[["soils"]]
 }
 
 collect_input_soillayers_sand <- function(
@@ -96,7 +106,7 @@ collect_input_soillayers_sand <- function(
     zipped_runs = zipped_runs,
     Nmax_soillayers = Nmax_soillayers,
     sw2_soil_var = "sand_frac"
-  )
+  )[["soils"]]
 }
 
 
@@ -115,7 +125,7 @@ collect_input_soillayers_clay <- function(
     zipped_runs = zipped_runs,
     Nmax_soillayers = Nmax_soillayers,
     sw2_soil_var = "clay_frac"
-  )
+  )[["soils"]]
 }
 
 

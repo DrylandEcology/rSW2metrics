@@ -85,9 +85,11 @@ calc_univariate_from_sw2 <- function(
       isTRUE(inherits(list_years_scen_used[[k]], "list"))
 
     id_periods <- if (use_all_yrs) {
-      1
+      1L
+    } else if (has_periods) {
+      which(lengths(list_years_scen_used[[k]]) > 0L)
     } else {
-      if (has_periods) which(lengths(list_years_scen_used[[k]]) > 0) else 1
+      1L
     }
 
     group_labels <- paste0(
@@ -163,12 +165,10 @@ calc_univariate_from_sw2 <- function(
           ),
           if (use_all_yrs) {
             NULL
+          } else if (has_periods) {
+            names(list_years_scen_used[[k]])[id_periods]
           } else {
-            if (has_periods) {
-              names(list_years_scen_used[[k]])[id_periods]
-            } else {
-              NULL
-            }
+            NULL
           }
         )
       )
@@ -238,9 +238,11 @@ calc_multivariate_from_sw2 <- function(
       isTRUE(inherits(list_years_scen_used[[k]], "list"))
 
     id_periods <- if (use_all_yrs) {
-      1
+      1L
+    } else if (has_periods) {
+      which(lengths(list_years_scen_used[[k]]) > 0L)
     } else {
-      if (has_periods) which(lengths(list_years_scen_used[[k]]) > 0) else 1
+      1L
     }
 
     group_labels <- paste0(
@@ -336,12 +338,10 @@ calc_multivariate_from_sw2 <- function(
           NULL,
           if (use_all_yrs) {
             NULL
+          } else if (has_periods) {
+            names(list_years_scen_used[[k]])[id_periods]
           } else {
-            if (has_periods) {
-              names(list_years_scen_used[[k]])[id_periods]
-            } else {
-              NULL
-            }
+            NULL
           }
         )
       )
@@ -419,17 +419,15 @@ extract_from_sw2 <- function(
       FUN = paste0,
       collapse = "-"
     )
-    # nolint start: extraction_operator_linter.
-    x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1
-    # nolint end
+    x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1L
 
   } else if (sw2_tp == "Month") {
-    x_time[, "Month"] <- x[[1]][, "Month"]
+    x_time[, "Month"] <- x[[1L]][, "Month"]
   }
 
 
   #--- Subset to requested years
-  if (!missing(years) && length(years) > 0) {
+  if (!missing(years) && length(years) > 0L) {
     ids <- x_time[, "Year"] %in% years
     x_time <- x_time[ids, , drop = FALSE]
     x_vals <- lapply(
@@ -442,5 +440,99 @@ extract_from_sw2 <- function(
   list(
     time = x_time,
     values = x_vals
+  )
+}
+
+
+
+
+get_swp_weighted <- function(
+  path, name_sw2_run, id_scen,
+  years,
+  soils,
+  zipped_runs = FALSE,
+  used_depth_range_cm = NULL,
+  ...
+) {
+  warning("`get_swp_weighted()` uses matric-VWC!", call. = FALSE)
+  .Deprecated("SWRC not implemented.")
+
+  vwc <- extract_from_sw2(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
+    id_scen = id_scen,
+    years = years,
+    sw2_tp = "Day",
+    sw2_outs = "VWCMATRIC",
+    sw2_vars = "Lyr",
+    varnames_are_fixed = FALSE
+  )
+
+  N_days <- nrow(vwc[["values"]][[1]])
+
+  T_by_lyr <- extract_from_sw2(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    zipped_runs = zipped_runs,
+    id_scen = id_scen,
+    years = years,
+    sw2_tp = "Day",
+    sw2_outs = "TRANSP",
+    sw2_vars = "transp_total_Lyr",
+    varnames_are_fixed = FALSE
+  )
+
+  widths_cm <- calc_soillayer_weights(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm
+  )
+
+  id_slyrs <- which(!is.na(widths_cm))
+  widths_cm <- widths_cm[id_slyrs]
+
+
+  tmp <- rep(NA, N_days)
+
+  for (k in seq_len(N_days)) {
+    tmp[k] <- if (sum(T_by_lyr[["values"]][[1]][k, id_slyrs]) > 0) {
+      # values weighted by transpiration per layer
+      rSOILWAT2::VWCtoSWP(
+        vwc = weighted.mean(
+          x = vwc[["values"]][[1]][k, id_slyrs],
+          w = T_by_lyr[["values"]][[1]][k, id_slyrs]
+        ),
+        sand = weighted.mean(
+          x = soils[["sand_frac"]][id_slyrs],
+          w = T_by_lyr[["values"]][[1]][k, id_slyrs]
+        ),
+        clay = weighted.mean(
+          x = soils[["clay_frac"]][id_slyrs],
+          w = T_by_lyr[["values"]][[1]][k, id_slyrs]
+        )
+      )
+
+    } else {
+      # values weighted by layer width
+      rSOILWAT2::VWCtoSWP(
+        vwc = weighted.mean(
+          x = vwc[["values"]][[1]][k, id_slyrs],
+          w = widths_cm
+        ),
+        sand = weighted.mean(
+          x = soils[["sand_frac"]][id_slyrs],
+          w = widths_cm
+        ),
+        clay = weighted.mean(
+          x = soils[["clay_frac"]][id_slyrs],
+          w = widths_cm
+        )
+      )
+    }
+  }
+
+  list(
+    time = vwc[["time"]],
+    values = list(swp_weighted = tmp)
   )
 }

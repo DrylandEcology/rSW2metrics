@@ -22,6 +22,11 @@ has_fun_soils_as_arg <- function(fun) {
   isTRUE("soils" %in% names(formals(fun)))
 }
 
+
+has_fun_swrc_as_arg <- function(fun) {
+  isTRUE("swrcp_and_usage" %in% names(formals(fun)))
+}
+
 has_fun_ts_as_output <- function(fun) {
   tmp <- sort(eval(formals(fun)[["out"]]))
   isTRUE(identical(tmp, "ts_years") || identical(tmp, c("raw", "ts_years")))
@@ -51,13 +56,17 @@ check_metric_arguments <- function(out, req_soil_vars) {
   fun_args <- lapply(fun_args[-1], eval)
 
   if (missing(out) || is.null(out)) {
-    stop("'out' is a required argument to function ", shQuote(fun_name))
+    stop(
+      "'out' is a required argument to function ", shQuote(fun_name),
+      call. = FALSE
+    )
   }
 
   if ("out" %in% names(fun_args) && !(fun_args[["out"]] %in% c(out, "raw"))) {
     stop(
       "Inconsistency in 'out': ",
-      shQuote(out), " versus ", shQuote(fun_args[["out"]])
+      shQuote(out), " versus ", shQuote(fun_args[["out"]]),
+      call. = FALSE
     )
   }
 
@@ -73,7 +82,8 @@ check_metric_arguments <- function(out, req_soil_vars) {
       stop(
         "'list_years_scen_used' ",
         "should be a list with integer vectors ",
-        "for function ", shQuote(fun_name)
+        "for function ", shQuote(fun_name),
+        call. = FALSE
       )
     }
 
@@ -96,7 +106,8 @@ check_metric_arguments <- function(out, req_soil_vars) {
       stop(
         "'list_years_scen_used' ",
         "should be a list of lists with integer vectors ",
-        "for function ", shQuote(fun_name)
+        "for function ", shQuote(fun_name),
+        call. = FALSE
       )
     }
 
@@ -104,7 +115,8 @@ check_metric_arguments <- function(out, req_soil_vars) {
       stop(
         "'fun_aggs_across_yrs' ",
         "is a required argument ",
-        "for function ", shQuote(fun_name)
+        "for function ", shQuote(fun_name),
+        call. = FALSE
       )
     }
 
@@ -119,7 +131,8 @@ check_metric_arguments <- function(out, req_soil_vars) {
         stop(
           "Requested soil variable(s) ",
           toString(shQuote(req_soil_vars[tmp])),
-          " are not implemented, see `list_soil_variables()`."
+          " are not implemented, see `list_soil_variables()`.",
+          call. = FALSE
         )
       }
 
@@ -135,14 +148,16 @@ check_metric_arguments <- function(out, req_soil_vars) {
         stop(
           "Requested soil variable(s) ",
           toString(shQuote(req_soil_vars[!has_vars])),
-          " are missing from 'soils' object."
+          " are missing from 'soils' object.",
+          call. = FALSE
         )
       }
 
     } else {
       stop(
         "Soil variables are required for function ", shQuote(fun_name),
-        " but there is no 'soils' object."
+        " but there is no 'soils' object.",
+        call. = FALSE
       )
     }
   }
@@ -249,7 +264,8 @@ identify_metric_timestep <- function(submetrics) {
   if (length(timestep) > 1) {
     stop(
       "More than one time step detected ",
-      toString(shQuote(timestep))
+      toString(shQuote(timestep)),
+      call. = FALSE
     )
 
   } else if (length(timestep) == 0) {
@@ -260,7 +276,7 @@ identify_metric_timestep <- function(submetrics) {
     )
 
   } else {
-    tmp <- paste0(tag_timesteps[[timestep]], collapse = "|")
+    tmp <- paste(tag_timesteps[[timestep]], collapse = "|")
     # remove trailing "_"
     tmp <- gsub("_$", "", gsub(tmp, "", submetrics))
 

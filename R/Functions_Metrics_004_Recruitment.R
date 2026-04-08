@@ -4,6 +4,106 @@ calc_RecruitmentIndex_v2 <- function(...) {
   calc_RecruitmentIndex_v3(..., tol = 0)
 }
 
+
+#' Index estimating recruitment potential for perennial plants
+#'
+#' Recruitment potential is estimated as the sum of wet degree-days `WDD`
+#' during the most favorable continuous periods with warm conditions and
+#' wet near-surface soils, see [calc_MDD_daily()].
+#' The function calculates the onset timing, duration and accumulated `WDD`
+#' for the most favorable period in the spring and fall,
+#' see Chenoweth et al. (2023) for additional details.
+#'
+#' Specifically, recruitment potential considers `WDD` over soil depths of
+#' `recruitment_depth_range_cm` during periods that are defined
+#' by starting and stopping conditions.
+#'
+#' The start of a suitable period is identified by a wet period (positive `WDD`)
+#' that lasts at least `init_days` and accumulated `WDD` over soil depths of
+#' `init_depth_range_cm` reaches at least `init_WDD`.
+#'
+#' The end of a suitable period is identified either
+#' (i) by a dry period (positive dry degree-days `DDD`)
+#' that lasts at least `stop_days_DDD` and accumulated `DDD` over soil depths of
+#' `stop_depth_range_cm` reaches at least `stop_DDD`, or
+#' (ii) by a period with accumulated total degree-days `TDD` of
+#' less than `stop_TDD` that lasts at least `stop_days_TDD`.
+#'
+#' @inheritParams metrics
+#' @inheritParams calc_MDD_daily
+#' @param hemisphere_NS A character. Hemisphere identifies day of mid-summer
+#' (July 15 on the northern hemisphere) that separates spring and fall
+#' recruitment periods.
+#' @param recruitment_depth_range_cm A numeric vector of length two. Soil depth
+#' interval over which wet degree-days are accumulated.
+#' @param Temp_limit_C A numeric value. The base temperature used to accumulate
+#' degree-days.
+#' @param Wet_SWP_limit_MPa A numeric value. Critical soil water potential that
+#' identifies moist soil conditions.
+#' @param Dry_SWP_limit_MPa A numeric value. Critical soil water potential that
+#' identifies dry soil conditions.
+#' @param init_WDD A numeric value.
+#' @param init_days A numeric value.
+#' @param init_depth_range_cm A numeric vector of length two.
+#' @param stop_DDD A numeric value.
+#' @param stop_days_DDD A numeric value.
+#' @param stop_depth_range_cm A numeric vector of length two.
+#' @param stop_TDD A numeric value.
+#' @param stop_days_TDD A numeric value.
+#' @param include_year A logical value.
+#' A column `"Year"` is added to the output.
+#' @param tol A numeric value.
+#'
+#' @section Details:
+#' Argument `soils` uses only element `"depth_cm"`.
+#'
+#' @references Chenoweth et al. (2023)
+#' Ecologically relevant moisture and temperature metrics for assessing
+#' dryland ecosystem dynamics.
+#' Ecohydrology, 16(3), e2509. \url{https://doi.org/10.1002/eco.2509}
+#'
+#' @examples
+#' # Prepare data (here using rSOILWAT2)
+#' swin <- rSOILWAT2::sw_exampleData
+#' soils <- list(depth_cm = rSOILWAT2::swSoils_Layers(swin)[, "depth_cm"])
+#' nSoilLayers <- length(soils[["depth_cm"]])
+#'
+#' sim <- rSOILWAT2::sw_exec(swin)
+#' sim_data <- list(
+#'   swp_daily = list(
+#'     time = sim@SWPMATRIC@Day[, c("Year", "Day")],
+#'     values = list(
+#'       swp = sim@SWPMATRIC@Day[, paste0("Lyr_", seq_len(nSoilLayers))]
+#'     )
+#'   ),
+#'   temp_daily = list(
+#'     values = list(tmean = sim@TEMP@Day[, "avg_C"])
+#'   ),
+#'   swe_daily = list(
+#'     values = list(swe = sim@SNOWPACK@Day[, "snowpackWaterEquivalent_cm"])
+#'   )
+#' )
+#'
+#' # Recruitment potential
+#' ri <- calc_RecruitmentIndex_v3(
+#'   sim_data = sim_data,
+#'   soils = soils,
+#'   recruitment_depth_range_cm = c(10, 20),
+#'   Temp_limit_C = 5,
+#'   Wet_SWP_limit_MPa = -1.5,
+#'   Dry_SWP_limit_MPa = -3,
+#'   init_WDD = 15,
+#'   init_days = 3,
+#'   init_depth_range_cm = c(0, 10),
+#'   stop_DDD = 15,
+#'   stop_days_DDD = 3,
+#'   stop_depth_range_cm = c(0, 20),
+#'   stop_TDD = 0,
+#'   stop_days_TDD = 3,
+#'   include_year = TRUE
+#' )
+#'
+#' @export
 calc_RecruitmentIndex_v3 <- function(
   sim_data,
   soils,
@@ -78,12 +178,12 @@ calc_RecruitmentIndex_v3 <- function(
 
   # List of possible start days
   if (init_WDD <= 0) {
-    ids_start <- which(wdd_start[["values"]][[1]] > 0)
+    ids_start <- which(wdd_start[["values"]][[1L]] > 0)
 
   } else {
     # (i) after `init_days` with WDD
     tmp1a <- zoo::rollsum(
-      wdd_start[["values"]][[1]] > 0,
+      wdd_start[["values"]][[1L]] > 0,
       k = init_days,
       fill = 0,
       align = "right"
@@ -91,28 +191,28 @@ calc_RecruitmentIndex_v3 <- function(
 
     # (ii) and with a sum of `init_WDD`
     tmp1b <- zoo::rollsum(
-      wdd_start[["values"]][[1]],
+      wdd_start[["values"]][[1L]],
       k = init_days,
       fill = 0,
       align = "right"
     ) >= init_WDD
 
-    ids_start <- 1 + which(tmp1a & tmp1b)
+    ids_start <- 1L + which(tmp1a & tmp1b)
     tmp <- length(ids_start)
-    if (tmp > 0 && ids_start[tmp] > N_days) {
-      ids_start[tmp] <- ids_start[tmp] - 1
+    if (tmp > 0L && ids_start[tmp] > N_days) {
+      ids_start[tmp] <- ids_start[tmp] - 1L
       ids_start <- unique(ids_start)
     }
   }
 
   # List of end/stop days due to DDD
-  if (stop_DDD <= 0) {
-    ids_stop_DDD <- which(ddd_stop[["values"]][[1]] > 0)
+  if (stop_DDD <= 0L) {
+    ids_stop_DDD <- which(ddd_stop[["values"]][[1L]] > 0)
 
   } else {
     # (i) after `stop_days_DDD` with DDD
     tmp2a <- zoo::rollsum(
-      ddd_stop[["values"]][[1]] > 0,
+      ddd_stop[["values"]][[1L]] > 0,
       k = stop_days_DDD,
       fill = 0,
       align = "right"
@@ -120,29 +220,29 @@ calc_RecruitmentIndex_v3 <- function(
 
     # (ii) and with a sum of `stop_DDD`
     tmp2b <- zoo::rollsum(
-      ddd_stop[["values"]][[1]],
+      ddd_stop[["values"]][[1L]],
       k = stop_days_DDD,
       fill = 0,
       align = "right"
     ) >= stop_DDD
 
-    ids_stop_DDD <- 1 + which(tmp2a & tmp2b)
+    ids_stop_DDD <- 1L + which(tmp2a & tmp2b)
     tmp <- length(ids_stop_DDD)
-    if (tmp > 0 && ids_stop_DDD[tmp] > N_days) {
-      ids_stop_DDD[tmp] <- ids_stop_DDD[tmp] - 1
+    if (tmp > 0L && ids_stop_DDD[tmp] > N_days) {
+      ids_stop_DDD[tmp] <- ids_stop_DDD[tmp] - 1L
       ids_stop_DDD <- unique(ids_stop_DDD)
     }
   }
 
 
   # List of end/stop days due to (absence of) TDD
-  if (stop_TDD <= 0 && stop_days_TDD < 1) {
-    ids_stop_TDD <- which(tdd_nostop[["values"]][[1]] <= tol)
+  if (stop_TDD <= 0L && stop_days_TDD < 1L) {
+    ids_stop_TDD <- which(tdd_nostop[["values"]][[1L]] <= tol)
 
   } else {
     # (i) after `stop_days_TDD` with TDD
     tmp3a <- zoo::rollsum(
-      tdd_nostop[["values"]][[1]] <= tol,
+      tdd_nostop[["values"]][[1L]] <= tol,
       k = stop_days_TDD,
       fill = 0,
       align = "right"
@@ -150,16 +250,16 @@ calc_RecruitmentIndex_v3 <- function(
 
     # (ii) and with a sum of `stop_TDD`
     tmp3b <- zoo::rollsum(
-      tdd_nostop[["values"]][[1]],
+      tdd_nostop[["values"]][[1L]],
       k = stop_days_TDD,
       fill = 0,
       align = "right"
     ) <= stop_TDD + tol
 
-    ids_stop_TDD <- 1 + which(tmp3a & tmp3b)
+    ids_stop_TDD <- 1L + which(tmp3a & tmp3b)
     tmp <- length(ids_stop_TDD)
-    if (tmp > 0 && ids_stop_TDD[tmp] > N_days) {
-      ids_stop_TDD[tmp] <- ids_stop_TDD[tmp] - 1
+    if (tmp > 0L && ids_stop_TDD[tmp] > N_days) {
+      ids_stop_TDD[tmp] <- ids_stop_TDD[tmp] - 1L
       ids_stop_TDD <- unique(ids_stop_TDD)
     }
   }
@@ -167,13 +267,13 @@ calc_RecruitmentIndex_v3 <- function(
 
   # Combine all stopping days and add day after last simulated day as end day
   ids_stop <- unique(sort(c(ids_stop_DDD, ids_stop_TDD)))
-  ids_stop[length(ids_stop) + 1] <- 1 + length(ddd_stop[["values"]][[1]])
+  ids_stop[length(ids_stop) + 1L] <- 1L + length(ddd_stop[["values"]][[1L]])
 
 
   # List start/end of all suitable periods
   periods <- list()
 
-  k0 <- 1
+  k0 <- 1L
   for (k1 in seq_along(ids_start)) {
     # Identify start day and locate earliest stop day
     tmp1 <- ids_start[k1]
@@ -181,7 +281,7 @@ calc_RecruitmentIndex_v3 <- function(
       start = tmp1,
       end = min(ids_stop[ids_stop >= tmp1])
     )
-    k0 <- k0 + 1
+    k0 <- k0 + 1L
   }
 
   periods <- do.call(rbind, periods)
@@ -189,18 +289,18 @@ calc_RecruitmentIndex_v3 <- function(
 
   # Recruitment potential: sum of WDD within suitable soil depths
   ts_years <- unique(wdd_recruit[["time"]][, "Year"])
-  jan0 <- as.Date(paste0(ts_years[[1]] - 1, "-12-31"))
+  jan0 <- as.Date(paste0(ts_years[[1L]] - 1L, "-12-31"))
 
   res <- array(
     data = 0,
-    dim = c(length(ts_years), 6 + as.integer(include_year)),
+    dim = c(length(ts_years), 6L + as.integer(include_year)),
     dimnames = list(NULL,
       c(
         if (include_year) "Year",
         paste0(
-          rep(c("Spring", "Fall"), each = 3),
+          rep(c("Spring", "Fall"), each = 3L),
           "Recruitment_",
-          rep(c("maxWDD", "DOY", "DurationDays"), times = 2)
+          rep(c("maxWDD", "DOY", "DurationDays"), times = 2L)
         )
       )
     )
@@ -223,68 +323,58 @@ calc_RecruitmentIndex_v3 <- function(
     # Loop over periods in current year
     for (k2 in seq_along(ids_periods)) {
       # Identify start/end of current period
-      id_mid_yr <- ids_yr[[1]] + doy_mid_lyr - 1
+      id_mid_yr <- ids_yr[[1L]] + doy_mid_lyr - 1L
       lims <- c(
-        max(ids_yr[[1]], periods[ids_periods[k2], "start"]),
+        max(ids_yr[[1L]], periods[ids_periods[k2], "start"]),
         min(ids_yr[length(ids_yr)], periods[ids_periods[k2], "end"])
       )
 
       # Identify maximum (cumulative) WDD (and starting DOY) of
       # periods in current year
-      if (lims[[1]] < id_mid_yr && lims[[2]] >= id_mid_yr) {
+      if (lims[[1L]] < id_mid_yr && lims[[2L]] >= id_mid_yr) {
         # Current period crosses mid-year date
-        ids1 <- seq(from = lims[[1]], to = id_mid_yr - 1)
+        ids1 <- seq(from = lims[[1L]], to = id_mid_yr - 1L)
         ids2 <- seq(from = id_mid_yr, to = lims[[2]])
         tmp <- c(
           sum(wdd_recruit[["values"]][[1]][ids1]),
           sum(wdd_recruit[["values"]][[1]][ids2])
         )
 
-        if (tmp[[1]] > res[k1, "SpringRecruitment_maxWDD"]) {
-          res[k1, "SpringRecruitment_maxWDD"] <- tmp[[1]]
-          # nolint start: extraction_operator_linter.
+        if (tmp[[1L]] > res[k1, "SpringRecruitment_maxWDD"]) {
+          res[k1, "SpringRecruitment_maxWDD"] <- tmp[[1L]]
           res[k1, "SpringRecruitment_DOY"] <-
-            as.POSIXlt(jan0 + lims[[1]])$yday + 1
-          # nolint end
+            as.POSIXlt(jan0 + lims[[1L]])$yday + 1L
           res[k1, "SpringRecruitment_DurationDays"] <- length(ids1)
         }
 
-        if (tmp[[2]] > res[k1, "FallRecruitment_maxWDD"]) {
-          res[k1, "FallRecruitment_maxWDD"] <- tmp[[2]]
-          # nolint start: extraction_operator_linter.
+        if (tmp[[2L]] > res[k1, "FallRecruitment_maxWDD"]) {
+          res[k1, "FallRecruitment_maxWDD"] <- tmp[[2L]]
           res[k1, "FallRecruitment_DOY"] <-
-            as.POSIXlt(jan0 + id_mid_yr)$yday + 1
-          # nolint end
+            as.POSIXlt(jan0 + id_mid_yr)$yday + 1L
           res[k1, "FallRecruitment_DurationDays"] <- length(ids2)
         }
 
       } else {
-        ids <- seq(from = lims[[1]], to = lims[[2]])
-        tmp <- sum(wdd_recruit[["values"]][[1]][ids])
+        ids <- seq(from = lims[[1L]], to = lims[[2L]])
+        tmp <- sum(wdd_recruit[["values"]][[1L]][ids])
 
         if (all(lims < id_mid_yr)) {
           # Current period is completely before mid-year date
           if (tmp > res[k1, "SpringRecruitment_maxWDD"]) {
             # Current spring period is larger than previous ones -> replace
             res[k1, "SpringRecruitment_maxWDD"] <- tmp
-            # nolint start: extraction_operator_linter.
             res[k1, "SpringRecruitment_DOY"] <-
-              as.POSIXlt(jan0 + lims[[1]])$yday + 1
-            # nolint end
+              as.POSIXlt(jan0 + lims[[1L]])$yday + 1L
             res[k1, "SpringRecruitment_DurationDays"] <- length(ids)
           }
 
-        } else {
+        } else if (tmp > res[k1, "FallRecruitment_maxWDD"]) {
           # Current period is completely after mid-year date
-          if (tmp > res[k1, "FallRecruitment_maxWDD"]) {
-            # Current fall period is larger than previous ones -> replace
-            res[k1, "FallRecruitment_maxWDD"] <- tmp
-            # nolint start: extraction_operator_linter.
-            res[k1, "FallRecruitment_DOY"] <-
-              as.POSIXlt(jan0 + lims[[1]])$yday + 1
-            # nolint end
-            res[k1, "FallRecruitment_DurationDays"] <- length(ids)
-          }
+          # Current fall period is larger than previous ones -> replace
+          res[k1, "FallRecruitment_maxWDD"] <- tmp
+          res[k1, "FallRecruitment_DOY"] <-
+            as.POSIXlt(jan0 + lims[[1L]])$yday + 1L
+          res[k1, "FallRecruitment_DurationDays"] <- length(ids)
         }
       }
     }

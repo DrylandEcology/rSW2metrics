@@ -25,6 +25,7 @@ foo_metrics <- function(
   fun_args,
   run_rSFSW2_names,
   is_soils_input,
+  is_swrc_input,
   N_sites
 ) {
   lapply(
@@ -35,7 +36,8 @@ foo_metrics <- function(
         fun_args = fun_args,
         name_sw2_run = run_rSFSW2_names[s],
         is_soils_input = is_soils_input,
-        soil_variables = list_soil_variables()
+        soil_variables = list_soil_variables(),
+        is_swrc_input = is_swrc_input
       ))
       format_metric_1sim(x = tmp, id = s)
     }
@@ -199,7 +201,7 @@ test_that("Check metrics", {
         years_sim_timeseries_by_scen[[sc]]
       }
 
-      if (getNamespaceVersion("rSOILWAT2") < as.numeric_version("6.0.0")) {
+      if (getNamespaceVersion("rSOILWAT2") < numeric_version("6.0.0")) {
         rSOILWAT2::swWeather_FirstYearHistorical(sw2_in) <- -1
       }
       rSOILWAT2::swYears_StartYear(sw2_in) <- 0
@@ -213,17 +215,38 @@ test_that("Check metrics", {
       rSOILWAT2::swMarkov_Conv(sw2_in) <- wgen_coeffs[["mkv_woy"]]
 
       # CO2 concentration scenario
-      co2_nametag <- "RCP85"
+      yearRangeCO2 <- c(
+        rSOILWAT2::swYears_StartYear(sw2_in),
+        rSOILWAT2::swYears_EndYear(sw2_in)
+      ) +
+        rSOILWAT2::swCarbon_DeltaYear(sw2_in)
+
+      co2_nametag <- "CMIP5_historical|CMIP5_RCP85"
+
+      if (getNamespaceVersion("rSOILWAT2") >= "6.5.0") {
+        yearRangeCO2 <- c(
+          min(yearRangeCO2[[1L]], sw2_in@prod2@vegYear),
+          max(yearRangeCO2[[2L]], sw2_in@prod2@vegYear)
+        )
+      } else if (getNamespaceVersion("rSOILWAT2") >= "6.4.0") {
+        yearRangeCO2 <- c(
+          min(yearRangeCO2[[1L]], sw2_in@prod@vegYear),
+          max(yearRangeCO2[[2L]], sw2_in@prod@vegYear)
+        )
+      } else {
+        co2_nametag <- "RCP85"
+      }
+
       co2_data <- rSOILWAT2::lookup_annual_CO2a(
-        start = rSOILWAT2::swYears_StartYear(sw2_in),
-        end = rSOILWAT2::swYears_EndYear(sw2_in),
+        start = yearRangeCO2[[1L]],
+        end = yearRangeCO2[[2L]],
         name_co2 = co2_nametag
       )
       rSOILWAT2::swCarbon_Scenario(sw2_in) <- co2_nametag
       rSOILWAT2::swCarbon_CO2ppm(sw2_in) <- data.matrix(co2_data)
 
 
-      if (sc > 1) {
+      if (sc > 1L) {
         # Climate scenarios: 2 C warming + 50% reduction in June-Aug precip
         tmp <- sc / prjpars[["N_scen"]]
         rSOILWAT2::swWeather_MonScalingParams(sw2_in)[6:8, "PPT"] <- 0.5 * tmp
@@ -232,7 +255,10 @@ test_that("Check metrics", {
       }
 
       swRunScenariosData[[sc]] <- sw2_in
-      runDataSC <- rSOILWAT2::sw_exec(inputData = swRunScenariosData[[sc]])
+      runDataSC <- rSOILWAT2::sw_exec(
+        inputData = swRunScenariosData[[sc]],
+        quiet = TRUE
+      )
 
       if (is.na(used_rSOILWAT2_version)) {
         used_rSOILWAT2_version <- rSOILWAT2::get_version(runDataSC)
@@ -293,11 +319,11 @@ test_that("Check metrics", {
           flags = "-jrTq0"
         )
 
-        if (ret == 0 && file.exists(fname_zip)) {
-          unlink(fname_run, recursive = TRUE)
-        } else {
-          stop("Zipping of simulation output failed.")
+        if (ret != 0 || !file.exists(fname_zip)) {
+          stop("Zipping of simulation output failed.", call. = FALSE)
         }
+
+        unlink(fname_run, recursive = TRUE)
       }
 
     } else {
@@ -338,6 +364,7 @@ test_that("Check metrics", {
             fun_args = fun_args,
             run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
             is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
+            is_swrc_input = has_fun_swrc_as_arg(fun_metrics[k1]),
             N_sites = N_sites_used
           )
           # nolint end: implicit_assignment_linter.
@@ -349,6 +376,7 @@ test_that("Check metrics", {
           fun_args = fun_args,
           run_rSFSW2_names = used_run_rSFSW2_names[ids_used_runs],
           is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
+          is_swrc_input = has_fun_swrc_as_arg(fun_metrics[k1]),
           N_sites = N_sites_used
         )
       }

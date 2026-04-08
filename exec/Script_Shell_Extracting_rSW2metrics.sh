@@ -43,6 +43,7 @@ Rscript Script_to_Extract_Metric.R -o=ExtremeShortTermDryStress_Seasonal_wholepr
 Rscript Script_to_Extract_Metric.R -o=FrostDays_Seasonal -fun=metric_FrostDays_Seasonal ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=FrostDaysAtNeg5C_annual -fun=metric_FrostDaysAtNeg5C ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=LandCover_annualClim -fun=metric_land_cover_v2 ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=LandCover_annualClim -fun=metric_land_cover_v3 ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=NonDrySWA_Seasonal_top50cm -fun=metric_NonDrySWA_Seasonal_top50cm ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=NonDrySWA_Seasonal_wholeprofile -fun=metric_NonDrySWA_Seasonal_wholeprofile ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=PET_Seasonal -fun=metric_PET_Seasonal ${mode} ${parallel} ${prjoptions}
@@ -99,6 +100,8 @@ Rscript Script_to_Extract_Metric.R -o=Transpiration_Seasonal -fun=metric_Transpi
 Rscript Script_to_Extract_Metric.R -o=TranspirationSeasonality_v6 -fun=metric_TranspirationSeasonality_v6 ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=veg_biomass_annual -fun=metric_veg_biomass_annual_v2 ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=veg_biomass_monthly -fun=metric_veg_biomass_monthly_v2 ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=veg_biomass_annual -fun=metric_veg_biomass_annual_v3 ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=veg_biomass_monthly -fun=metric_veg_biomass_monthly_v3 ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=VWC_Seasonal_top50cm -fun=metric_VWC_Seasonal_top50cm ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=VWC_Seasonal_wholeprofile -fun=metric_VWC_Seasonal_wholeprofile ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=WDDat5C0to020cm15bar_quarterly -fun=metric_WDDat5C0to020cm15bar_quarterly ${mode} ${parallel} ${prjoptions}

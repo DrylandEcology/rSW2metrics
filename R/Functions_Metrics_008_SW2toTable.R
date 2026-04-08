@@ -123,6 +123,10 @@ metric_SW2toTable_daily <- function(
         clay_frac = soils[, "clay_frac"],
         gravel_content = soils[, "gravel_content"]
       )
+
+      mtrcs_swrcp_and_usage <- load_swrcp_and_usage(
+        sim_input[["swRunScenariosData"]][[id_scen_used[k1]]]
+      )
     }
 
 
@@ -140,7 +144,10 @@ metric_SW2toTable_daily <- function(
     } else if (has_swc) {
       tmp_swc
     } else {
-      stop("Neither ", var_vwc, " nor ", var_swc, " was stored as output.")
+      stop(
+        "Neither ", var_vwc, " nor ", var_swc, " was stored as output.",
+        call. = FALSE
+      )
     }
 
 
@@ -152,17 +159,15 @@ metric_SW2toTable_daily <- function(
 
 
     #--- Put together data
-    # nolint start: extraction_operator_linter.
     data_sim <- list(cbind(
       Year = sim_sim[, "Year"],
       DOY = sim_sim[, "Day"],
-      Month = 1 + dates$mon,
+      Month = 1L + dates$mon,
       Day = dates$mday
     ))
-    # nolint end
 
-    sim_vwc <- if (has_vwc) tmp_vwc[, 2 + ids_cols, drop = FALSE]
-    sim_swc <- if (has_swc) tmp_swc[, 2 + ids_cols, drop = FALSE]
+    sim_vwc <- if (has_vwc) tmp_vwc[, 2L + ids_cols, drop = FALSE]
+    sim_swc <- if (has_swc) tmp_swc[, 2L + ids_cols, drop = FALSE]
 
 
     #--- * meteo ------
@@ -264,7 +269,7 @@ metric_SW2toTable_daily <- function(
     #--- * soiltemperature ------
     if (any(c("all", "soiltemperature") %in% outputs_SW2toTable)) {
 
-      if (getNamespaceVersion("rSOILWAT2") >= as.numeric_version("5.3.1")) {
+      if (getNamespaceVersion("rSOILWAT2") >= numeric_version("5.3.1")) {
         tmp_st <- rSOILWAT2::get_soiltemp(
           sim_data,
           timestep = "Day",
@@ -291,7 +296,8 @@ metric_SW2toTable_daily <- function(
       } else if (rSOILWAT2::check_version(sim_data, "5.3.0")) {
         stop(
           "Cannot process soil temperature values correctly; ",
-          "please upgrade 'rSOILWAT2' to v5.3.1 or later."
+          "please upgrade 'rSOILWAT2' to v5.3.1 or later.",
+          call. = FALSE
         )
 
       } else {
@@ -373,6 +379,7 @@ metric_SW2toTable_daily <- function(
           values = list(swc = tmp_swc)
         ),
         soils = mtrcs_soils,
+        swrcp_and_usage = mtrcs_swrcp_and_usage,
         used_depth_range_cm = NULL,
         SWP_limit_MPa = -3,
         method = "by_layer"

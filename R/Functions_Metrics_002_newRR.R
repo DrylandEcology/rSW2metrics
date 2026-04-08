@@ -22,7 +22,7 @@ get_rh <- function(path, name_sw2_run, id_scen, years, zipped_runs = FALSE) {
   )
 
   # Provide correct name and initialize
-  res[["values"]][[1]][] <- NA # nolint: extraction_operator_linter.
+  res[["values"]][[1L]][] <- NA
   names(res[["values"]]) <- "rh"
 
   # Extract RH (from inputs)
@@ -64,7 +64,10 @@ get_vpd <- function(
   stopifnot(requireNamespace("rSW2data"))
 
   if (!missing(years)) {
-    warning("'years' is not implemented but provided as argument!")
+    warning(
+      "'years' is not implemented but provided as argument!",
+      call. = FALSE
+    )
   }
 
   temp_min <- get_values_from_sw2(
@@ -106,7 +109,16 @@ get_vpd <- function(
 
 
 
-#--- CWD = climatic water deficit [mm] = PET - ET
+#--- CWD = climatic water deficit ``[mm]`` = PET - ET
+
+#' Climatic water deficit
+#'
+#' @param pet_cm A numeric vector. Potential evapotranspiration `[cm]`.
+#' @param et_cm A numeric vector. Actual evapotranspiration `[cm]`.
+#'
+#' @return Climatic water deficit ``[mm]``.
+#'
+#' @export
 calc_CWD_mm <- function(pet_cm, et_cm) {
   10 * (pet_cm - et_cm)
 }
@@ -218,10 +230,12 @@ calc_wetdry <- function(
     sm <- matrix(
       data = if (is_op_lt) {
         if (sm_periods[["limit"]] == Inf) !tmp else tmp
+      } else if (sm_periods[["limit"]] == Inf) {
+        tmp
       } else {
-        if (sm_periods[["limit"]] == Inf) tmp else !tmp
+        !tmp
       },
-      ncol = 1
+      ncol = 1L
     )
   }
 
@@ -229,10 +243,10 @@ calc_wetdry <- function(
     time = time_daily,
     values = if (is_op_lt) {
       # wet: op = `>` --> wet(profile) = any(wet[i])
-      list(apply(sm, 1, any))
+      list(apply(sm, 1L, any))
     } else {
       # dry: op = `<` --> dry(profile) = all(dry[i])
-      list(apply(sm, 1, all))
+      list(apply(sm, 1L, all))
     }
   )
 }
@@ -240,17 +254,104 @@ calc_wetdry <- function(
 # v1b: Temp > limit & sm <> limit & snow == 0
 # wet based on any(SWC[i] > SWC_limit)
 # dry based on all(SWC[i] < SWC_limit)
-#' @param sim_data A named list or environment with the following elements
-#'   - `"swp_daily"` with two elements
-#'       - `"values"`, a list which contains the named element `"swp"`,
-#'         a two-dimensional object of daily soil water potential `[-bar]`
-#'       - `"time"` (that is passed through)
-#'   - `"temp_daily"`, a list `"values"` which contains the named element
-#'     `"tmean"`, a vector of daily mean air temperatures `[C]`
-#'   - `"swe_daily"`, a list `"values"` which contains the named element
-#'     `"swe"`, a vector of daily snow-water equivalents `[cm]`
+
+#' Degree-days based on a daily soil moisture, temperature and snow condition
 #'
-#' @noRd
+#' @inheritParams metrics
+#' @param sim_data A named list or environment with the following elements
+#'    - `"swp_daily"` with two elements
+#'        - `"values"`, a list with the named element `"swp"`,
+#'          a two-dimensional object (days by soil layers)
+#'          of daily soil water potential `[-bar]`
+#'        - `"time"`, a two-dimensional object with days in rows and columns
+#'          `"Year"` and `"Day"` (day of year)
+#'    - `"temp_daily"`, a list with the element `"values"` that contains the
+#'       named element `"tmean"`, a vector of daily mean air temperatures `[C]`
+#'    - `"swe_daily"`, a list with the named element`"values"` that contains the
+#'       named element `"swe"`, a vector of daily water equivalents of
+#'       the snow pack `[cm]`
+#' @param t_periods A list with two named elements that identifies days on
+#' which `"tmean"` satisfies the requested conditions,
+#' e.g., `> 5 [C]` for a base temperature of `5 [C]`
+#'    - `"op"`, a relational operator, e.g., `>`
+#'    - `"limit"`, a numeric value in units of `[C]`
+#' @param sm_periods A list with two named elements that identifies days on
+#' which `"swp"` (converted to ``[mm]``) satisfies the requested conditions.
+#' Note, that dryness (`<`, `<=`) requires all considered soil layers to be dry,
+#' whereas wetness (`>`, `>=`) requires at least one considered soil layer
+#' to be moist). For instance, `< -3 [MPa]` identifies dry-degree days
+#' with a dryness below `-3 [MPa]`
+#'    - `"op"`, a relational operator, e.g., `<`
+#'    - `"limit"`, a numeric value in units of ``[mm]``
+#' @param snow_periods A list with two named elements that identifies days on
+#' which `"swe"` satisfies the requested conditions,
+#' e.g., `<= 0` ``[mm]`` for days without a snow pack
+#'    - `"op"`, a relational operator, e.g., `<=`
+#'    - `"limit"`, a numeric value in units of ``[mm]``
+#'
+#' @return A list with two named elements
+#'    - `"values"`, a list with the named element `"mdd"`,
+#'      a numeric vector with daily conditioned degree-days `[degC x day]`
+#'    - `"time"`, a two-dimensional object with days in rows and columns
+#'      `"Year"` and `"Day"` (day of year), i.e.,
+#'      a copy of the input `sim_data[["swp_daily"]][["time"]]`
+#'
+#' @section Details:
+#' Argument `soils` uses only element `"depth_cm"`.
+#'
+#' @examples
+#' # Prepare data (here using rSOILWAT2)
+#' swin <- rSOILWAT2::sw_exampleData
+#' soils <- list(depth_cm = rSOILWAT2::swSoils_Layers(swin)[, "depth_cm"])
+#' nSoilLayers <- length(soils[["depth_cm"]])
+#'
+#' sim <- rSOILWAT2::sw_exec(swin)
+#' sim_data <- list(
+#'   swp_daily = list(
+#'     time = sim@SWPMATRIC@Day[, c("Year", "Day")],
+#'     values = list(
+#'       swp = sim@SWPMATRIC@Day[, paste0("Lyr_", seq_len(nSoilLayers))]
+#'     )
+#'   ),
+#'   temp_daily = list(
+#'     values = list(tmean = sim@TEMP@Day[, "avg_C"])
+#'   ),
+#'   swe_daily = list(
+#'     values = list(swe = sim@SNOWPACK@Day[, "snowpackWaterEquivalent_cm"])
+#'   )
+#' )
+#'
+#' # Dry degree-days "DDDat5C0to100cm30bar" `[C x day]`
+#' # (base 5 C, 0-100 cm, all < -3 MPa, snowfree)
+#' ddd_daily <- calc_MDD_daily(
+#'   sim_data = sim_data,
+#'   soils = soils,
+#'   used_depth_range_cm = c(0, 100),
+#'   t_periods = list(op = `>`, limit = 5),
+#'   sm_periods = list(op = `<`, limit = -3)
+#' )
+#' ddd_annual <- tapply(
+#'   X = ddd_daily[["values"]][["mdd"]],
+#'   INDEX = ddd_daily[["time"]][, "Year"],
+#'   FUN = sum
+#' )
+#'
+#' # Wet degree-days "WDDat5C0to100cm15bar" `[C x day]`
+#' # (base 5 C, 0-100 cm, any >-1.5 MPa, snowfree)
+#' wdd_daily <- calc_MDD_daily(
+#'   sim_data = sim_data,
+#'   soils = soils,
+#'   used_depth_range_cm = c(0, 100),
+#'   t_periods = list(op = `>`, limit = 5),
+#'   sm_periods = list(op = `>`, limit = -1.5)
+#' )
+#' wdd_annual <- tapply(
+#'   X = wdd_daily[["values"]][["mdd"]],
+#'   INDEX = wdd_daily[["time"]][, "Year"],
+#'   FUN = sum
+#' )
+#'
+#' @export
 calc_MDD_daily <- function(
   sim_data,
   soils,
@@ -290,7 +391,7 @@ calc_MDD_daily <- function(
 
   # Temperature when all criteria are met (propagate NAs in sm, dg, snw)
   mdd <- rep(NA, length(dg))
-  ids <- sm[["values"]][[1]] & dg & snw
+  ids <- sm[["values"]][[1L]] & dg & snw
   mdd[which(ids)] <-
     sim_data[["temp_daily"]][["values"]][["tmean"]][which(ids)] -
     t_periods[["limit"]]
@@ -604,62 +705,125 @@ metric_DDDat5C0to100cm30bar <- function(
 }
 
 
-#' Calculate soil water availability \var{SWA}
+#' Calculate soil water availability `SWA`
 #'
 #' We define available soil water `SWA` as the amount of soil water `SWC`
-#' that exceeds some base (= critical) amount of soil water `SWC_crit[i]`,
+#' that exceeds some base (= critical) amount of soil water \eqn{SWC_{crit}[i]},
 #' i.e.,
-#' \deqn{SWA[t,i] = max{0, SWC[t,i] - SWC_crit[i]}}
+#' \deqn{SWA[t,i] = max\left\{0, SWC[t,i] - SWC_{crit}[i]\right\}}
 #' for day t and soil layer i.
 #'
 #' @section Details:
-#' The base (= critical) amount of soil water `SWC_crit[i]` is specified via a
-#' critical soil water potential `SWP_crit`, here \code{SWP_limit_MPa}, e.g.,
-#' `SWP_crit = -3.0 MPa`.
-#' The water release curve employed during the simulation run is used to
-#' translate `SWP` into volumetric water content `VWC`, i.e.,
-#' \deqn{VWC_crit[i,matric] = f(SWP_crit, SWRCp[i])}
-#' where `SWRCp` are the parameters describing the water release curve.
-#' However, the translation is only valid for the matric soil, i.e.,
-#' the component without coarse fragments.
+#' The base (= critical) amount of soil water \eqn{SWC_{crit}[i]} can be
+#' specified either via
+#' (i) critical soil water potential \eqn{SWP_{crit}} and
+#' parameters describing the water release curve `SWRCp`, or
+#' (ii) critical volumetric water content \eqn{VWC_{crit}[i]}.
 #'
-#' `SWA` in the presence of coarse fragments is calculated as
+#' Option 1: inputs \eqn{SWP_{crit}} and `SWRCp`.
+#' The water release curve (argument `swrcp_and_usage`) employed during
+#' the simulation run is used to translate \eqn{SWP_{crit}}
+#' (argument `SWP_limit_MPa`) into volumetric water content `VWC`, i.e.,
+#' \deqn{VWC_{crit}[i,matric] = f(SWP_{crit}, SWRCp[i])}
+#'
+#' However, the translation is only valid for the matric soil, i.e.,
+#' the component without coarse fragments. Thus, `SWA` in the presence of
+#' coarse fragments is calculated as
 #'
 # nolint start: line_length_linter.
-#' \deqn{SWA[t,i] = max{0, SWC[t,i] - w[i] * (1 - cfrag[i]) * VWC_crit[i,matric]}}
-#' or equivalently
-#' \deqn{SWA[t,i] = max{0, w[i] * (1 - cfrag[i]) * (VWC[t,i,matric] - VWC_crit[i,matric])}}
+#' \deqn{SWA[t,i] = max\left\{0, SWC[t,i] - w[i] * (1 - cfrag[i]) * VWC_{crit}[i,matric]\right\}}
 # nolint end
 #'
 #' where matric volumetric water `VWC` is multiplied by `w[i] * (1 - cfrag[i])`
 #' to calculate the amount of water in soil layer i,
 #' correcting for the volume occupied by coarse fragments.
 #'
-#' For day t, soil layer i, soil layer width `w[i]`, and
-#' `cfrag[i]` = fraction of coarse fragments.
+#' for day `t`, soil layer `i`, soil layer width `w[i]`, and
+#' fraction of coarse fragments `cfrag[i]`.
 #'
-#' @param sim_swc_daily A named list with a "time" element and a
-#'    "values" element containing daily \var{"swc"} for each soil layer
-#'    in units of centimeters.
-#' @param soils A named list with soil parameters \var{"depth_cm"},
-#'   \var{"sand_frac"},\var{"clay_frac"}, and \var{"gravel_content"}
-#'   as numeric vectors with values for each soil layer.
-#' @param used_depth_range_cm A numeric vector of length two.
-#' @param SWP_limit_MPa A numeric value.
-#' @param method A character string.
+#' Option 2: input \eqn{VWC_{crit}[i]}.
+#' Alternatively, the base (= critical) amount of soil water \eqn{SWC_{crit}[i]}
+#' can be directly specified as critical volumetric water content
+#' \eqn{VWC_{crit}[i]} for each soil layer (argument `base_vwc`).
 #'
-#' @return A list with elements "time" and "values" where values represent
-#'   available soil water in units of millimeters above \code{SWP_limit_MPa}:
-#'   if \code{method} is \var{\dQuote{across_profile}},
-#'   then summed across \code{used_depth_range_cm},
-#'   if \code{method} is \var{\dQuote{by_layer}},
-#'   then columns contain values for each soil layer within
-#'    \code{used_depth_range_cm}.
+#' `SWA` is then calculated as
+#' \deqn{SWA[t,i] = max\left\{0, SWC[t,i] - w[i] * VWC_{crit}[i]\right\}}
+#'
+#' for day `t`, soil layer `i`, soil layer width `w[i]`, and
+#' fraction of coarse fragments `cfrag[i]`.
+#'
+#'
+#' @inheritParams metrics
+#' @param sim_swc_daily A named list with a `"time"` element and a
+#' `"values"` element containing daily `"swc"` for each soil layer
+#' in units `[cm]`.
+#' @param SWP_limit_MPa A numeric value. The base (= critical) amount of
+#' soil water, see details.
+#' @param base_vwc A numeric vector. An alternative to `SWP_limit_MPa`;
+#' the base (= critical) amount of soil water, see details.
+#' If `base_vwc` is provided, then `SWP_limit_MPa` and `swrcp_and_usage`
+#' are ignored.
+#' @param method A character string. See return value.
+#'
+#' @return A list with elements `"time"` and `"values"` where values represent
+#' available soil water in units of millimeters above `SWP_limit_MPa`:
+#'    - if `method` is `"across_profile"`,
+#'      then summed across `used_depth_range_cm`,
+#'    - if `method` is `"by_layer"`,
+#'      then columns contain values for each soil layer within
+#'      `used_depth_range_cm`.
+#'
+#' @examples
+#' # Prepare data (here using rSOILWAT2)
+#' swin <- rSOILWAT2::sw_exampleData
+#' tmp <- rSOILWAT2::swSoils_Layers(swin)
+#' soils <- list(
+#'   depth_cm = tmp[, "depth_cm"],
+#'   sand_frac = tmp[, "sand_frac"],
+#'   clay_frac = tmp[, "clay_frac"],
+#'   gravel_content = tmp[, "gravel_content"]
+#' )
+#' nSoilLayers <- length(soils[["depth_cm"]])
+#' swrcp_and_usage <- load_swrcp_and_usage(swin)
+#'
+#' sim <- rSOILWAT2::sw_exec(swin)
+#' sim_data <- list(
+#'   swc_daily = list(
+#'     time = sim@SWCBULK@Day[, c("Year", "Day")],
+#'     values = list(
+#'       swc = sim@SWCBULK@Day[, paste0("Lyr_", seq_len(nSoilLayers))]
+#'     )
+#'   )
+#' )
+#'
+#' # Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``
+#' swa_daily <- calc_SWA_mm(
+#'   sim_swc_daily = sim_data[["swc_daily"]],
+#'   soils = soils,
+#'   swrcp_and_usage = swrcp_and_usage,
+#'   SWP_limit_MPa = -3.9,
+#'   used_depth_range_cm = c(0, 100),
+#'   method = "across_profile"
+#' )
+#'
+#' # Alternative approach via critical volumetric moisture
+#' baseVWC = c(0.0904, 0.133, 0.1795, 0.1909, 0.1739, 0.1727, 0.1099, 0.1099)
+#' swa_daily2 <- calc_SWA_mm(
+#'   sim_swc_daily = sim_data[["swc_daily"]],
+#'   soils = soils["depth_cm"],
+#'   base_vwc = baseVWC,
+#'   used_depth_range_cm = c(0, 100),
+#'   method = "across_profile"
+#' )
+#'
+#' @export
 calc_SWA_mm <- function(
   sim_swc_daily,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
+  base_vwc = NULL,
   method = c("across_profile", "by_layer")
 ) {
   method <- match.arg(method)
@@ -672,26 +836,41 @@ calc_SWA_mm <- function(
 
   id_slyrs <- which(!is.na(widths_cm))
 
-  if (length(id_slyrs) > 0) {
+  if (length(id_slyrs) > 0L) {
     widths_cm <- widths_cm[id_slyrs]
 
-    # Calculate SWC threshold (corrected for coarse fragments)
-    # SWC <-> VWC exists only for the matric component
-    base_SWC_mm <- if (is.finite(SWP_limit_MPa)) {
-      rSOILWAT2::SWPtoVWC(
-        swp = SWP_limit_MPa,
+    # Calculate SWC threshold
+    ttmp <- if (!is.null(base_vwc)) {
+      base_vwc[id_slyrs]
+
+    } else if (is.finite(SWP_limit_MPa)) {
+      # Convert SWP to matric-VWC
+      # SWC <-> VWC exists only for the matric component
+      tmp <- convert_with_swrc(
+        x = SWP_limit_MPa,
+        direction = "swp_to_vwc",
+        use_swrc_v6 = swrcp_and_usage[["use_swrc_v6"]],
+        fcoarse = rep(0, length(id_slyrs)),
         sand = soils[["sand_frac"]][id_slyrs],
-        clay = soils[["clay_frac"]][id_slyrs]
-      ) * 10 * widths_cm * (1 - soils[["gravel_content"]][id_slyrs])
+        clay = soils[["clay_frac"]][id_slyrs],
+        swrcp = swrcp_and_usage[["swrcp"]][id_slyrs, , drop = FALSE],
+        swrc_name = swrcp_and_usage[["swrc_name"]]
+      )
+
+      # Convert matric-VWC to bulk-VWC
+      tmp * (1 - soils[["gravel_content"]][id_slyrs])
 
     } else {
       rep(0, length(id_slyrs))
     }
 
-    # Determine SWA [mm] for each soil layer as SWC - SWC_base
+    # Convert bulk-VWC to SWC
+    base_SWC_mm <- ttmp * 10 * widths_cm
+
+    # Determine SWA ``[mm]`` for each soil layer as SWC - SWC_base
     swa_by_layer <- sweep(
       x = 10 * sim_swc_daily[["values"]][["swc"]][, id_slyrs, drop = FALSE],
-      MARGIN = 2,
+      MARGIN = 2L,
       STATS = base_SWC_mm,
       FUN = "-"
     )
@@ -712,7 +891,7 @@ calc_SWA_mm <- function(
 
   list(
     time = sim_swc_daily[["time"]],
-    values = list(values)
+    values = list(swa = values)
   )
 }
 
@@ -725,6 +904,7 @@ get_SWA <- function(
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
   ...
@@ -759,6 +939,7 @@ get_SWA <- function(
     swa_daily <- calc_SWA_mm(
       sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
+      swrcp_and_usage = swrcp_and_usage,
       SWP_limit_MPa = SWP_limit_MPa,
       used_depth_range_cm = used_depth_range_cm,
       method = "across_profile"
@@ -785,7 +966,9 @@ metric_SWAat0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
-  soils, ...
+  soils,
+  swrcp_and_usage,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -802,6 +985,7 @@ metric_SWAat0to100cm30bar <- function(
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     SWP_limit_MPa = -3,
     used_depth_range_cm = c(0, 100),
     ...
@@ -812,7 +996,9 @@ metric_SWAat0to100cm39bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
-  soils, ...
+  soils,
+  swrcp_and_usage,
+  ...
 ) {
   out <- match.arg(out)
 
@@ -829,6 +1015,7 @@ metric_SWAat0to100cm39bar <- function(
     list_years_scen_used = list_years_scen_used,
     out = out,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     SWP_limit_MPa = -3.9,
     used_depth_range_cm = c(0, 100),
     ...
@@ -1168,7 +1355,7 @@ get_SW2flux <- function(
 }
 
 #--- Annual and monthly fluxes:
-#' Evapotranspiration (ET) [mm]
+#' Evapotranspiration (ET) ``[mm]``
 #' @noRd
 metric_ET_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -1217,7 +1404,7 @@ metric_ET_monthly <- function(
 }
 
 
-#' Diffuse Recharge (DR) = Deep Drainage [mm]
+#' Diffuse Recharge (DR) = Deep Drainage ``[mm]``
 #' @noRd
 metric_DR_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -1266,7 +1453,7 @@ metric_DR_monthly <- function(
   )
 }
 
-#' Annual radiation (H) [MJ/m2]
+#' Annual radiation (H) ``[MJ/m2]``
 #' @noRd
 metric_Radiation_annual <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -1290,7 +1477,7 @@ metric_Radiation_annual <- function(
   )
 }
 
-#' Monthly radiation (H) [MJ/m2]
+#' Monthly radiation (H) ``[MJ/m2]``
 #' @noRd
 metric_Radiation_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
@@ -1786,7 +1973,7 @@ metric_Tmean_monthlyClim <- function(
   )
 }
 
-#' Across-year average monthly precipitation amount [mm]
+#' Across-year average monthly precipitation amount ``[mm]``
 #' @section Notes: Un-simulated but requested time steps propagate NAs.
 #' @noRd
 metric_PPT_monthlyClim <- function(
@@ -1899,7 +2086,7 @@ metric_SMTRs <- function(
 
 calc_AI <- function(ppt, pet) ppt / pet
 
-#' Annual AI = aridity index [mm/mm] = PPT/PET
+#' Annual AI = aridity index ``[mm/mm]`` = PPT/PET
 #'
 #' @return A return object where `group` contains the following annual
 #' variable:
@@ -2406,6 +2593,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage = list(use_swrc_v6 = FALSE),
   ...
 ) {
   res <- list()
@@ -2564,6 +2752,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       # required content of sim_data: list(time, values = swc)
       sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
+      swrcp_and_usage = swrcp_and_usage,
       SWP_limit_MPa = -3.9,
       used_depth_range_cm = c(0, 100),
       method = "across_profile"
@@ -2589,7 +2778,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
         pet = sim_data[["yr"]][["values"]][["pet"]]
       ),
 
-      # Potential evapotranspiration `[mm]`
+      # Potential evapotranspiration ``[mm]``
       PET = 10 * sim_data[["yr"]][["values"]][["pet"]],
 
       # Mean daily air temperature `[C]`
@@ -2601,7 +2790,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       # Maximum daily air temperature `[C]`
       Tmax = sim_data[["yr"]][["values"]][["tmax"]],
 
-      # Precipitation amount `[mm]`
+      # Precipitation amount ``[mm]``
       PPT = 10 * sim_data[["yr"]][["values"]][["ppt"]],
 
       # Seasonal timing of precipitation `[-]`
@@ -2654,13 +2843,13 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       # (Actual) evapotranspiration [`mm`]
       ET = 10 * sim_data[["yr"]][["values"]][["et"]],
 
-      # Climatic water deficit `[mm]` (where `CWD = PPT - ET`)
+      # Climatic water deficit ``[mm]`` (where `CWD = PPT - ET`)
       CWD = calc_CWD_mm(
         pet_cm = sim_data[["yr"]][["values"]][["pet"]],
         et_cm = sim_data[["yr"]][["values"]][["et"]]
       ),
 
-      # 10-day extreme climatic water deficit `[mm]`
+      # 10-day extreme climatic water deficit ``[mm]``
       # (where `CWDextreme10d` is the largest daily `CWD`
       # averaged over 10-day periods)
       CWDextreme010d = calc_extreme_funNday(
@@ -2768,7 +2957,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
       RecruitmentSpringWDD =
         as.vector(tmp_recruit[, "SpringRecruitment_maxWDD"]),
 
-      # Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`
+      # Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``
       SWA = tapply(
         X = tmp_swa_daily[["values"]][[1L]],
         INDEX = tmp_swa_daily[["time"]][, "Year"],
@@ -2843,11 +3032,11 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 # nolint start: line_length_linter
 #'    * Aridity index `[mm / mm]`: `"AI"`
 #'      (where `AI = PPT / PET`)
-#'    * Potential evapotranspiration amount `[mm]`: `"PET"`
+#'    * Potential evapotranspiration amount ``[mm]``: `"PET"`
 #'    * Mean daily air temperature `[C]`: `"Tmean"`
 #'    * Minimum daily air temperature `[C]`: `"Tmin"`
 #'    * Maximum daily air temperature `[C]`: `"Tmax"`
-#'    * Precipitation amount `[mm]`: `"PPT"`
+#'    * Precipitation amount ``[mm]``: `"PPT"`
 #'    * Seasonal timing of precipitation `[-]`: `"PPTsst"`
 #'      (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
 #'    * Total growing degree days `[C x day]`: `"TDD"`
@@ -2856,10 +3045,10 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Warm season length `[day]`: `"GrowingSeasonDuration_(mean)|(cv)"`
 #'      (where `GrowingSeasonDuration` is the longest spell of days with a positive `TDD`)
 #'
-#'    * Evapotranspiration amount `[mm]`: `"ET"`
-#'    * Climatic water deficit amount `[mm]`: `"CWD"`
+#'    * Evapotranspiration amount ``[mm]``: `"ET"`
+#'    * Climatic water deficit amount ``[mm]``: `"CWD"`
 #'      (where `CWD = PPT - ET`)
-#'    * 10-day extreme climatic water deficit `[mm]`: `"CWDextreme010d"`
+#'    * 10-day extreme climatic water deficit ``[mm]``: `"CWDextreme010d"`
 #'      (where `CWDextreme10d` is the largest daily `CWD` averaged over 10-day periods)
 #'    * Seasonal variability of climatic water deficit `[mm / mm]`: `"CWDssv"`
 #'      (where `CWDssv = mean(monthly CWD) / sd(monthly CWD)`)
@@ -2885,7 +3074,7 @@ get_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Spring recruitment duration `[day]`: `"RecruitmentSpringDuration_"`
 #'    * Spring recruitment wet-degree days `[C x day]`: `"RecruitmentSpringWDD"`
 #'
-#'    * Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`: `"SWA"`
+#'    * Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``: `"SWA"`
 #'    * Seasonal variability of available soil moisture `[mm / mm]`: `"SWAssv"`
 #'      (where `SWAssv = mean(monthly SWA) / sd(monthly CWD)`)
 #'    * Seasonal timing of available soil moisture `[-]`: `"SWAsst"`
@@ -2902,6 +3091,7 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
   out = c("ts_years", "raw"),
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   out <- match.arg(out)
@@ -2919,6 +3109,7 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
     out = out,
     zipped_runs = zipped_runs,
     soils = soils,
+    swrcp_and_usage = swrcp_and_usage,
     ...
   )
 }
@@ -2945,11 +3136,11 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 # nolint start: line_length_linter
 #'    * Aridity index `[mm / mm]`: `"AI_(mean)|(cv)"`
 #'      (where `AI = PPT / PET`)
-#'    * Potential evapotranspiration amount `[mm]`: `"PET_(mean)|(cv)"`
+#'    * Potential evapotranspiration amount ``[mm]``: `"PET_(mean)|(cv)"`
 #'    * Mean daily air temperature `[C]`: `"Tmean_(mean)|(sd)"`
 #'    * Minimum daily air temperature `[C]`: `"Tmin_(mean)|(sd)"`
 #'    * Maximum daily air temperature `[C]`: `"Tmax_(mean)|(sd)"`
-#'    * Precipitation amount `[mm]`: `"PPT_(mean)|(cv)"`
+#'    * Precipitation amount ``[mm]``: `"PPT_(mean)|(cv)"`
 #'    * Seasonal timing of precipitation `[-]`: `"PPTsst_(mean)|(sd)"`
 #'      (where `PPTsst = cor(monthly PPT, monthly Tmean)`)
 #'    * Total growing degree days `[C x day]`: `"TDD_(mean)|(cv)"`
@@ -2958,10 +3149,10 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Warm season length `[day]`: `"GrowingSeasonDuration_(mean)|(cv)"`
 #'      (where `GrowingSeasonDuration` is the longest spell of days with a positive `TDD`)
 #'
-#'    * Evapotranspiration amount `[mm]`: `"ET_(mean)|(cv)"`
-#'    * Climatic water deficit amount `[mm]`: `"CWD_(mean)|(cv)"`
+#'    * Evapotranspiration amount ``[mm]``: `"ET_(mean)|(cv)"`
+#'    * Climatic water deficit amount ``[mm]``: `"CWD_(mean)|(cv)"`
 #'      (where `CWD = PPT - ET`)
-#'    * 10-day extreme climatic water deficit `[mm]`: `"CWDextreme010d_(mean)|(cv)"`
+#'    * 10-day extreme climatic water deficit ``[mm]``: `"CWDextreme010d_(mean)|(cv)"`
 #'      (where `CWDextreme10d` is the largest daily `CWD` averaged over 10-day periods)
 #'    * Seasonal variability of climatic water deficit `[mm / mm]`: `"CWDssv_(mean)|(cv)"`
 #'      (where `CWDssv = mean(monthly CWD) / sd(monthly CWD)`)
@@ -2991,7 +3182,7 @@ metric_EcologicalDroughtMetrics2023_annual <- function(
 #'    * Spring recruitment duration `[day]`: `"RecruitmentSpringDuration_(mean)|(cv)"`
 #'    * Spring recruitment wet-degree days `[C x day]`: `"RecruitmentSpringWDD_(mean)|(cv)"`
 #'
-#'    * Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`: `"SWA_(mean)|(cv)"`
+#'    * Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``: `"SWA_(mean)|(cv)"`
 #'    * Seasonal variability of available soil moisture `[mm / mm]`: `"SWAssv_(mean)|(cv)"`
 #'      (where `SWAssv = mean(monthly SWA) / sd(monthly CWD)`)
 #'    * Seasonal timing of available soil moisture `[-]`: `"SWAsst_(mean)|(sd)"`
@@ -3018,6 +3209,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
   out = "across_years",
   zipped_runs = FALSE,
   soils,
+  swrcp_and_usage,
   ...
 ) {
   stopifnot(check_metric_arguments(
@@ -3040,6 +3232,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           out = "ts_years",
           zipped_runs = zipped_runs,
           soils = soils,
+          swrcp_and_usage = swrcp_and_usage,
           ...
         )[[1L]]
 
@@ -3053,7 +3246,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           AI_mean = mean(tmpx["AI", , drop = TRUE]),
           AI_cv = cv(tmpx["AI", , drop = TRUE]),
 
-          # Potential evapotranspiration `[mm]`
+          # Potential evapotranspiration ``[mm]``
           PET_mean = mean(tmpx["PET", , drop = TRUE]),
           PET_cv = cv(tmpx["PET", , drop = TRUE]),
 
@@ -3069,7 +3262,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
           Tmax_mean = mean(tmpx["Tmax", , drop = TRUE]),
           Tmax_sd = sd(tmpx["Tmax", , drop = TRUE]),
 
-          # Precipitation amount `[mm]`
+          # Precipitation amount ``[mm]``
           PPT_mean = mean(tmpx["PPT", , drop = TRUE]),
           PPT_cv = cv(tmpx["PPT", , drop = TRUE]),
 
@@ -3097,15 +3290,15 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
 
 
           #--- Climatic water deficit
-          # Evapotranspiration `[mm]`: `"ET_(mean)|(cv)"`
+          # Evapotranspiration ``[mm]``: `"ET_(mean)|(cv)"`
           ET_mean = mean(tmpx["ET", , drop = TRUE]),
           ET_cv = cv(tmpx["ET", , drop = TRUE]),
 
-          # Climatic water deficit `[mm]` (where `CWD = PPT - ET`)
+          # Climatic water deficit ``[mm]`` (where `CWD = PPT - ET`)
           CWD_mean = mean(tmpx["CWD", , drop = TRUE]),
           CWD_cv = cv(tmpx["CWD", , drop = TRUE]),
 
-          # 10-day extreme climatic water deficit `[mm]`
+          # 10-day extreme climatic water deficit ``[mm]``
           # (where `CWDextreme10d` is the largest daily `CWD`
           # averaged over 10-day periods)
           CWDextreme010d_mean = mean(tmpx["CWDextreme010d", , drop = TRUE]),
@@ -3248,7 +3441,7 @@ metric_EcologicalDroughtMetrics2023_annualClim <- function(
 
 
           #--- Available soil moisture
-          # Available soil moisture (0-100 cm, >-3.9 MPa) `[mm]`
+          # Available soil moisture (0-100 cm, >-3.9 MPa) ``[mm]``
           SWA_mean = mean(tmpx["SWA", , drop = TRUE]),
           SWA_cv = cv(tmpx["SWA", , drop = TRUE]),
 
